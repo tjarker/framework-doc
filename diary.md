@@ -84,11 +84,12 @@ Wednesday, 11.09.2024
 -----------------------------------------------------------------
 
 TODO:
-  - prepare message to companies describing the project and what I would like to talk about
-  - get uvm running on eda1
-  - prepare for meeting with Martin and Luca
-  - get a broad overview of software testing methods
-  - create Latex doc for thesis (or should I use typist?)
+  - [x] prepare message to companies describing the project and what I would like to talk about
+  - [ ] get uvm running on eda1
+  - [ ] prepare for meeting with Martin and Luca
+  - [ ] get a broad overview of software testing methods
+  - [x] create Latex doc for thesis (or should I use typist?)
+  - [ ] organize all the downloaded stuff
 
 Martin Feedback:
   - it is only commercial tools implementing the SV features -> that makes it ok to provide the same functionality in a different language if you can avoid commercial tools
@@ -104,4 +105,14 @@ Meeting Agenda:
     - When should I come to Berkeley and for how long?
     - What would I do there? Will I get a desk? How is Martins schedule?
   - Coverage:
-    - I think it 
+    - I think it should be possible to do internal coverage, only doing it at the IO seems limiting
+    - not only functional coverage but also code coverage (statement, branch, fsm)
+
+
+- being able to handle VHDL could be an advantage for a new verification framework
+- what is the status of the yosys/GHDL based translation of VHDL to verilog?
+
+- how do we achieve concurrency in the testbench?
+- how do we move data around between the structures in the testbench?
+  - TLM with queues is used in UVM
+  - TLM 2.0 adds timing information to the transactions -> this seems interesting
