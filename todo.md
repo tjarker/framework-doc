@@ -1,0 +1,3 @@
+- get a basic JNA example running
+- create a uvm testbeench for s4noc
+- get a uvm testbench running on eda1
