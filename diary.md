@@ -86,7 +86,7 @@ Wednesday, 11.09.2024
 TODO:
   - [x] prepare message to companies describing the project and what I would like to talk about
   - [ ] get uvm running on eda1
-  - [ ] prepare for meeting with Martin and Luca
+  - [X] prepare for meeting with Martin and Luca
   - [ ] get a broad overview of software testing methods
   - [x] create Latex doc for thesis (or should I use typist?)
   - [ ] organize all the downloaded stuff
@@ -108,6 +108,14 @@ Meeting Agenda:
     - I think it should be possible to do internal coverage, only doing it at the IO seems limiting
     - not only functional coverage but also code coverage (statement, branch, fsm)
 
+Meeting Notes:
+  - what should we do?
+    - should we try to do something at the methodological level? or just minor improvements over UVM?
+  - Luca: interface analysis
+  - ask them: what are the weaknesses of UVM?
+  - Martin: the small stuff like writing assertions for next cycle
+  - SVA will come to chisel, how could this be integrated?
+
 
 - being able to handle VHDL could be an advantage for a new verification framework
 - what is the status of the yosys/GHDL based translation of VHDL to verilog?
@@ -116,3 +124,20 @@ Meeting Agenda:
 - how do we move data around between the structures in the testbench?
   - TLM with queues is used in UVM
   - TLM 2.0 adds timing information to the transactions -> this seems interesting
+
+
+=================================================================
+Thursday, 12.09.2024
+-----------------------------------------------------------------
+
+TODO:
+  - [ ] get uvm running on eda1
+  - [ ] get a broad overview of software testing methods
+  - [ ] organize all the downloaded stuff
+  - [X] get a JNI working example
+
+- looked at boolector and JNI
+- sbt-jni is a plugin to allow for easy integration with scala
+- boolector compiled and looked at C api
+- it seems difficult to manage the heap allocated boolector objects in scala
+- one can save the pointer in scala as a long and then use it in the native code
