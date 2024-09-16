@@ -141,3 +141,147 @@ TODO:
 - boolector compiled and looked at C api
 - it seems difficult to manage the heap allocated boolector objects in scala
 - one can save the pointer in scala as a long and then use it in the native code
+
+
+=================================================================
+Friday, 13.09.2024
+-----------------------------------------------------------------
+
+# TODO:
+  - [ ] get uvm running on eda1
+  - [ ] s4noc
+  - [ ] get a broad overview of software testing methods
+  - [ ] look at stay in Berkeley
+
+- is UVM actcually somehow actor based with its components and channels inbetween?
+- would an actual actor based approach be more ergonomic?
+
+- software testing talks about different layers of testing
+- unit testing, integration testing, system testing
+- how does this map to verification?
+- is UVM only a system testing framework?
+
+# Mathias:
+- ISO standards for testing (design process v shape process) part of backround research
+- hearing aid comapnies will follow this in some form
+
+
+# Berkeley:
+- flights around 800 euros -> 6000 dkk
+- accommodation around 13000 dkk
+- car around 600 dollars -> 4000 dkk
+- sum 23000 dkk
+
+- we should have a base class for a transaction type interface which has put methods 
+
+
+- we could have multiple archs
+- can we automate having multiple archs and testing them all?
+
+- concurrency should be communicated by events
+- we need time and events
+- actors seem to be a good idea
+- expect method for future value?
+
+=================================================================
+Week 2 Summary (09.09.2024-13.09.2024)
+-----------------------------------------------------------------
+
+
+
+
+=================================================================
+Monday, 16.09.2024
+-----------------------------------------------------------------
+
+# TODO:
+  - [ ] get uvm running on eda1
+  - [ ] s4noc
+  - [ ] get a broad overview of software testing methods
+  - [ ] look at stay in Berkeley
+  - [ ] look at ISO standards for testing (V shape process)
+  - [ ] look into verilator coverage
+
+- could we create timed assertions from unit tests and let them be used in integration tests? (e.g. capture interface behavior)
+
+- The concepts of UVM have been around for a long time (https://en.wikipedia.org/wiki/Functional_verification#Types)
+
+# What is the unique value of my project?
+  - simple things should be simple, complex things should be possible
+  - use functional programming features to simplify testbench construction
+  - create one framework to support simple unit tests as well as complex integration tests
+
+- focus on communication between components? How can we hide the concurrent nature of the testbench? How can we expose timing and event information at the transactional level?
+
+# proposal
+
+- **should we go for event-based simulation?**
+
+Current testing frameworks such as Cocotb and ChiselTest offer a very simple way of creating testbenches, providing an API to set and get ports and control simulation time progression. When creating more complex testbenches
+
+## problems
+- testing frameworks like cocotbor chiseltest provide very basic concurrency abstractions with co-routines and fork-style multi-threading, respectively
+- this leaves the structuring of the testbench code to the user, leading to a variety of different approaches and a low chance of code reuse
+- UVM provides a more structured approach to testbench construction, but is overly complex, exposing a lot of unnecessary low level details to the user
+- UVM does not provide reasonable defaults, which results in large amounts of boilerplate code for simple tests, disencouraging the use of the framework for simple unit testing
+- classic UVM testbenches have to be written in SystemVerilog, which is a rather low-level language with limited expressiveness which can impede the efficiency of testbench construction
+- ported versions of UVM to other languages like Python (PyUVM) make UVM more accessible by using an easier language, but some of the design decisions which are based on SystemVerilog were not reconsidered
+- this results in a framework which does not necessarily take advantage of the features of the new language
+
+## Solutions
+- A higher-level language with high expressiveness should be used to create a new verification framework
+- The framework should be based on the principles found in the UVM but rethink API decisions on features of the new language
+- The framework should provide standard ways of implementing testbenches ranging from simple unit tests to complex system level tests
+- The framework should provide the infrastructure for handling communication in complex concurrent testbenches
+- The framework should provide reasonable defaults for test components, such that a simple test can be written with minimal boilerplate code
+
+## goals
+
+- consider different concurrency models, which hides the complexity of concurrent programming while being tailored to the domain of testbenches (multi-threading, co-routines, actors, event-driven)
+- optimize the communication between components for ease of use (given the concurrency model)
+- leverage higher-level abstractions and functional programming for more concise test creation
+- facilitate multiple levels of testing (unit, integration, system) with the same framework
+- choose reasonable defaults to make simple test creation easy, but allow for customization for more complex tests
+- A new verification framework has to support the generation of constrained-random stimuli and coverage collection as well as the possibility to create assertions
+
+
+# how can we leverage functional programming
+
+```scala
+val mon = PcieMonitor(dut.pcie)
+val sc = scoreboard(mon.txs) { 
+  case (tx, rx) => tx.data == rx.data
+}
+```
+
+# What bout timing in TLM systems?
+- how does TLM2.0 handle the timing? The protocol itself seems overkill for anything
+
+# questions
+- How do you check for certain transaction-level guarantees when using TLM1.0, where no timing information is captured in the channels?
+- How much are you taking advantage of the reusability aspect of UVM? Are you at a point where testbench construction is accelerated by reusing components?
+
+
+# actor based programming
+  - TTCN-3 (Testing and Test Control Notation version 3) is a strongly typed testing language used in conformance testing of communicating systems.
+
+# concurrency models
+- parallel discrete event simulation (PDES)
+
+# Software testing
+
+## data driven testing frameworks
+  - Separates the test case data from the executable test script
+  - They reduce the cost of adding new tests and changing them when your business rules change. This is done by creating parameters for different scenarios, using data sets that the same code can run against.
+  - They help to identify what data is most important for tested behavior. By separating first-class scenario data into parameters, it becomes clear what matters most to the test. This makes it easy to remember how something works when developers need to change it.
+  - this seems a lot like what UVM tries to achieve by using sequencers
+  - disadvantages: 
+    - large code base for testing
+    - hard to maintain
+    - more documentation
+    - more skill needed to write tests
+
+## keyword driven framework
+  - capture more complex behvaior in *keywords* to simplify test cases
+  - aren't these just functions with more work?
+  - allows test case developers to not worry about the implementation details of the test

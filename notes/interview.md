@@ -70,3 +70,8 @@
 ### Validation and Feedback:
 19. **Have you provided feedback to the UVM community or tool vendors regarding your experiences? If so, what was the nature of your feedback?**
 20. **Would you participate in a pilot or beta testing of a new UVM feature or methodology if it promised to address your challenges?**
+
+
+-----------------------------------------------------------------------------------------------------------------
+
+- UVM is about reuse, how successful have you been in reusing components across different projects? And what difficulties have you encountered?
