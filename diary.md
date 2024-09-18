@@ -285,3 +285,41 @@ val sc = scoreboard(mon.txs) {
   - capture more complex behvaior in *keywords* to simplify test cases
   - aren't these just functions with more work?
   - allows test case developers to not worry about the implementation details of the test
+
+=================================================================
+Wednesday, 18.09.2024
+-----------------------------------------------------------------
+
+TODO:
+  - [ ] get uvm running on eda2 instead
+  - [ ] s4noc
+  - [ ] get a broad overview of software testing methods
+  - [ ] look at stay in Berkeley
+  - [ ] look at ISO standards for testing (V shape process)
+  - [x] look into verilator coverage
+  - [ ] look into TTCN-3
+  - [ ] read "verilog and its ancestors"
+  - [ ] create a verilator systemc example
+  - [x] create verilator cpp example
+
+# Verilator
+- we can drive verilated models via cpp or systemc
+- systemc seems to have a notion of time
+- one can connect multiple verilated sc modules together -> this could be useful for testing multiple duts together without creating a hardware description
+- coverage includes (https://veripool.org/guide/latest/simulating.html#user-coverage)
+  - functional coverage in the form of assertions
+  - line coverage
+  - toggle coverage
+- randomization seems to work
+
+- one can basically create a shell around a verilated model which could also be used to single step for debugging
+  - can we do real time dumping to a file? YES!
+  - there could be an interactive mode for debugging
+
+
+# OSVVM
+- OSVVM is a free library of packages providing additional capabilities and utilities for VHDL and verification
+- https://github.com/OSVVM/Documentation/blob/main/OSVVM_structured_testbench_framework.pdf
+- https://osvvm.github.io/Overview/Osvvm1About.html
+
+- SystemVerilog does not allow variable indexing of interface arrays...
