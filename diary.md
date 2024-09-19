@@ -291,7 +291,7 @@ Wednesday, 18.09.2024
 -----------------------------------------------------------------
 
 TODO:
-  - [ ] get uvm running on eda2 instead
+  - [x] get uvm running on eda2 instead
   - [ ] s4noc
   - [ ] get a broad overview of software testing methods
   - [ ] look at stay in Berkeley
@@ -323,3 +323,34 @@ TODO:
 - https://osvvm.github.io/Overview/Osvvm1About.html
 
 - SystemVerilog does not allow variable indexing of interface arrays...
+- it does, but only on virtual interface arrays
+- normal interface arrays are only allowed to be indexed with variables in generate blocks
+
+=================================================================
+Thursday, 19.09.2024
+-----------------------------------------------------------------
+
+TODO:
+  - [ ] s4noc
+  - [ ] get a broad overview of software testing methods
+  - [ ] look at stay in Berkeley
+  - [ ] look at ISO standards for testing (V shape process)
+  - [ ] look into TTCN-3
+  - [ ] read "verilog and its ancestors"
+  - [ ] create a verilator systemc example
+
+- verilator does allow for delay statements in the verilog code
+- the timescale resolution controls what one simulation tick means
+- we can control how many simulation ticks per clock cycle we want
+- if we skip simulation ticks where an event should have occurred, we get an error -> do we have to evaluate at each tick or is there a way to figure out whether events are pending?
+
+- got s4noc running on eda2 with the first transactions going through the noc using sv interfaces
+
+=================================================================
+Friday, 20.09.2024
+-----------------------------------------------------------------
+
+TODO:
+  - [ ] write down final set of questions for companies
+  - [ ] setup agents for s4noc and send first uvm transactions (only drivers)
+  - [ ] look at stay in Berkeley
