@@ -354,3 +354,52 @@ TODO:
   - [ ] write down final set of questions for companies
   - [ ] setup agents for s4noc and send first uvm transactions (only drivers)
   - [ ] look at stay in Berkeley
+  - [ ] investigate `simPublic` from spinalHDL
+  - [ ] verilator multi clock? (https://zipcpu.com/blog/2018/09/06/tbclock.html)
+
+- we should support running multiple tests on the same hardware reducing the need for recompilation
+
+- if we want to collect coverage information, the more performant solution would be to do so in CPP
+- this means functional coverage has to be declared before the testbench is compiled
+
+
+
+=================================================================
+Week 3 Summary (16.09.2024-20.09.2024)
+-----------------------------------------------------------------
+
+- project focus:
+  - testing frameworks like cocotb, chiseltest and spinalhdl sim provide basic means to interact with the dut
+  - but no higher level abstractions to allow for more complex testbenches
+    - how do multiple concurrent verification components communicate?
+  - UVM provides structured way to do so, but does not scale well with simple tests
+  - a new framework should reconsider UVM decisions and tailor API to language features
+    - real software language allows for more expressive testbenches
+    - functional programming lang features could be leveraged to simplify testbench construction
+  - reasoneable defaults should be provided to make simple tests easy to write
+  - allow for multiple levels of testing with the same framework going from unit to system level tests
+  - the framework should support the generation of constrained-random stimuli and coverage collection as well as the possibility to create assertions
+
+Amelia:
+- add simulation operations peek, poke.. as MLIR dialect
+- what front-end? of course all front-end *could* profit from this
+- how to have arbitrary code interact with the dut?
+- common backend to generate sv testbenches
+
+- Timing in TLM systems:
+  - how do you ensure when transactions are actually put on the pins?
+  - how to ensure simultaneous transactions are actually simultaneous?
+
+- software testing:
+  - did not find anything useful yet
+  - a lot of it is tailored to web development
+    - data driven testing frameworks seem similar to UVM testbenches
+
+- Verilator, C++ and SystemC
+  - created cpp driven testbench for verilated model
+  - allow for delay annotations
+  - we can also connect multiple verilated models together
+  - in systemc this is actually supported (bind)
+
+
+- s4noc uvm testbench
