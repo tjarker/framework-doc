@@ -75,3 +75,76 @@
 -----------------------------------------------------------------------------------------------------------------
 
 - UVM is about reuse, how successful have you been in reusing components across different projects? And what difficulties have you encountered?
+
+
+- Are you following any standards (e.g. ISO) in your verification process? If so, how do you ensure compliance?
+
+- Are there any language limitations that you encounter while developing your verification environment? If so, how do you work around them?
+
+
+
+
+
+==================================================================================================================================
+
+
+# General Questions
+
+Verification Pipeline
+- describe the general flow of your verification process from spec to signoff
+- what are the interactions with the design team?
+
+Collaboration
+- how is work divided between verification
+
+Automation
+- have you integratedhave you integrated any automated tools or scripts into your verification flow to speed up repetitive tasks?
+
+Standards
+- Are you following any standards (e.g. ISO) in your verification process? If so, how do you ensure compliance?
+
+Verification IP reuse
+- how do you reuse VIP going from specification models to rtl to netlists
+- do you develope your VIP inhouse or do you also obtain external VIP
+- UVM is about reuse, how successful have you been in reusing components across different projects? And what difficulties have you encountered?
+
+Special DSP needs
+- have you done any special customization on top of UVM for DSP verification?
+
+Verification methods
+- how much do you use formal methods
+- how do you define which parts to test using formal methods and which parts using simulation based methods
+
+Tools
+- which eda tools are you using
+
+Test scales
+- do you use different approaches for testing smaller design units
+
+Coverage
+- what coverage metrics do you use? Code coverage?
+- what are the most important coverage metrics for you?
+
+Debugging & verification
+- how do you use your verification environment for debugging?
+- do you use interactive running of testbenches?
+
+Bottlenecks
+- what are the biggest bottlenecks in your verification process? How do you address them?
+
+# UVM Specific Questions
+
+Phasing
+- which phases do you use apart from uvm standard phases
+- have you added custom logic to different phases
+
+Configurability
+- how satisfied are you with the configuration mechanisms in UVM
+- how much do you use the configDB and uvm factory
+- what would be the advantages over using formal parameters and generic class instead
+
+# Open criticism
+
+Criticism
+- what limitations of uvm have you encountered
+- Are there any language limitations that you encounter while developing your verification environment? If so, how do you work around them?

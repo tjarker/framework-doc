@@ -403,3 +403,83 @@ Amelia:
 
 
 - s4noc uvm testbench
+
+
+=================================================================
+Monday, 23.09.2024
+-----------------------------------------------------------------
+
+TODO:
+  - [x] scala3 name macro
+  - [ ] questions for companies
+  - [ ] setup agents for s4noc and send first uvm transactions (only drivers)
+  - [ ] look at stay in Berkeley
+  - [x] investigate `simPublic` from spinalHDL
+  - [x] verilator multi clock? (https://zipcpu.com/blog/2018/09/06/tbclock.html)
+  - [x] create simple btor2 crv example
+
+
+- scala3 macros make capturing the name of the enclosing val easy
+
+- verilator multi clock
+  - we can check how long time before each clock has to tick
+  - advance the time til then, evaluate the clock and repeat
+  - io updates need to be bound to a clock! (this looks like SV interfaces)
+  - they should be scheduled at the falling edge
+
+- argument against uvm factory is compile time type checking
+
+
+## software testing
+
+- Unit testing
+  - fixtures provide a mechanism to establish a known state of the uut
+  - setup fixtures -> code to create objects, configure settings and prep data
+  - teardown fixtures -> code to clean up after the test ensuring no state leaks into other tests
+  - parameterized fixtures -> same test for different parameters
+
+- Boundary value testing
+  - test the boundaries of the input domain
+  - hypothesis framework in python
+
+- Equivalence partitioning
+  - divide the input domain into equivalence classes
+  - test one value from each class
+
+- QuickCheck
+  - property-based testing
+  - generate random inputs and check properties
+  - can be used for functional verification
+  - Scala has ScalaCheck!
+
+
+### take aways
+- fixtures are good because they let us reuse the already running simulation!
+- they also make generator parameters first class citizens
+- parameterized fixtures seem a little awkward to use (python they are in meta programming) -> can this be done better
+
+
+## SpinalHDL
+- uses swig for interfacing with verilator
+- simPublic seems no really to do anything to the generated verilator model
+
+## Thoughts
+
+- The DSL part should be decoupled from the implementation and backend
+- This should allow for later optimizations
+
+## CRV
+- SMT solvers are actually not good at producing nice distributions, they are deterministic..
+- boolector seems to ignore the seed for simple examples
+- there is a scala z3 wrapper
+- z3 supports incremental solving, so already seen values could be excluded from the next generation
+
+- verilators contrained random solver is under development (crave) https://github.com/agra-uni-bremen/crave
+
+- jacop is still an option
+
+- pyVSC seems to be doing a lot of stuff around pyboolector (what exactly?)
+
+- SMTSampler concerns itself with the distribution of the values
+- uses z3 under the hood with some modifications
+- https://github.com/RafaelTupynamba/SMTSampler
