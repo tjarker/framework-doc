@@ -468,6 +468,7 @@ TODO:
 - The DSL part should be decoupled from the implementation and backend
 - This should allow for later optimizations
 
+
 ## CRV
 - SMT solvers are actually not good at producing nice distributions, they are deterministic..
 - boolector seems to ignore the seed for simple examples
@@ -483,3 +484,82 @@ TODO:
 - SMTSampler concerns itself with the distribution of the values
 - uses z3 under the hood with some modifications
 - https://github.com/RafaelTupynamba/SMTSampler
+
+
+=================================================================
+Wednesday, 25.09.2024
+-----------------------------------------------------------------
+
+- graalvm can compile scala to native code
+- we can include native libraries in the scala code using JNI and then link them into the native binary
+- there is a sbt plugin for graalvm native image
+
+
+# Meeting
+- early chisel had some work to generate a TB from the test code in verilog to be run on the FPGA (so something like firesim)
+- crv and coverage are nice to haves, the focus should be on the testbench structure
+- so focus on creating standard components, standard communication interfaces and standards for parallelism
+
+
+=================================================================
+Thursday, 26.09.2024
+-----------------------------------------------------------------
+
+TODO:
+  - [ ] create an API outline for an actor with phases
+  - [ ] create an AST for constraints and a DSL to create such an AST, then use brute force for now to find solutions
+  - [ ] look at how CRV with jacoP in chiselverify creates different solutions to same problem
+
+- I should combine actors with the phasing model
+- each actor has different phases and reactions bound to phases
+- this could be completely event driven?
+- one runtime to register events and event listeners
+- the runtime schedules actors reactions on a thread pool
+- queues of UVM are maintained in the background by the runtime -> message queues
+
+
+
+- idea: in UVM scoreboards and other analyzers connect to monitors which broadcast their transactions
+- why not use an publish/subscribe model? monitors publish on a topic and scoreboards subscribe to the topic
+
+- is the uvm reset phase run in parallel?
+
+- the pre and post phases could be done having a @, during and after modifier on the phase recactions
+
+- GraalVM has a LLVM backend
+- with this we could create llvm-IR from scala which could then be used inside circt
+- how could we replace calls to peek, poke and so on with circt sim dialect IR instructions?
+- could the calls be marked as native and then the argument passing + call code is replaced with one llvm-IR instruction?
+
+# Ingredients
+
+- AST for constraints
+- DSL for constraints
+- solver backend for constraints
+
+- type system for hardware to create interfaces
+- a bundle type for the interface should do
+- what kind of hardware types do we need?
+
+- hardware module type with interface
+- potential chisel bridge
+
+- coverage for ports
+
+
+- could we have a unified `Conext` concept for DSL constructs
+- a bundle context takes the defined signals and adds them to the record
+- a module record would take singal defs and add them to the nets
+- a simulation context would do what?
+
+# Constrained Random
+
+- what kind of data types should be supported?
+- only hardware data types?
+
+
+## Enums
+
+- we can access the list of enum variants
+- `.productArity` gives the number of contained values
+- we can use this to only allow basic enums without nested values
