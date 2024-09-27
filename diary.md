@@ -563,3 +563,128 @@ TODO:
 - we can access the list of enum variants
 - `.productArity` gives the number of contained values
 - we can use this to only allow basic enums without nested values
+
+=================================================================
+# Friday, 27.09.2024
+-----------------------------------------------------------------
+
+TODO:
+  - [x] create a project plan outline
+  - [ ] setup agents for s4noc and send first uvm transactions (only drivers)
+  - [ ] look at stay in Berkeley
+
+
+
+# Checklist
+
+## Type System
+1. create a simple type system DSL with
+  - bit and bitvector (signed and unsigned)
+  - vecs
+  - bundles
+  - enums
+
+## Constraint System
+1. create a constraint AST which is associated with bundles
+2. create a DSL to create constraints
+3. create a solver backend for constraints
+
+## Simulator Interface
+1. Define API for controlling simulation
+2. Implement runtime for API
+3. Choose mode of communication between scala host and simulation
+4. Define interface between scala host and simulation
+5. Implement interface
+
+## Concurrency Runtime
+1. Investigate different models for concurrency
+2. Define an API for a unit of concurrency
+3. Implement runtime for concurrency management
+
+## Testbench Model
+1. Develop a standardized testbench structure
+2. Define class system for testbench primitives
+3. Implement defaults
+4. Implement test API for different levels of testing
+
+## Documentation
+1. Write technical background
+  - SystemVerilog
+    - history
+    - hardware description subset
+    - OO features
+  - constrained random verification
+    - SV DSL
+    - usage in verification
+    - SAT, SMT solvers
+    - sampling techniques
+  - Coverage
+    - Code coverage
+      - line
+      - branch
+      - fsm
+    - Functional coverage
+      - SV DSL
+      - usage in verification
+  - Hardware verification
+    - simulation based testbenches
+    - formal methods
+    - higher level abstractions
+      - bus functional models
+      - [???](https://en.wikipedia.org/wiki/Functional_verification#Types)
+    - UVM
+      - history
+      - components
+      - usage
+  - Software testing
+    - unit testing
+    - integration testing
+    - system testing
+    - data driven testing
+    - keyword driven testing
+    - boundary value testing
+    - equivalence partitioning
+    - quickcheck
+  - Actor based programming
+    - history
+    - usage in verification
+    - akka
+    - TTCN-3
+  - Simulators
+    - event driven simulators
+    - compiled simulators
+
+  2. Designing a new verification framework
+    - discuss shortcomings of UVM
+    - discuss design choices for new framework
+    - showcase pseudo code for new framework
+
+
+  3. Write about Implementing design
+    - discuss language options and jutsify choice
+    - explain choices of type system DSL
+    - explain choices of constraint system DSL
+  
+  4. Describe simulator interface and backend implementation
+
+  5. Describe concurrency runtime implementation
+
+  6. Describe testbench model implementation
+
+  7. Write user guide
+
+  8. evaluate the framework with use-cases
+
+  9. Discussion
+  
+  10. Conclusion
+
+
+## functions accepting generic scala3 enum companion object
+
+- scala3 enums are expanded to a type declaration + object with enum variant defs
+- the object does *not* extend anything, but has some predefined methods
+- we can restrict a method to
+  - only accept singleton objects
+  - use structural typing to check whether a `def values: Array[reflect.Enum]` method exists
+- this seems good enough to check that we indeed have received an enum
