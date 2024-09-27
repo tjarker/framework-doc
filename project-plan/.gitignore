@@ -1,0 +1,8 @@
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.dvi
+*.synctex.gz
+project-plan.pdf
+gantt.pdf
