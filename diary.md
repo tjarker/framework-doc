@@ -654,6 +654,10 @@ TODO:
     - event driven simulators
     - compiled simulators
 
+  2. Write about interviews with companies
+    - summaries of interviews
+    - insights gained
+
   2. Designing a new verification framework
     - discuss shortcomings of UVM
     - discuss design choices for new framework
@@ -688,3 +692,15 @@ TODO:
   - only accept singleton objects
   - use structural typing to check whether a `def values: Array[reflect.Enum]` method exists
 - this seems good enough to check that we indeed have received an enum
+
+
+=================================================================
+# Monday, 30.09.2024
+-----------------------------------------------------------------
+
+TODO:
+
+
+- scala offers asynchronous execution on a thread pool using futures
+- the api is not as nice as real async/await
+- async/await existed for scala2 with some limitations but not for scala3
