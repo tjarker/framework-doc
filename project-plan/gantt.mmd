@@ -1,23 +1,30 @@
 gantt
     dateFormat  YYYY-MM-DD
-    title       Project Plan
     excludes    weekends, tuesday
-    axisFormat  Week %W
+    axisFormat  %b %d
     tickInterval 1week
     todayMarker off
     weekday monday
 
 
     section Simulation Environment
-    Verilator Wrapper : backend, 2024-10-03, 5d
-    Concurrency support : conc, after backend, 5d
+    Verilator wrapper implementation: ver_wrap, 2024-10-03, 3d
+    Scala wrapper implementation: sc_wrap, after ver_wrap, 3d
+    Concurrency exploration : conc_expl, after sc_wrap, 3d
+    Concurrency implementation : conc_impl, after conc_expl, 3d
 
 
     section Testbench Methodology
-    Define Phases: 5d
-    Define class hierarchy :  6d
-
+    Design class hierarchy: 4d
+    Decide simulation phases :  1d
+    Design utilities and APIs : 2d
+    Design testbench API: 3d
+    Design RAL API : 3d
+    Implement base classes and utilities: 8d
+    Implement testbench API: 4d
+    Implement RAL : 3d
+    Buffer : 8d
 
     section Report
-    Technical background: 2024-10-07, 2w
-    Finalizing: 2024-12-15, 2025-02-02
+    Write technical background: 2024-10-07, 2w
+    Finalize Report: 2024-12-15, 2025-02-02

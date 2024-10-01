@@ -4,5 +4,8 @@
 *.log
 *.dvi
 *.synctex.gz
+*.bbl
+*.bcf
+*.run.xml
 project-plan.pdf
 gantt.pdf

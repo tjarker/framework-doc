@@ -1,0 +1,9 @@
+{
+  "gantt": {
+    "leftPadding": 200,
+    "barGap": 20,
+    "barHeight": 20,
+    "fontSize": 12,
+    "sectionFontSize": 14
+  }
+}
