@@ -704,3 +704,32 @@ TODO:
 - scala offers asynchronous execution on a thread pool using futures
 - the api is not as nice as real async/await
 - async/await existed for scala2 with some limitations but not for scala3
+
+
+=================================================================
+# Thursday, 03.10.2024
+-----------------------------------------------------------------
+
+TODO:
+  - [x] create a GCD verilated design with simple interface
+  - [x] hook up interface to scala
+  - [ ] use a custom verilated context which is destroyed to allow for reruns on same sbt instance
+
+
+# multi-threaded simulation
+
+- a clock advancing releases all threads that called step for that clock (mechanisms for multi steps, skipping some releases could be added)
+- all threads that ran due to the clock event need to signalize when they are done, such that the simulation runtime can do the next upcoming clock tick
+- the simulation runtime acts like an operating system, scheduling threads when they should run
+
+
+- should the only events be clock events? and if so only rising edge events?
+- it would be great if we supported both timed and clock driven simulation
+
+- clock.step() positions simulation time just after rising edge of clock, i.e. all register updates have been applied
+- time.tick(1 ns) advances simulation time til just after 1 ns has past, i.e. if in 1 ns a clock ticks, all register updates have been applied
+
+- if the runtime can associated release events with threads, then actors are just threads with multiple release events
+- here the event would be passed to the thread, such that it knows which reaction to run
+
+- verilator vpi requires a simpublic annotation in the verilog source to expose signals to the vpi interface
