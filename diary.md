@@ -733,3 +733,20 @@ TODO:
 - here the event would be passed to the thread, such that it knows which reaction to run
 
 - verilator vpi requires a simpublic annotation in the verilog source to expose signals to the vpi interface
+
+
+=================================================================
+# Friday, 04.10.2024
+-----------------------------------------------------------------
+
+TODO:
+  - [ ] use `gcd->eventsPending()` and `gcd->nextTimeSlot()` in the simulation loop
+
+# Verilator wrapper
+- the simulator has setup and teardown methods
+- else there is one function which has the following args
+  - two arrays providing ids and values of input changes
+  - two arrays to deposit the ids and values of output changes
+
+- timing seems a little weird in verilator
+- maybe for now, only support own time (don't consider delay statements in verilog)
