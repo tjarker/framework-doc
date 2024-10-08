@@ -750,3 +750,53 @@ TODO:
 
 - timing seems a little weird in verilator
 - maybe for now, only support own time (don't consider delay statements in verilog)
+
+
+=================================================================
+# Monday, 07.10.2024
+-----------------------------------------------------------------
+
+- The main controller thread interacting with the simulation is actually not a thread but whatever thread happens to be the last one to finish for this step
+- when a thread finishes it checks if there are any more threads to run and unblocks one of them if there are
+- if there aren't simulation ticks to next event controlled by the last thread to finish
+- then that last thread releases all threads fitting in the cores and blocks itself until its event occurs unless it was waiting for this event
+
+- chiseltest has some kind of schedule order based on the fork join hierarchy
+- why should this be necessary?
+
+
+- chiseltest has a simcontroller which uses a scheduler
+
+=================================================================
+# Tuesday, 08.10.2024
+-----------------------------------------------------------------
+
+## TODO:
+	- [ ] create a simple scheduler 
+  - [ ] handle wide verilator fields
+  - [ ] join sim threads before exiting
+
+
+## Notes
+- `scala.DelayedInit` lets you run code before the constructor of a class
+- implement `delayedInit(body: => Unit)` in the class to run code
+
+
+- what we would really have to do to achieve good co-routine like parallelsim would be
+  to split actions between clock ticks into small work packages which are submited to a thread pool
+- what about control flow around clock ticks? like a while loop which runs until a certain condition is met?
+- a compiler pass could probably do this but it would be a lot of work
+
+
+- project loom is perfect for cooperative multi tasking of driver tasks
+- https://www.baeldung.com/java-virtual-thread-vs-thread
+- but it is still under development
+
+## Single threaded sim runtime
+
+```
+[Time] 99540943
+[Sched] switching nested3 -> main
+Simulation took 100294 ms
+Simulation frequency: 992.4915049753724 ticks/ms
+```
