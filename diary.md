@@ -800,3 +800,362 @@ TODO:
 Simulation took 100294 ms
 Simulation frequency: 992.4915049753724 ticks/ms
 ```
+
+
+- consider doing more in java
+
+- use edu4chip as a medium sized use case
+
+- scott beamer is doing a simulator for firrtl
+
+
+=================================================================
+# Friday, 11.10.2024
+-----------------------------------------------------------------
+
+# Time model
+
+- how can we allow a system which both has clock steps and explicit time steps as mechanisms for advancing time?
+- in sv @( clocking_block ) waits for the positive edge of the clock
+- 
+
+- should we only allow to schedule events for certain point in time?
+
+
+- we can start only allowing stepping on clocks
+- only one clock is allowed to be used in a thread
+  - how can we enforce this constraint?
+
+- when a thread reaches a clock step it is blocked until the clock ticks and all side effects had the chance to occur, i.e. the last sim tick before the next posedge of the clock
+  - that means it registers the absolute time stamp it wants to be woken up at
+
+- at each tick we have to do the following
+  - check if any drive actions are pending and note the closest time tag
+  - check if any clock edges are pending and note the closest time tag
+  - choose the smaller time tag event
+  - advance the simulation to the time tag
+  - do the action
+  - continue to pop drive and clock events until non exist for the time tag
+  - call eval to apply the changes to the model
+  - release the thread which was waiting for this time tag
+  - 
+
+
+=================================================================
+# Monday, 14.10.2024
+-----------------------------------------------------------------
+
+# TODO
+  - [x] fix absoulte/relative time issue
+  - [x] get multi threadig running with actual model
+  - [x] create a cdc example
+  - [ ] start finding sources for thesis chapters
+  - [ ] look at UVM reference manual and documentation
+
+
+=================================================================
+# Wednesday, 16.10.2024
+-----------------------------------------------------------------
+
+# TODO
+  - [ ] start finding sources for thesis chapters
+  - [ ] look at UVM reference manual and documentation
+  - 
+
+
+
+# Notes
+
+- ports give access to pins of dut
+- interfaces are collection of ports with associated methods and coverage
+
+
+- phasing model
+  - we could extend the phasing model with custom phases
+  - actors could register reactions to phase startups (before), execution (during) and shutdown (after)
+
+```scala
+class MyAgent(seq: Sequence) extends Agent {
+
+  before(Reset) {
+    // do something
+  }
+
+  during(Reset) {
+    // do something
+  }
+
+  after(Reset) {
+    // do something
+  }
+
+  during(Run) {
+    react(seq.channel) {
+
+    }
+  }
+
+}
+```
+
+
+# Notes UVM guide
+
+> Common transaction-level abstractions today include: cycle-accurate, approximately-timed, loosely-timed, untimed, and token-level.
+
+
+- remember Odesky: language should now reflect mechanism but intent
+- the whole port export shinanigans reflects mechanism
+
+- the uvm factory and config db allow configuration penetrating multiple levels in the class hierarchy without any *explicit* parameters
+- configurability should be thought into the class *anyways* so why not make it explicit through formal parameters?
+
+# Ideas for UVM like types
+
+```scala
+trait Transaction {
+
+}
+
+trait Producer[T <: Transaction] {
+  def put(t: T): Unit
+}
+
+trait Consumer[T <: Transaction] {
+  def get: T
+}
+
+
+```
+
+=================================================================
+# Thursday, 17.10.2024
+-----------------------------------------------------------------
+
+- how can we have the context be passed down through all levels of hierarchy such that a struct in a struct in a struct knows that it is part of a port declaration?
+
+
+```scala
+
+class MyBundle extends Bundle {
+  val a = UInt(8.W)
+  val b = new Bundle {
+    val c = UInt(8.W)
+  }
+}
+
+class MyInterface extends Interface {
+  val a = Input(UInt(8.W))
+  val b = Output(UInt(8.W))
+  val c = new Bundle {
+    val d = Input(UInt(8.W))
+  }
+}
+
+
+```
+
+- should we keep the type information of directionality?
+
+
+=================================================================
+# Friday, 18.10.2024
+-----------------------------------------------------------------
+
+
+# TODO
+  - [ ] ordering errors for pokes and peeks
+
+
+# Ordering
+- should we also have a separate region `Monitor` like in chiseltest
+- or should we just say that all pokes are applied before peeks?
+- chiseltest uses thread priorities to enforce ordering
+
+
+=================================================================
+# Tuesday, 29.10.2024
+-----------------------------------------------------------------
+
+# CRV
+- kevin laefuer actually was part of some work on sampling of smt solvers
+- https://github.com/RafaelTupynamba/quicksampler?tab=readme-ov-file
+- https://github.com/RafaelTupynamba/SMTSampler
+- https://github.com/RafaelTupynamba/GuidedSampler
+
+
+# Notes
+
+- we should provide a simple global interface to a config db
+- config db seems to be only used in hierarchical cases, so is Jacobs argument about the sender not needing to have a handle to the receiver really valid?
+- the hierarchy is static, so a parent would HAVE a handle to any child or sub-child
+
+- the uvm factory allows for true runtime overrides via commandline, i.e. no recompilation needed
+- is this really a good argument? we only have to recompile the testbench, not the dut
+
+
+=================================================================
+# Wednesday, 30.10.2024
+-----------------------------------------------------------------
+
+- There are three distinct parts of a UVM testbench
+  - the test
+  - the environment
+  - the sequences 
+
+
+
+# configuration
+- could we "propagate" configuration parameters in a simple way through the design hierarchy?
+
+
+# coordinating end of test
+- in uvm we have objections
+- jacob talked about consensus in OVM or VMM
+- a phase could have a consensus object where components can register their agreement to end the phase
+
+
+=================================================================
+# Friday, 01.11.2024
+-----------------------------------------------------------------
+
+# TODO
+  - [ ] create wide peeks and pokes for verilator
+  - [ ] decide on how to share simulation context (shared variable vs. givens)
+
+- ioc (inversion of control)
+- use only traits, not generics! we are only interested in what it is able to do, not the specific type
+
+
+=================================================================
+# Tuesday, 05.11.2024
+-----------------------------------------------------------------
+
+# TODO
+
+- [x] wide verilator pokes and peeks
+
+
+=================================================================
+# Wednesday, 06.11.2024
+-----------------------------------------------------------------
+
+# Sequences & Sequencer 
+- an iterator is not good enough to model sequences since there is Feedback
+- writing sequences as a kind of state machine is maybe also awkward
+
+
+```scala
+
+class MySequence extends Sequence[MyItem] {
+
+  def body = {
+    // do something
+    yield(MyItem())
+
+    // do something
+    yield(MyItem())
+  }
+}
+
+@main def test() = {
+  val seq = MySequence()
+  prntln(seq.next())
+
+  for (item <- seq) {
+    println(item)
+  }
+}
+
+```
+
+
+# Simulation
+- we could use channels to the 
+
+
+
+=================================================================
+# Thursday, 07.11.2024
+-----------------------------------------------------------------
+
+
+- the scheduler has to be aware of:
+  - all threads that may interact with the hardware
+    - could be handled in the fork call
+  - it can then wait for all threads to enter a waiting state.
+
+
+=================================================================
+# Friday, 08.11.2024
+-----------------------------------------------------------------
+
+
+# Sequences
+
+- there should be two types of sequences:
+  1. sequences with feedback
+  2. sequences without feedback (i.e. *dumb* sequences)
+- the dumb sequences should be obtainable from any scala collection
+  - they probably all implement the iterator trait
+  - we could provide a conversion from an iterator to a sequence
+
+- the sequences with feedback are step by step recepies where the sequence writer obtains some feedback for each applied item
+- here we need to use bi-directional channels and run the sequence in another thread
+
+
+- to the driver it should look all the same whether it is a sequence or a dumb sequence
+
+
+=================================================================
+# Friday, 22.11.2024
+
+# Forks
+
+- when forks are waiting for other forks, they need to register this with the scheduler
+
+
+=================================================================
+# Monday, 25.11.2024
+-----------------------------------------------------------------
+
+- use Comp() wrapper to get around too many annoying parameter for user component classes
+- comp handles naming (also enclosing term) and passes parent, adds to children and so on
+
+- when constructor IoC is used, how can parameters be decided at a lower level?
+- is this actually necessary?
+- 
+
+
+- can active vs. passive agent be contructed by mixing in?
+```scala
+val myAgent = new MyAgent with Active
+```
+
+
+- how should phasing be staged, i.e. when should the current phase exit and the next phase enter?
+
+=================================================================
+# Monday 2.12.2024
+-----------------------------------------------------------------
+
+# TODO
+- [ ] decide how to deal with monitoring threads (they should read after all drives)
+
+
+- Likely, marking a thread as sleeping or awake should be acked by the scheduler?
+
+- there seems to be an issue with the current channels, where the async backend is too slow 
+  to release the waiting thread before the scheduler proceeds time
+
+
+=================================================================
+# Tuesday 3.12.2024
+-----------------------------------------------------------------
+
+- a scheduler for the simulation framework has to be concerned with the following things:
+  - progression of time
+  - release of threads at the right time
+  - threads being blocked due to other reasons than waiting for time
+    - threads waiting for other threads to finish (join)
+    - threads waiting to send/receive a value on a channel

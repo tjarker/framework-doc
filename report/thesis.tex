@@ -1,5 +1,9 @@
 \documentclass[11pt]{article}
 
+\usepackage[backend=biber,style=ieee]{biblatex}
+\addbibresource{books.bib}
+\addbibresource{papers.bib}
+
 
 \author{Tjark Petersen}
 \title{Thesis}
@@ -24,6 +28,8 @@
 
 \section{Constrained-Random Verification}
 
+\cite{Mehta2021}
+
 \section{Code Coverage}
 
 \section{Functional Coverage}
@@ -33,6 +39,31 @@
 \section{Formal Verification}
 
 \section{System Verilog}
+
+\cite[Sec. 6, pp. 43]{flake2020a}
+- by the mid 1990s Verilog began to show its limitations 
+- discussed replacing HDLs altogether with C++ or java for hardware design
+- other option is strengthening Verilog lang
+
+
+\subsection{Superlog}
+
+\citeauthor{flake2020a} \cite[Sec. 6, pp. 44-49]{flake2020a}
+- engineers at Co-Design Automation Inc. saw potential in conciseness and closeness to HW in Verilog
+- C was chosen as a source of inspiration for language extensions due to wide spread use in EDA and embedded systems communitites
+- this turned into superlog
+- additions included:
+  - variable size data types (queues, sparse arrays, associative arrays)
+  - bundled data types with different directions
+  - enumerations
+  - references
+  - C dpi
+  - interfaces as collection of wires, but also exposing of methods of modules without hierarchical references
+
+\subsection{Vera}
+
+\cite[Sec. 7, pp. 51-??]{flake2020a}
+- 
 
 \section{UVM}
 
@@ -47,5 +78,8 @@
 - integration testing
 - system testing
 - black vs. grey vs. white box testing
+
+
+\printbibliography
 
 \end{document}
