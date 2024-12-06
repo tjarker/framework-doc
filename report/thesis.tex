@@ -1,4 +1,4 @@
-\documentclass[11pt]{article}
+\documentclass[11pt]{book}
 
 \usepackage[backend=biber,style=ieee]{biblatex}
 \addbibresource{books.bib}
@@ -12,10 +12,132 @@
 \begin{document}
 \maketitle
 
-\section{Introduction}
+\section*{Abstract} %==========================================================================================================
+
+\section*{Acknowledgements} %==================================================================================================
+
+\newpage
+
+\tableofcontents
+
+
+\chapter{Introduction} %=======================================================================================================
+
+\section{Motivation} %---------------------------------------------------------------------------------------------------------
+
+\section{Objectives} %---------------------------------------------------------------------------------------------------------
+
+\section{Scope} %--------------------------------------------------------------------------------------------------------------
 
 - verification has a hard time keeping up with increasing design complexity
 - verification is a bottleneck in the design process
+
+\chapter{Background \& Related Work} %=========================================================================================
+
+\section{Hardware Verification}
+
+\subsection{Simulation-Based Verification}
+
+\subsubsection{Event-Driven Simulation}
+
+\section{Cycle-Based Simulation}
+
+\subsection{Assertion-Based Verification}
+
+\subsection{Formal Verification}
+
+\section{Constrained-Random Verification} %------------------------------------------------------------------------------------
+
+\cite{Mehta2021}
+
+\section{Coverage} %-----------------------------------------------------------------------------------------------------------
+
+\subsection{Code Coverage}
+
+\subsection{Functional Coverage}
+
+\section{History of Hardware Verification Languages} %-------------------------------------------------------------------------
+
+\subsection{OpenVera}
+
+\cite[Sec. 7, pp. 51-??]{flake2020a}
+
+\subsection{The e Language}
+
+\subsection{SystemVerilog}
+
+\cite[Sec. 6, pp. 43]{flake2020a}
+- by the mid 1990s Verilog began to show its limitations 
+- discussed replacing HDLs altogether with C++ or java for hardware design
+- other option is strengthening Verilog lang
+
+\section{UVM} %----------------------------------------------------------------------------------------------------------------
+
+\subsection{UVM Testbench structure}
+
+\subsection{UVM Sequences}
+
+\subsection{UVM Tests}
+
+\section{Software Testing Methods} %-------------------------------------------------------------------------------------------
+- unit testing
+- integration testing
+- system testing
+- black vs. grey vs. white box testing
+
+
+\chapter{Design of a Verification Environment} %===============================================================================
+
+\section{Separation of Concerns} %---------------------------------------------------------------------------------------------
+
+\subsection{The Testbench}
+
+\subsection{The Interaction Sequences}
+
+\subsection{The Test cases}
+
+
+
+
+\chapter{Implementation} %=====================================================================================================
+
+\section{Simulation} %---------------------------------------------------------------------------------------------------------
+
+\subsection{Generating the Verilated Model} 
+
+\subsection{Interfacing with the Verilated Model}
+
+\subsection{The simulation Runtime} 
+
+\section{Concurrency} %--------------------------------------------------------------------------------------------------------
+
+\section{Component Types}
+
+\section{Phasing}
+
+\section{Register Abstraction}
+
+
+\chapter{Evaluation} %=========================================================================================================
+
+\section{Use Cases} %----------------------------------------------------------------------------------------------------------
+
+\section{Results} %------------------------------------------------------------------------------------------------------------
+
+\section{Discussion} %---------------------------------------------------------------------------------------------------------
+
+
+
+\chapter{Conclusion} %=========================================================================================================
+
+\printbibliography
+
+\end{document}
+
+
+
+
+
 
 \section{Hardware Description Languages}
 
@@ -26,24 +148,13 @@
 - talk about other concurrency models
 - is UVM actor based?
 
-\section{Constrained-Random Verification}
 
-\cite{Mehta2021}
 
-\section{Code Coverage}
 
-\section{Functional Coverage}
 
-\section{Assertion-Based Verification}
 
-\section{Formal Verification}
 
-\section{System Verilog}
 
-\cite[Sec. 6, pp. 43]{flake2020a}
-- by the mid 1990s Verilog began to show its limitations 
-- discussed replacing HDLs altogether with C++ or java for hardware design
-- other option is strengthening Verilog lang
 
 
 \subsection{Superlog}
@@ -60,16 +171,12 @@
   - C dpi
   - interfaces as collection of wires, but also exposing of methods of modules without hierarchical references
 
-\subsection{Vera}
 
-\cite[Sec. 7, pp. 51-??]{flake2020a}
 - 
 
 \section{UVM}
 
-\section{Event-Driven Simulation}
 
-\section{Cycle-Based Simulation}
 
 \section{Transaction-Level Modeling}
 
@@ -80,6 +187,4 @@
 - black vs. grey vs. white box testing
 
 
-\printbibliography
 
-\end{document}

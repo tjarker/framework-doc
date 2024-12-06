@@ -1159,3 +1159,20 @@ val myAgent = new MyAgent with Active
   - threads being blocked due to other reasons than waiting for time
     - threads waiting for other threads to finish (join)
     - threads waiting to send/receive a value on a channel
+
+
+=================================================================
+# Wednesday 4.12.2024
+-----------------------------------------------------------------
+
+# TODO
+- [ ] create the error and warning summary at the end of a test
+
+
+=================================================================
+# Friday 6.12.2024
+-----------------------------------------------------------------
+
+# TODO:
+- [ ] register abstraction layer
+- [ ] try out the public annotation list as external file like in patmos 
