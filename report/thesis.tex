@@ -1,13 +1,15 @@
-\documentclass[11pt]{book}
+\documentclass[12pt]{book}
 
 \usepackage[backend=biber,style=ieee]{biblatex}
 \addbibresource{books.bib}
 \addbibresource{papers.bib}
-
+\addbibresource{pages.bib}
 
 \author{Tjark Petersen}
 \title{Thesis}
 
+
+\newcommand{\name}{MyVerificationFramework}
 
 \begin{document}
 \maketitle
@@ -20,31 +22,67 @@
 
 \tableofcontents
 
-
+% 
 \chapter{Introduction} %=======================================================================================================
 
-\section{Motivation} %---------------------------------------------------------------------------------------------------------
-
-\section{Objectives} %---------------------------------------------------------------------------------------------------------
-
-\section{Scope} %--------------------------------------------------------------------------------------------------------------
+- present topic
+- present problem statement
+- why is this relevant
+- this is an explorative and problemsolving thesis
+- explain the goal/objectives
+- what methods will be used
+- how is the thesis structured
 
 - verification has a hard time keeping up with increasing design complexity
-- verification is a bottleneck in the design process
+- verification is a bottleneck in the product development process (40-50\% of design cost) \cite{mehta2018asic}
+- UVM is the most used verification framework
+- UVM is overly complex and only a subset is actually used \cite{sutherland2015uvm}
+- time to reevaluate verification tools
 
 \chapter{Background \& Related Work} %=========================================================================================
+
+- what is the purpose of verification
+- what tools do we have to ease verification
+- what tools do we have to measure verification progress
+- don't introduce "things" but introduce the problems/challenges they're trying to solve
+
+- in this section a complete picture of what verification includes should be drawn in order to put the foundation for understanding what a verification framework should provide
+
 
 \section{Hardware Verification}
 
 \subsection{Simulation-Based Verification}
 
-\subsubsection{Event-Driven Simulation}
-
-\section{Cycle-Based Simulation}
-
 \subsection{Assertion-Based Verification}
 
 \subsection{Formal Verification}
+
+Formal verification is an alternative approach to verify the correctness of a design given its specification. Instead of observing the behavior of the DUT, properties that should hold for the design are specified mathematically. These properties are typically expressed using temporal logic, such as Linear Temporal Logic (LTL) or Computational Tree Logic (CTL), which describe how a design should behave over time.
+
+The process of formal verification involves checking these properties against the design model using formal tools like model checkers or theorem provers. Model checkers exhaustively explore all possible states of the design to ensure the properties hold universally, while theorem provers use deductive reasoning to prove the correctness of properties.
+
+One significant advantage of formal verification is its ability to detect subtle corner-case bugs that might not surface during simulation-based testing, regardless of the level of coverage. Formal methods provide exhaustive coverage of the design space under specified constraints, ensuring that all edge cases are considered. This makes it particularly valuable for verifying critical design components like control logic, protocols, or safety-critical systems where failures can have severe consequences.
+
+However, formal verification also comes with challenges:
+\begin{itemize}
+    \item \textbf{State Space Explosion:} As the complexity of a design increases, the number of states to be analyzed grows exponentially. This makes it difficult for model checkers to handle large systems without simplifications or abstractions.
+    \item \textbf{Specification Complexity:} Writing correct and comprehensive properties is non-trivial and requires a deep understanding of both the design and its intended behavior.
+    \item \textbf{Tool Limitations:} While formal tools have advanced significantly, they often require significant computational resources and expert knowledge to use effectively.
+\end{itemize}
+
+Despite these challenges, formal verification is increasingly being adopted as a complementary methodology alongside simulation-based verification. It is particularly useful in the early stages of design, where critical bugs can be identified and corrected before the full implementation is completed. Additionally, formal verification can be applied to specific parts of a design, such as verifying individual modules or ensuring compliance with protocols.
+
+Examples of practical applications include:
+\begin{itemize}
+    \item \textbf{Protocol Verification:} Ensuring compliance with communication standards such as PCIe, USB, or AXI.
+    \item \textbf{Control Logic:} Verifying that finite state machines or other control mechanisms behave correctly under all conditions.
+    \item \textbf{Safety Properties:} Proving that certain "bad states," such as deadlocks or unsafe operations, cannot occur.
+\end{itemize}
+
+The integration of formal methods into hardware verification flows is facilitated by frameworks like SystemVerilog Assertions (SVA) and tools such as Cadence JasperGold, Synopsys Formality, and Mentor Graphics Questa Formal. These tools offer user-friendly interfaces and integration with traditional simulation environments, making formal verification more accessible to design and verification engineers.
+
+By addressing the gaps left by simulation-based methods, formal verification plays a crucial role in creating robust and reliable hardware designs.
+
 
 \section{Constrained-Random Verification} %------------------------------------------------------------------------------------
 
@@ -56,7 +94,7 @@
 
 \subsection{Functional Coverage}
 
-\section{History of Hardware Verification Languages} %-------------------------------------------------------------------------
+\section{Hardware Verification Languages} %-------------------------------------------------------------------------
 
 \subsection{OpenVera}
 
@@ -73,11 +111,27 @@
 
 \section{UVM} %----------------------------------------------------------------------------------------------------------------
 
+The verification features which SV offers are by themselves not enough to create reusable testbenches. They provide the raw mechanisms for creating modern constrained-random, self-checking testbenches with coverage collection and bus-functional models, but the language itself does not prescribe a way of organizing the different responsibilities in a testbench such that large testbenches become manageable and such that parts of a testbench can be reused in another project or be bought from another company. 
+
+Acknowledging the problem, each EDA vendor had developed their own reuse methodology: Mentor Graphics had the Open Verification Methodology (OVM), Cadence had the Universal Reuse Methodology (URM) and Synopsys had the Verification Methodology Manual (VMM). Due to the fear of vendor lock, none of these methodologies gained widespread adoption \cite[ch. 4]{mehta2018asic}. Under the umbrella of the Accellera Systems Initiative, a standards organization supported by the EDA industry, a merger of the different methodologies was attempted. The result was the Universal Verification Methodology (UVM) which is mainly based on the OVM \cite[ch. 4]{mehta2018asic}. 
+
+The UVM provides standardized ways to create testbench infrastructure which is hierarchical and where responsibilities are divided over different components. Furthermore, it introduces the concept of phases, synchronized components throughout the different steps of a test case. Finally, the UVM raises the level of abstraction of the testbench by working with transactions which encapsulate a potential multi-clock cycle interaction with the DUT in one object.
+
 \subsection{UVM Testbench structure}
 
-\subsection{UVM Sequences}
+A UVM testbench consists of three main parts. The environment manifests the static infrastructure of the testbench which is shared between different test cases. It contains components which direct stimulus generated by the test case to the relevant DUT interfaces and transactions observed on the DUT interfaces to analysis components for coverage collection or checking against a model. The test sequences are series of transactions. They could be fully randomized sequences, predefined sequences which put the DUT into a desired state or something in between, e.g. a sequence of bus transactions to a certain adress with random data. The environment and test sequences are what is used to construct a test case. The test case instantiates a series of sequences to exercise the functionality under test and sends them to the environment.
+
+The full UVM testbench hierarchy is presented in \ref{fig:uvm_tb}. The top-level environment itself consists of multiple other environments, which are specific for sub-systems of the DUT. Inside each environment, there are a series of agents which are specific to the interfaces which are part of the sub-system. Additionally, components collecting coverage information at the sub-system level may be present. Finally, the environment contains a scoreboard which compares the transactions observed on the DUT interfaces with transactions produced by some kind of model, the predictor. 
+
+An agent is specific to one interface, for instance AXI4 or SPI, and bridges the gap between the transaction level and the driving and reading of the pins of the DUT. Agents come in two forms: passive and active. Passive agents only observe transactions on the interface pins and send them to analysis components such as scoreboards or coverage collectors. Active agents also accept transactions which they drive onto the interface pins. 
+
+This compartmentalization of the testbench aims at promoting reuse where possible and should make maintaining large and complex testbench systems easier. Furthermore, external IP blocks, for instance an AXI agent, should be easy to integrate into a testbench. Having looked at the overall structure of a UVM testbench, the following sections will concern themselves with the stimulus and the test cases.
+
+- talk about overall structure and show diagram
 
 \subsection{UVM Tests}
+
+\subsection{UVM Sequence Items and Sequences}
 
 \section{Software Testing Methods} %-------------------------------------------------------------------------------------------
 - unit testing
@@ -85,18 +139,174 @@
 - system testing
 - black vs. grey vs. white box testing
 
-
-\chapter{Design of a Verification Environment} %===============================================================================
-
-\section{Separation of Concerns} %---------------------------------------------------------------------------------------------
-
-\subsection{The Testbench}
-
-\subsection{The Interaction Sequences}
-
-\subsection{The Test cases}
+\chapter{Problem Statement \& Methods} %=======================================================================================
 
 
+
+
+% talk about company interviews
+\chapter{Industry Survey} %====================================================================================================
+
+\section{Company 1}
+
+Company 1 develops ASICs for the hearing aid industry. 
+- 7-8 dedicated verification engineers
+
+- don't use all UVM and SV features
+- try to stick to standard features to make hiring easier
+- develop all VIP inhouse
+- reuse inhouse VIP across projects, e.g. interfaces like APB or SWD
+- integrate C or verilog models for bought IP like EEPROM 
+- use VCS for simulation
+- prefer single language for design to enable incremental compilation
+- think that register abstraction in UVM is very complex
+- have testbenches at the module level
+- use randomized inputs (CRV)
+- integrate matlab models for DSP
+- Signal data streams are not random but represent typical data
+- constraints in time, i.e. between signal packages, are difficult
+- use FSM code coverage
+- no line or branch coverage
+- functional coverage
+
+- after specification is finished, verification starts in parallel with design
+- basic testbench layout can be created based on interfaces
+
+- for debugging, assertion-based verification is used, some formal, some runtime, some both
+- use connectivity checks to check that certain config connects certain parts of design
+
+- for regression CI is used
+- checkout always works
+- 6000 simulations with tests
+- 6 hours runtime
+- synthesis is also done for regression
+- coverage checks are performed
+
+- no ISO standards have to be considered by the verification team
+- standards are required for chip set, already captured in verification plan
+
+- inhouse VIP is actively improved and maintained and reused
+- 1 code base for everything
+
+- have looked at PyUVM but speed is an issue
+- want a setup framework to generate basic structure of testbench
+- want a setup framework to generate basic unit test structure
+- afraid of adapting new niche tools since it may be a recruitment issue
+
+- in their experience it is rare that software engineers become verification engineers, don't see need to tailor verification environment to software engineers
+
+- prefer formal methods over unit tests
+
+- in terms of bottlenecks, the testplan is more of an issue than the actual development time of the testbenches
+- Development time is also more predicatable, debugging is not
+- especially working around known bugs to further progress is difficult
+
+- use the different UVM runtime phases extensively, especially reset phases, to increase composition
+- UVM factory is difficult to debug, and hard to maintain
+- callbacks would be the bettern option but weren't available when UVM was drafted
+
+- have their own standard scoreboard implementation
+
+- UVM is not perfect, some companies insisted on things from their own methodology
+
+- use configDB to pass data to agents
+
+- RAL is not finished in their opinion
+- e.g. one reg block can't be mapped into multiple address spaces
+- developed their own extension
+
+- UVM examples on the internet are often outdated
+- only showcase small and trivial examples
+
+- power aware verification is still difficult
+
+- like idea of a framework without too many choices
+
+\section{Company 2}
+
+Company 2 offers consulting services for verification. 
+
+- one issue with the RAL is register randomization, they have their own implementation
+- scoreboard: have their own standard scoreboard implementation
+- model is not in scoreboard, scoreboard only compares streams of transactions
+
+- first step is usually systemC model which can also be used for firmware development
+- verification is about model checking
+- assertions are alos a model
+- verification process is about building confidence, first no bugs, then a lot, then no bugs again
+- as verification infrastructure improves, the number of bugs found increases
+
+- UVM falls apart in multi-clock designs
+
+- assertions should be close to the interfaces
+
+- a VIP should already contain a coverage model
+- for system level coverage, cross coverage between different agents can be used
+
+- coverage model has to be good, otherwise it is not useful
+- can be check with intentionally weak tests
+
+- design assumptions should be captured in assertions
+
+- assertions have to be back-annotated to specification
+
+- verification engineer also has implicit assumptions about how to attack the problem of proving that something is correct
+
+\section{Company 3}
+
+\section{Conclusions}
+
+\chapter{Analysis} %===========================================================================================================
+
+- here, the requirements should be made and possible approaches outlined
+- this includes possible tools to rely on (also for features which are not part of the final product, e.g. coverage and crv)
+
+
+\section{Requirements} %-------------------------------------------------------------------------------------------------------
+
+\subsection{Supported HDLs}
+The first consideration to be made concerns the hardware description languages to be supported by \name. 
+
+\subsection{Simulation Backend}
+The second consideration which has to be made is the simulation backend which the verification framework will use. This decision is also influenced by the choice of supported HDL's, ease of interfacing with the simulation and finally of course performance. Since the project itself aims to be open-source, the choice of a proprietary simulator is not an option. The two most popular open-source simulators are Icarus Verilog and Verilator. Icarus Verilog compiles a Verilog design into its own format which can be executed by a separate simulation runtime engine, a kind of interpreter \cite{iverilog}. The newest Verilog standard partially supported is IEEE1800-2012 which includes some SystemVerilog features. 
+
+Verilator, on the other hand, transpiles the Verilog design into C++ or SystemC classes which can then be compiled into a standalone executable \cite{verilator}. This makes Verilator very suitable for co-simulation with other models or software components, since it can easily be interfaced at the C/C++ level. The only interface to a verilated model, apart from setting inputs and reading outputs, is the \texttt{eval} function which runs a static schedule to update the model's state. Since the model is in the end compiled to a native executable with no additional simulation runtime, the performance of Verilator is significantly better than Icarus Verilog, with speedups of 100x on a single thread being reported by the developers \cite{verilator}. Verilator supports nearly fully the IEEE 1364-2005 standard, partially the IEEE 1800-2005 standard and some very specific features of newer standards. The IEEE 1800-2005 standard includes SystemVerilog features, of which some like classes and interfaces are supported by Verilator.
+
+Before version 5, Verilator ignored delay statements in the Verilog source code. The newer version now support this feature, thus matching the capabilities of Icarus Verilog. 
+
+Considering especially the ease of integrating verilated models with other software components in addition to the superior performance, Verilator was identified as better option for the verification framework.
+
+
+\subsection{Verification language}
+The next consideration is 
+
+\subsubsection{Dedicated HVL}
+
+\subsubsection{DSL Approach}
+
+\subsection{Separation of Concerns} %---------------------------------------------------------------------------------------------
+Now that the base requirements have been defined, the feature set of the verification framework itself has to be determined. 
+
+\subsubsection{The Testbench}
+
+\subsubsection{The Interaction Sequences}
+
+\subsubsection{The Test cases}
+
+\subsection{Configurability} %--------------------------------------------------------------------------------------------------
+
+UVM requires a recompilation for each testbench \cite{salemi2013uvm}, we don't need that since a jar can have multiple entry points.
+
+\section{Solution Approaches} %--------------------------------------------------------------------------------------------------
+
+1. SystemVerilog library written for Verilator
+2. dedicated HVL compiling via CIRCT dialects to SV testbench
+3. DSL cosim with simulation backend
+
+%\subsection{Compiled}
+% MLIR
+
+%\subsection{Co-Simulation}
 
 
 \chapter{Implementation} %=====================================================================================================
@@ -126,7 +336,19 @@
 
 \section{Discussion} %---------------------------------------------------------------------------------------------------------
 
+- scala 3 was chosen to use newest features and make future proof but that prevents integration with chisel
 
+- annoying to write interface in scala and SV -> simple tool could create scala code from SV
+
+\section{Future Work} %========================================================================================================
+
+- verilator performance features (multi-threading, ...)
+
+- add support for attached models
+  - a function receiving the dut and can do whatever it likes, reading outputs, setting inputs to for instance model a UART/SPI/Memory
+  - simulation loop could call the function in each evaluation step
+
+- integration with scalatest
 
 \chapter{Conclusion} %=========================================================================================================
 
