@@ -10,7 +10,6 @@
 \author{Tjark Petersen}
 \title{Thesis}
 
-
 \newcommand{\name}{MyVerificationFramework}
 
 \begin{document}
@@ -24,7 +23,6 @@
 
 \tableofcontents
 
-% 
 \chapter{Introduction} %=======================================================================================================
 
 - present topic
@@ -48,8 +46,8 @@
 - what tools do we have to measure verification progress
 - don't introduce "things" but introduce the problems/challenges they're trying to solve
 
-- in this section a complete picture of what verification includes should be drawn in order to put the foundation for understanding what a verification framework should provide
-
+- in this section a complete picture of what verification includes should be drawn in order to put the foundation for
+understanding what a verification framework should provide
 
 \section{Hardware Verification}
 
@@ -59,32 +57,52 @@
 
 \subsection{Formal Verification}
 
-Formal verification is an alternative approach to verify the correctness of a design given its specification. Instead of observing the behavior of the DUT, properties that should hold for the design are specified mathematically. These properties are typically expressed using temporal logic, such as Linear Temporal Logic (LTL) or Computational Tree Logic (CTL), which describe how a design should behave over time.
+Formal verification is an alternative approach to verify the correctness of a design given its specification. Instead
+of observing the behavior of the DUT, properties that should hold for the design are specified mathematically. These
+properties are typically expressed using temporal logic, such as Linear Temporal Logic (LTL) or Computational Tree
+Logic (CTL), which describe how a design should behave over time.
 
-The process of formal verification involves checking these properties against the design model using formal tools like model checkers or theorem provers. Model checkers exhaustively explore all possible states of the design to ensure the properties hold universally, while theorem provers use deductive reasoning to prove the correctness of properties.
+The process of formal verification involves checking these properties against the design model using formal tools
+like model checkers or theorem provers. Model checkers exhaustively explore all possible states of the design to
+ensure the properties hold universally, while theorem provers use deductive reasoning to prove the correctness of properties.
 
-One significant advantage of formal verification is its ability to detect subtle corner-case bugs that might not surface during simulation-based testing, regardless of the level of coverage. Formal methods provide exhaustive coverage of the design space under specified constraints, ensuring that all edge cases are considered. This makes it particularly valuable for verifying critical design components like control logic, protocols, or safety-critical systems where failures can have severe consequences.
+One significant advantage of formal verification is its ability to detect subtle corner-case bugs that might not
+surface during simulation-based testing, regardless of the level of coverage. Formal methods provide exhaustive
+coverage of the design space under specified constraints, ensuring that all edge cases are considered. This makes it
+particularly valuable for verifying critical design components like control logic, protocols, or safety-critical
+systems where failures can have severe consequences.
 
 However, formal verification also comes with challenges:
 \begin{itemize}
-    \item \textbf{State Space Explosion:} As the complexity of a design increases, the number of states to be analyzed grows exponentially. This makes it difficult for model checkers to handle large systems without simplifications or abstractions.
-    \item \textbf{Specification Complexity:} Writing correct and comprehensive properties is non-trivial and requires a deep understanding of both the design and its intended behavior.
-    \item \textbf{Tool Limitations:} While formal tools have advanced significantly, they often require significant computational resources and expert knowledge to use effectively.
+  \item \textbf{State Space Explosion:} As the complexity of a design increases, the number of states to be analyzed
+    grows exponentially. This makes it difficult for model checkers to handle large systems without simplifications
+    or abstractions.
+  \item \textbf{Specification Complexity:} Writing correct and comprehensive properties is non-trivial and requires a
+    deep understanding of both the design and its intended behavior.
+  \item \textbf{Tool Limitations:} While formal tools have advanced significantly, they often require significant
+    computational resources and expert knowledge to use effectively.
 \end{itemize}
 
-Despite these challenges, formal verification is increasingly being adopted as a complementary methodology alongside simulation-based verification. It is particularly useful in the early stages of design, where critical bugs can be identified and corrected before the full implementation is completed. Additionally, formal verification can be applied to specific parts of a design, such as verifying individual modules or ensuring compliance with protocols.
+Despite these challenges, formal verification is increasingly being adopted as a complementary methodology alongside
+simulation-based verification. It is particularly useful in the early stages of design, where critical bugs can be
+identified and corrected before the full implementation is completed. Additionally, formal verification can be
+applied to specific parts of a design, such as verifying individual modules or ensuring compliance with protocols.
 
 Examples of practical applications include:
 \begin{itemize}
-    \item \textbf{Protocol Verification:} Ensuring compliance with communication standards such as PCIe, USB, or AXI.
-    \item \textbf{Control Logic:} Verifying that finite state machines or other control mechanisms behave correctly under all conditions.
-    \item \textbf{Safety Properties:} Proving that certain "bad states," such as deadlocks or unsafe operations, cannot occur.
+  \item \textbf{Protocol Verification:} Ensuring compliance with communication standards such as PCIe, USB, or AXI.
+  \item \textbf{Control Logic:} Verifying that finite state machines or other control mechanisms behave correctly
+    under all conditions.
+  \item \textbf{Safety Properties:} Proving that certain "bad states," such as deadlocks or unsafe operations, cannot occur.
 \end{itemize}
 
-The integration of formal methods into hardware verification flows is facilitated by frameworks like SystemVerilog Assertions (SVA) and tools such as Cadence JasperGold, Synopsys Formality, and Mentor Graphics Questa Formal. These tools offer user-friendly interfaces and integration with traditional simulation environments, making formal verification more accessible to design and verification engineers.
+The integration of formal methods into hardware verification flows is facilitated by frameworks like SystemVerilog
+Assertions (SVA) and tools such as Cadence JasperGold, Synopsys Formality, and Mentor Graphics Questa Formal. These
+tools offer user-friendly interfaces and integration with traditional simulation environments, making formal
+verification more accessible to design and verification engineers.
 
-By addressing the gaps left by simulation-based methods, formal verification plays a crucial role in creating robust and reliable hardware designs.
-
+By addressing the gaps left by simulation-based methods, formal verification plays a crucial role in creating robust
+and reliable hardware designs.
 
 \section{Constrained-Random Verification} %------------------------------------------------------------------------------------
 
@@ -107,27 +125,58 @@ By addressing the gaps left by simulation-based methods, formal verification pla
 \subsection{SystemVerilog}
 
 \cite[Sec. 6, pp. 43]{flake2020a}
-- by the mid 1990s Verilog began to show its limitations 
+- by the mid 1990s Verilog began to show its limitations
 - discussed replacing HDLs altogether with C++ or java for hardware design
 - other option is strengthening Verilog lang
 
 \section{UVM} %----------------------------------------------------------------------------------------------------------------
 
-The verification features which SV offers are by themselves not enough to create reusable testbenches. They provide the raw mechanisms for creating modern constrained-random, self-checking testbenches with coverage collection and bus-functional models, but the language itself does not prescribe a way of organizing the different responsibilities in a testbench such that large testbenches become manageable and such that parts of a testbench can be reused in another project or be bought from another company. 
+The verification features which SV offers are by themselves not enough to create reusable testbenches. They provide
+the raw mechanisms for creating modern constrained-random, self-checking testbenches with coverage collection and
+bus-functional models, but the language itself does not prescribe a way of organizing the different responsibilities
+in a testbench such that large testbenches become manageable and such that parts of a testbench can be reused in
+another project or be bought from another company.
 
-Acknowledging the problem, each EDA vendor had developed their own reuse methodology: Mentor Graphics had the Open Verification Methodology (OVM), Cadence had the Universal Reuse Methodology (URM) and Synopsys had the Verification Methodology Manual (VMM). Due to the fear of vendor lock, none of these methodologies gained widespread adoption \cite[ch. 4]{mehta2018asic}. Under the umbrella of the Accellera Systems Initiative, a standards organization supported by the EDA industry, a merger of the different methodologies was attempted. The result was the Universal Verification Methodology (UVM) which is mainly based on the OVM \cite[ch. 4]{mehta2018asic}. 
+Acknowledging the problem, each EDA vendor had developed their own reuse methodology: Mentor Graphics had the Open
+Verification Methodology (OVM), Cadence had the Universal Reuse Methodology (URM) and Synopsys had the Verification
+Methodology Manual (VMM). Due to the fear of vendor lock, none of these methodologies gained widespread adoption
+\cite[ch. 4]{mehta2018asic}. Under the umbrella of the Accellera Systems Initiative, a standards organization
+supported by the EDA industry, a merger of the different methodologies was attempted. The result was the Universal
+Verification Methodology (UVM) which is mainly based on the OVM \cite[ch. 4]{mehta2018asic}.
 
-The UVM provides standardized ways to create testbench infrastructure which is hierarchical and where responsibilities are divided over different components. Furthermore, it introduces the concept of phases, synchronized components throughout the different steps of a test case. Finally, the UVM raises the level of abstraction of the testbench by working with transactions which encapsulate a potential multi-clock cycle interaction with the DUT in one object.
+The UVM provides standardized ways to create testbench infrastructure which is hierarchical and where
+responsibilities are divided over different components. Furthermore, it introduces the concept of phases,
+synchronized components throughout the different steps of a test case. Finally, the UVM raises the level of
+abstraction of the testbench by working with transactions which encapsulate a potential multi-clock cycle interaction
+with the DUT in one object.
 
 \subsection{UVM Testbench structure}
 
-A UVM testbench consists of three main parts. The environment manifests the static infrastructure of the testbench which is shared between different test cases. It contains components which direct stimulus generated by the test case to the relevant DUT interfaces and transactions observed on the DUT interfaces to analysis components for coverage collection or checking against a model. The test sequences are series of transactions. They could be fully randomized sequences, predefined sequences which put the DUT into a desired state or something in between, e.g. a sequence of bus transactions to a certain adress with random data. The environment and test sequences are what is used to construct a test case. The test case instantiates a series of sequences to exercise the functionality under test and sends them to the environment.
+A UVM testbench consists of three main parts. The environment manifests the static infrastructure of the testbench
+which is shared between different test cases. It contains components which direct stimulus generated by the test case
+to the relevant DUT interfaces and transactions observed on the DUT interfaces to analysis components for coverage
+collection or checking against a model. The test sequences are series of transactions. They could be fully randomized
+sequences, predefined sequences which put the DUT into a desired state or something in between, e.g. a sequence of
+bus transactions to a certain adress with random data. The environment and test sequences are what is used to
+construct a test case. The test case instantiates a series of sequences to exercise the functionality under test and
+sends them to the environment.
 
-The full UVM testbench hierarchy is presented in \ref{fig:uvm_tb}. The top-level environment itself consists of multiple other environments, which are specific for sub-systems of the DUT. Inside each environment, there are a series of agents which are specific to the interfaces which are part of the sub-system. Additionally, components collecting coverage information at the sub-system level may be present. Finally, the environment contains a scoreboard which compares the transactions observed on the DUT interfaces with transactions produced by some kind of model, the predictor. 
+The full UVM testbench hierarchy is presented in \ref{fig:uvm_tb}. The top-level environment itself consists of
+multiple other environments, which are specific for sub-systems of the DUT. Inside each environment, there are a
+series of agents which are specific to the interfaces which are part of the sub-system. Additionally, components
+collecting coverage information at the sub-system level may be present. Finally, the environment contains a
+scoreboard which compares the transactions observed on the DUT interfaces with transactions produced by some kind of
+model, the predictor.
 
-An agent is specific to one interface, for instance AXI4 or SPI, and bridges the gap between the transaction level and the driving and reading of the pins of the DUT. Agents come in two forms: passive and active. Passive agents only observe transactions on the interface pins and send them to analysis components such as scoreboards or coverage collectors. Active agents also accept transactions which they drive onto the interface pins. 
+An agent is specific to one interface, for instance AXI4 or SPI, and bridges the gap between the transaction level
+and the driving and reading of the pins of the DUT. Agents come in two forms: passive and active. Passive agents only
+observe transactions on the interface pins and send them to analysis components such as scoreboards or coverage
+collectors. Active agents also accept transactions which they drive onto the interface pins.
 
-This compartmentalization of the testbench aims at promoting reuse where possible and should make maintaining large and complex testbench systems easier. Furthermore, external IP blocks, for instance an AXI agent, should be easy to integrate into a testbench. Having looked at the overall structure of a UVM testbench, the following sections will concern themselves with the stimulus and the test cases.
+This compartmentalization of the testbench aims at promoting reuse where possible and should make maintaining large
+and complex testbench systems easier. Furthermore, external IP blocks, for instance an AXI agent, should be easy to
+integrate into a testbench. Having looked at the overall structure of a UVM testbench, the following sections will
+concern themselves with the stimulus and the test cases.
 
 - talk about overall structure and show diagram
 
@@ -143,39 +192,72 @@ This compartmentalization of the testbench aims at promoting reuse where possibl
 
 \chapter{Problem Statement \& Methods} %=======================================================================================
 
-
-
-
 % talk about company interviews
 \chapter{Industry Survey} %====================================================================================================
 
 \section{Company 1}
 
-Company 1 develops ASICs for the hearing aid industry, with a team of 7-8 dedicated verification engineers. The verification tasks they are performing do not need to adhere to ISO standards directly, but these standards are already captured in the verification plan. The company prefers using a single language for design to enable incremental compilation and simplify the workflow. All verification IP (VIP) is developed in-house and actively maintained, with reuse being a key focus across projects. Examples of reusable VIP include standard interfaces like APB and SWD. Additionally, they integrate models for external IP, such as EEPROM, using C or Verilog models. Reuse is made easy and encouraged by maintaining a single code base for everything.
+Company 1 develops ASICs for the hearing aid industry, with a team of 7-8 dedicated verification engineers. The
+verification tasks they are performing do not need to adhere to ISO standards directly, but these standards are
+already captured in the verification plan. The company prefers using a single language for design to enable
+incremental compilation and simplify the workflow. All verification IP (VIP) is developed in-house and actively
+maintained, with reuse being a key focus across projects. Examples of reusable VIP include standard interfaces like
+APB and SWD. Additionally, they integrate models for external IP, such as EEPROM, using C or Verilog models. Reuse is
+made easy and encouraged by maintaining a single code base for everything.
 
-Once the specification for a new project is complete, verification begins in parallel with the design process. The basic layout of the testbenches can be created early on, based on the interfaces being used. The company uses module-level testbenches before moving to verification of the top-level. They make extensive use of different UVM runtime phases, particularly reset phases, to improve modularity and composition. Over time, they have developed their own standard scoreboard implementation and rely on the configDB to pass data between agents. Connectivity checks are performed to ensure that specific configurations correctly link different parts of the design.
+Once the specification for a new project is complete, verification begins in parallel with the design process. The
+basic layout of the testbenches can be created early on, based on the interfaces being used. The company uses
+module-level testbenches before moving to verification of the top-level. They make extensive use of different UVM
+runtime phases, particularly reset phases, to improve modularity and composition. Over time, they have developed
+their own standard scoreboard implementation and rely on the configDB to pass data between agents. Connectivity
+checks are performed to ensure that specific configurations correctly link different parts of the design.
 
-Their coverage strategy prioritizes functional coverage and FSM code coverage. Debugging is supported by assertion-based verification, with assertions used for runtime checking, formal checking, or both. Debugging remains an unpredictable part of the development process. Known bugs are particularly difficult to work around while trying to progress. 
+Their coverage strategy prioritizes functional coverage and FSM code coverage. Debugging is supported by
+assertion-based verification, with assertions used for runtime checking, formal checking, or both. Debugging remains
+an unpredictable part of the development process. Known bugs are particularly difficult to work around while trying to progress.
 
-For simulation, the company uses VCS and employs continuous integration (CI) to manage regression testing. Each regression run includes approximately 6000 simulations, with a total runtime of around six hours. Synthesis is also performed as part of the regression flow, and coverage checks are automatically executed. The CI system ensures that a freshly checked-out version of the project always works. Although they have considered PyUVM as a potential tool, they find the speed insufficient for their needs. Furthermore, they are cautious about adopting new or niche tools, fearing that it could complicate future recruitment efforts.
+For simulation, the company uses VCS and employs continuous integration (CI) to manage regression testing. Each
+regression run includes approximately 6000 simulations, with a total runtime of around six hours. Synthesis is also
+performed as part of the regression flow, and coverage checks are automatically executed. The CI system ensures that
+a freshly checked-out version of the project always works. Although they have considered PyUVM as a potential tool,
+they find the speed insufficient for their needs. Furthermore, they are cautious about adopting new or niche tools,
+fearing that it could complicate future recruitment efforts.
 
-The testbenches of the company rely heavily on CRV. However, signal data streams are not purely random, but instead they use typical data encountered in real-world scenarios, because change throughout time is difficult to capture in constraints. To support DSP verification, MATLAB models are integrated into the verification environment.
+The testbenches of the company rely heavily on CRV. However, signal data streams are not purely random, but instead
+they use typical data encountered in real-world scenarios, because change throughout time is difficult to capture in
+constraints. To support DSP verification, MATLAB models are integrated into the verification environment.
 
-The company is overall satisfied with their usage of UVM, but pointed out some shortcomings. Specifically, they believe that code using the UVM factory is difficult to debug and maintain, while the register abstraction layer (RAL) in UVM is incomplete. For instance, a single register block cannot be mapped into multiple address spaces, so they developed their own extension to address this limitation. Concerning the UVM factory, they not that using callbacks, a feature not available during the development of UVM, would be the better option to keep dependencies modular in the code. They also observe that many UVM examples available online are outdated and focus only on trivial cases. Additionally, they note that UVM was influenced by several companies of which some insisted on incorporating features from their own verification methodologies, sometimes resulting in unnecessary complexity. While they continue to use UVM, they would are not opposed to a framework with fewer options and simpler design choices. They also emphasize that power-aware verification remains a significant challenge.
+The company is overall satisfied with their usage of UVM, but pointed out some shortcomings. Specifically, they
+believe that code using the UVM factory is difficult to debug and maintain, while the register abstraction layer
+(RAL) in UVM is incomplete. For instance, a single register block cannot be mapped into multiple address spaces, so
+they developed their own extension to address this limitation. Concerning the UVM factory, they not that using
+callbacks, a feature not available during the development of UVM, would be the better option to keep dependencies
+modular in the code. They also observe that many UVM examples available online are outdated and focus only on trivial
+cases. Additionally, they note that UVM was influenced by several companies of which some insisted on incorporating
+features from their own verification methodologies, sometimes resulting in unnecessary complexity. While they
+continue to use UVM, they would are not opposed to a framework with fewer options and simpler design choices. They
+also emphasize that power-aware verification remains a significant challenge.
 
-In terms of recruitment, the company intentionally avoids using all UVM and SystemVerilog features to make hiring easier. They believe that limiting the use of overly complex or non-standard features lowers the learning curve for new engineers. They have observed that it is rare for software engineers to transition into verification roles, so they do not see a need to tailor the verification environment specifically for software engineers. To further ease the process of setting up a verification environmet, they use a setup framework that can automatically generate the basic structure for testbenches and unit tests.
+In terms of recruitment, the company intentionally avoids using all UVM and SystemVerilog features to make hiring
+easier. They believe that limiting the use of overly complex or non-standard features lowers the learning curve for
+new engineers. They have observed that it is rare for software engineers to transition into verification roles, so
+they do not see a need to tailor the verification environment specifically for software engineers. To further ease
+the process of setting up a verification environment, they use a setup framework that can automatically generate the
+basic structure for testbenches and unit tests.
 
-One of the key challenges they face is that the test plan often becomes a bottleneck, more so than the actual development time for testbenches. While development time tends to be predictable, debugging remains highly unpredictable, especially when working around known bugs while trying to maintain progress.
+One of the key challenges they face is that the test plan often becomes a bottleneck, more so than the actual
+development time for testbenches. While development time tends to be predictable, debugging remains highly
+unpredictable, especially when working around known bugs while trying to maintain progress.
 
 \begin{comment}
-Company 1 develops ASICs for the hearing aid industry. 
+Company 1 develops ASICs for the hearing aid industry.
 - 7-8 dedicated verification engineers
 
 - don't use all UVM and SV features
 - try to stick to standard features to make hiring easier
 - develop all VIP inhouse
 - reuse inhouse VIP across projects, e.g. interfaces like APB or SWD
-- integrate C or verilog models for bought IP like EEPROM 
+- integrate C or verilog models for bought IP like EEPROM
 - use VCS for simulation
 - prefer single language for design to enable incremental compilation
 - think that register abstraction in UVM is very complex
@@ -244,25 +326,72 @@ Company 1 develops ASICs for the hearing aid industry.
 
 \section{Company 2}
 
-Company 2 offers consulting services for hardware design and verification, including training for UVM, thus bringing extensive experience in handling various verification challenges.
+Company 2 offers consulting services for hardware design and verification, including training for UVM, thus bringing
+extensive experience in handling various verification challenges.
 
-Verification at its core is about building confidence in the design in their opinion. The process typically follows an evolutionary path: initially, few bugs are found, then many bugs surface as the verification infrastructure matures, and finally, the design stabilizes with no remaining bugs. This approach often involves dividing the verification task into smaller, manageable features and verifying them separately. Effective verification requires robust coverage models, as weak models give misleading results. These coverage models can be validated through intentionally weak tests, which are expected to score low. However, it is important to note that coverage only accounts for known-knowns and known-unknowns; there is no established methodology for addressing unknown-unknowns, i.e. bugs that are not detected by the verification plan. The company follows the best practice of always capturing design assumptions in assertions.
+Verification at its core is about building confidence in the design in their opinion. The process typically follows
+an evolutionary path: initially, few bugs are found, then many bugs surface as the verification infrastructure
+matures, and finally, the design stabilizes with no remaining bugs. This approach often involves dividing the
+verification task into smaller, manageable features and verifying them separately. Effective verification requires
+robust coverage models, as weak models give misleading results. These coverage models can be validated through
+intentionally weak tests, which are expected to score low. However, it is important to note that coverage only
+accounts for known-knowns and known-unknowns; there is no established methodology for addressing unknown-unknowns,
+i.e. bugs that are not detected by the verification plan. The company follows the best practice of always capturing
+design assumptions in assertions.
 
-Formal verification is considered a superior tool for proving design correctness but often struggles with the complexity of large designs. Despite these challenges, formal methods remain a critical component of their verification process.
+Formal verification is considered a superior tool for proving design correctness but often struggles with the
+complexity of large designs. Despite these challenges, formal methods remain a critical component of their verification process.
 
-They perceive UVM to be a well-working tool for verification. Like all tools, it is not perfect though, and they note some small issues which they have encountered. The ConfigDB mechanism, can confuse users, in their experience, due to component scoping mechanism. Misunderstanding its usage can lead to spaghetti code, but when used correctly, the ConfigDB solves the essential problem of enabling communication between classes without direct references. It acts as a middleman, allowing information to be passed down from the test to the environment, agents, and drivers. Sometimes they even use the ConfigDB as a channel, where a driver monitors specific keys for changes to receive data.
+They perceive UVM to be a well-working tool for verification. Like all tools, it is not perfect though, and they note
+some small issues which they have encountered. The ConfigDB mechanism, can confuse users, in their experience, due to
+component scoping mechanism. Misunderstanding its usage can lead to spaghetti code, but when used correctly, the
+ConfigDB solves the essential problem of enabling communication between classes without direct references. It acts as
+a middleman, allowing information to be passed down from the test to the environment, agents, and drivers. Sometimes
+they even use the ConfigDB as a channel, where a driver monitors specific keys for changes to receive data.
 
-They note that the UVM factory mechanism generally works well for flexible component creation. In object-oriented programming with static hierarchies, the creation of many small specific factories for component substitution in the hierarchy would be necessary anyways. UVM's global factory addresses this need, reducing the programming overhead for the end-user. But the UVM factory also introduces overhead, due to the indirection of object creation. Best practices include using direct instantiation when no overrides are expected or limiting factory use to scenarios where dynamic changes are really necessary.
+They note that the UVM factory mechanism generally works well for flexible component creation. In object-oriented
+programming with static hierarchies, the creation of many small specific factories for component substitution in the
+hierarchy would be necessary anyways. UVM's global factory addresses this need, reducing the programming overhead for
+the end-user. But the UVM factory also introduces overhead, due to the indirection of object creation. Best practices
+include using direct instantiation when no overrides are expected or limiting factory use to scenarios where dynamic
+changes are really necessary.
 
-Phasing in UVM works well in for the company. But there are some issues concerning the communication of phase completion. Each component can stop the phase from completing by raising an objection. However, this can lead to problems when the main test code finishes injecting stimuli while the testbench still has to wait for responses. The VMM had a consensus object that allowed components to register their “done” conditions, offering a potential solution. In agents, reset should be handled within the run phase. Base tests should handle reset and shutdown phases, while derived tests should handle configuration and main phases. The company has developed its own standard scoreboard infrastructure, which focuses on comparing streams of transactions.
+Phasing in UVM works well in for the company. But there are some issues concerning the communication of phase
+completion. Each component can stop the phase from completing by raising an objection. However, this can lead to
+problems when the main test code finishes injecting stimuli while the testbench still has to wait for responses. The
+VMM had a consensus object that allowed components to register their “done” conditions, offering a potential
+solution. In agents, reset should be handled within the run phase. Base tests should handle reset and shutdown
+phases, while derived tests should handle configuration and main phases. The company has developed its own standard
+scoreboard infrastructure, which focuses on comparing streams of transactions.
 
-They note that the Register Abstraction Layer (RAL) poses several challenges. It assumes a direct mapping of one register transaction to one bus sequence item. This assumption can be problematic when protocols require multiple transactions to complete the changes implied by the register transaction. Additionally, while the RAL supports writing individual fields, certain protocols do not support this and would need a read-modify-write cycle, resulting again in multiple sequence items. Register locking is available but does not ensure immutability, raising questions about its utility. Register randomization can be achieved using the `rand` keyword on fields, but unlike read/write operations, calls to `rand` are not synchronized if multiple components access the register model in parallel. There are currently multiple ways of injecting constraints into the register model, but none of them work well or are verbose according to the company. 
+They note that the Register Abstraction Layer (RAL) poses several challenges. It assumes a direct mapping of one
+register transaction to one bus sequence item. This assumption can be problematic when protocols require multiple
+transactions to complete the changes implied by the register transaction. Additionally, while the RAL supports
+writing individual fields, certain protocols do not support this and would need a read-modify-write cycle, resulting
+again in multiple sequence items. Register locking is available but does not ensure immutability, raising questions
+about its utility. Register randomization can be achieved using the `rand` keyword on fields, but unlike read/write
+operations, calls to `rand` are not synchronized if multiple components access the register model in parallel. There
+are currently multiple ways of injecting constraints into the register model, but none of them work well or are
+verbose according to the company.
 
-Certain types of DUTs present unique challenges. In a scenario where a DUT processes a stream, the interface where the input stream is consumed may be separated from the one where the output stream is produced. This means the resulting processed stream items flow though a different agent than the input stream items. An issue arises, if the test case would like to make a decision based on the processed stream. The test case can only receive feedback from a driver that it has sent a transaction to. In this case, it would like to receive feedback from a completely different agent. This case is not considered in UVM. A solution was outlined, where the agent receiving the processed stream would receive dummy transactions from the test case, such that it could answer with items from the processed stream. 
+Certain types of DUTs present unique challenges. In a scenario where a DUT processes a stream, the interface where
+the input stream is consumed may be separated from the one where the output stream is produced. This means the
+resulting processed stream items flow though a different agent than the input stream items. An issue arises, if the
+test case would like to make a decision based on the processed stream. The test case can only receive feedback from a
+driver that it has sent a transaction to. In this case, it would like to receive feedback from a completely different
+agent. This case is not considered in UVM. A solution was outlined, where the agent receiving the processed stream
+would receive dummy transactions from the test case, such that it could answer with items from the processed stream.
 
-DUTs that only produce outputs, such as random number generators, pose another issue: determining when to stop the test. Timing-related challenges also arise when one has to determined whether transactions occur simultaneously across multiple interfaces. The analysis ports of all interfaces would have to send either data or null each clock cycle, reducing significant overhead, if this was to be determined. Another issue revolves around DUTs like filters, which require initial stabilization before producing valid output. This could be handled by using metadata in transactions or RTL signals to indicate readiness.
+DUTs that only produce outputs, such as random number generators, pose another issue: determining when to stop the
+test. Timing-related challenges also arise when one has to determined whether transactions occur simultaneously
+across multiple interfaces. The analysis ports of all interfaces would have to send either data or null each clock
+cycle, reducing significant overhead, if this was to be determined. Another issue revolves around DUTs like filters,
+which require initial stabilization before producing valid output. This could be handled by using metadata in
+transactions or RTL signals to indicate readiness.
 
-The company is satisfied with commercial verification tools, but they note that access to these tools remains a challenge in educational settings, where they are typically available only during courses. They believe that this educational space should be filled by open-source alternatives such as PyUVM, which they are actively exploring.
+The company is satisfied with commercial verification tools, but they note that access to these tools remains a
+challenge in educational settings, where they are typically available only during courses. They believe that this
+educational space should be filled by open-source alternatives such as PyUVM, which they are actively exploring.
 
 \begin{comment}
 
@@ -302,8 +431,6 @@ Company 2 offers consulting services for hardware design and verification, inclu
 
 - verification is about confidence in the design
 - divide and conquer, by splitting into features and verifying them separately
-
-
 
 - configDB often confuses people due to the scoping mechanism
 - can lead to spaghetti code, if one does not know what they are doing
@@ -366,26 +493,49 @@ Company 2 offers consulting services for hardware design and verification, inclu
 - general perspective
 - verification progress isn't linear -> sometimes hard to communciate between engineers and managers
 - the spec isn't always perfect
-- sees hope in AI DSL for spec 
+- sees hope in AI DSL for spec
 - formal is the better tool, but struggles with complexity
 
 \end{comment}
 
 \section{Company 3}
 
-Company 3 develops ASICs for the hearing aid industry. Their verification team consists of two dedicated engineers, though verification responsibilities are shared with design engineers. Design engineers handle simpler verification tasks, while the verification engineers focus on more complex aspects. The company follows a waterfall development model.
+Company 3 develops ASICs for the hearing aid industry. Their verification team consists of two dedicated engineers,
+though verification responsibilities are shared with design engineers. Design engineers handle simpler verification
+tasks, while the verification engineers focus on more complex aspects. The company follows a waterfall development model.
 
-About six years ago, they transitioned to UVM and have since adopted a standardized subset of UVM to ensure consistency across projects. Agents are frequently reused since most projects rely on the same interfaces. Their Testbenches are employed not only for functional verification but also for gate-level simulations. While external VIPs have been used and integrated successfully, most VIPs are developed in-house. Formal methods are used mostly for their to application-specific instruction-set processors (ASIPs), but outside of that, formal verification is used only in cases where it is easily applicable.
+About six years ago, they transitioned to UVM and have since adopted a standardized subset of UVM to ensure
+consistency across projects. Agents are frequently reused since most projects rely on the same interfaces. Their
+Testbenches are employed not only for functional verification but also for gate-level simulations. While external
+VIPs have been used and integrated successfully, most VIPs are developed in-house. Formal methods are used mostly for
+their to application-specific instruction-set processors (ASIPs), but outside of that, formal verification is used
+only in cases where it is easily applicable.
 
-Their verification framework includes both module-level and top-level testbenches, with UVM environments from the former being reused in the latter. They also maintain a basic test framework for simpler verification needs. The employed reference model are mostly transaction-accurate and Matlab models are used for verifying DSP blocks.
+Their verification framework includes both module-level and top-level testbenches, with UVM environments from the
+former being reused in the latter. They also maintain a basic test framework for simpler verification needs. The
+employed reference model are mostly transaction-accurate and Matlab models are used for verifying DSP blocks.
 
-The company uses code coverage, but mainly focusses on functional coverage. Like in Company 1, CRV is used except for the modelling of audio streams where representative data streams are used instead. They note that debugging is one of the most time-consuming parts of the verification process, often taking up to 70\% of the overall verification effort.
+The company uses code coverage, but mainly focusses on functional coverage. Like in Company 1, CRV is used except for
+the modelling of audio streams where representative data streams are used instead. They note that debugging is one of
+the most time-consuming parts of the verification process, often taking up to 70\% of the overall verification effort.
 
-The team makes use of all UVM run phases, setting up the DUT and handling all analysis during the appropriate reset, configuration and shutdown phases to simplify the work of test case developers. They find the UVM Config DB effective for parameter passing, in part because they view parameterization of classes in SystemVerilog as cumbersome. Over the years, they have developed their own UVM extensions, including a custom scoreboard implementation. One issue they note concerning phasing is the handling of reset during the test. A solution is to do phase-hopping to go back to the reset phase, which is a messy solution according to them.
+The team makes use of all UVM run phases, setting up the DUT and handling all analysis during the appropriate reset,
+configuration and shutdown phases to simplify the work of test case developers. They find the UVM Config DB effective
+for parameter passing, in part because they view parameterization of classes in SystemVerilog as cumbersome. Over the
+years, they have developed their own UVM extensions, including a custom scoreboard implementation. One issue they
+note concerning phasing is the handling of reset during the test. A solution is to do phase-hopping to go back to the
+reset phase, which is a messy solution according to them.
 
-Rather than seeing limitations inherent in the UVM, they see more limitations in SystemVerilog itself. For instance parameterized interfaces can cause issues, and the language's verbosity and boilerplate code could be improved according to them. Clocking blocks are also avoided due to frequent problems with multiple driver conflicts. While they generally have no issues with the UVM factory, they believe it would be helpful if unsuccessful overrides specified via the command line generated explicit error messages. The UVM factory is primarily used by the team to adjust constraints and replace general sequences with more specific ones when necessary.
+Rather than seeing limitations inherent in the UVM, they see more limitations in SystemVerilog itself. For instance
+parameterized interfaces can cause issues, and the language's verbosity and boilerplate code could be improved
+according to them. Clocking blocks are also avoided due to frequent problems with multiple driver conflicts. While
+they generally have no issues with the UVM factory, they believe it would be helpful if unsuccessful overrides
+specified via the command line generated explicit error messages. The UVM factory is primarily used by the team to
+adjust constraints and replace general sequences with more specific ones when necessary.
 
-Overall, the team places a high priority on maintaining clear and understandable verification code, particularly so that RTL engineers can easily work with it, too. They prefer straightforward, maintainable code over overly complex features such as event callbacks.
+Overall, the team places a high priority on maintaining clear and understandable verification code, particularly so
+that RTL engineers can easily work with it, too. They prefer straightforward, maintainable code over overly complex
+features such as event callbacks.
 
 \begin{comment}
 
@@ -397,8 +547,6 @@ Company 3 develops ASICs for the hearing aid industry.
 - verification engineer only involved in complex verification tasks, else design engineer does verification
 
 - ISO standard requirements are already encoded in verification plan
-
-
 
 - switched to UVM around 6 years ago
 
@@ -416,7 +564,7 @@ Company 3 develops ASICs for the hearing aid industry.
 
 - use code coverage, but disable it for some parts of the design
 
-- use formal methods especially for their ASIPs 
+- use formal methods especially for their ASIPs
 - else use formal only in obvious cases
 
 - have their own basic test framework
@@ -424,7 +572,7 @@ Company 3 develops ASICs for the hearing aid industry.
 - UVM environment from module level testbenches is reused in top level testbenches
 
 - reference models are cycle or transaction accurate
-- some matlab models generate RTL -> model comes for free 
+- some matlab models generate RTL -> model comes for free
 
 - bottleneck is verification, around 70/%
 - but out of this, debugging takes the longest time
@@ -453,7 +601,7 @@ Company 3 develops ASICs for the hearing aid industry.
 - phase hopping is difficult and messy
 
 - see most issues with SV limitations
-- parameterized interfaces 
+- parameterized interfaces
 - verbose
 - boiler plate
 
@@ -464,8 +612,6 @@ Company 3 develops ASICs for the hearing aid industry.
 
 \end{comment}
 
-
-
 \chapter{Analysis} %===========================================================================================================
 
 - here, the requirements should be made and possible approaches outlined
@@ -473,33 +619,46 @@ Company 3 develops ASICs for the hearing aid industry.
 
 \section{Takeaways from the Industry Survey}
 
-
-
-
 \section{Requirements} %-------------------------------------------------------------------------------------------------------
 
 \subsection{Supported HDLs}
-The first consideration to be made concerns the hardware description languages to be supported by \name. 
+The first consideration to be made concerns the hardware description languages to be supported by \name.
 
 \subsection{Simulation Backend}
-The second consideration which has to be made is the simulation backend which the verification framework will use. This decision is also influenced by the choice of supported HDL's, ease of interfacing with the simulation and finally of course performance. Since the project itself aims to be open-source, the choice of a proprietary simulator is not an option. The two most popular open-source simulators are Icarus Verilog and Verilator. Icarus Verilog compiles a Verilog design into its own format which can be executed by a separate simulation runtime engine, a kind of interpreter \cite{iverilog}. The newest Verilog standard partially supported is IEEE1800-2012 which includes some SystemVerilog features. 
+The second consideration which has to be made is the simulation backend which the verification framework will use.
+This decision is also influenced by the choice of supported HDL's, ease of interfacing with the simulation and
+finally of course performance. Since the project itself aims to be open-source, the choice of a proprietary simulator
+is not an option. The two most popular open-source simulators are Icarus Verilog and Verilator. Icarus Verilog
+compiles a Verilog design into its own format which can be executed by a separate simulation runtime engine, a kind
+of interpreter \cite{iverilog}. The newest Verilog standard partially supported is IEEE1800-2012 which includes some
+SystemVerilog features.
 
-Verilator, on the other hand, transpiles the Verilog design into C++ or SystemC classes which can then be compiled into a standalone executable \cite{verilator}. This makes Verilator very suitable for co-simulation with other models or software components, since it can easily be interfaced at the C/C++ level. The only interface to a verilated model, apart from setting inputs and reading outputs, is the \texttt{eval} function which runs a static schedule to update the model's state. Since the model is in the end compiled to a native executable with no additional simulation runtime, the performance of Verilator is significantly better than Icarus Verilog, with speedups of 100x on a single thread being reported by the developers \cite{verilator}. Verilator supports nearly fully the IEEE 1364-2005 standard, partially the IEEE 1800-2005 standard and some very specific features of newer standards. The IEEE 1800-2005 standard includes SystemVerilog features, of which some like classes and interfaces are supported by Verilator.
+Verilator, on the other hand, transpiles the Verilog design into C++ or SystemC classes which can then be compiled
+into a standalone executable \cite{verilator}. This makes Verilator very suitable for co-simulation with other models
+or software components, since it can easily be interfaced at the C/C++ level. The only interface to a verilated
+model, apart from setting inputs and reading outputs, is the \texttt{eval} function which runs a static schedule to
+update the model's state. Since the model is in the end compiled to a native executable with no additional simulation
+runtime, the performance of Verilator is significantly better than Icarus Verilog, with speedups of 100x on a single
+thread being reported by the developers \cite{verilator}. Verilator supports nearly fully the IEEE 1364-2005
+standard, partially the IEEE 1800-2005 standard and some very specific features of newer standards. The IEEE
+1800-2005 standard includes SystemVerilog features, of which some like classes and interfaces are supported by Verilator.
 
-Before version 5, Verilator ignored delay statements in the Verilog source code. The newer version now support this feature, thus matching the capabilities of Icarus Verilog. 
+Before version 5, Verilator ignored delay statements in the Verilog source code. The newer version now support this
+feature, thus matching the capabilities of Icarus Verilog.
 
-Considering especially the ease of integrating verilated models with other software components in addition to the superior performance, Verilator was identified as better option for the verification framework.
-
+Considering especially the ease of integrating verilated models with other software components in addition to the
+superior performance, Verilator was identified as better option for the verification framework.
 
 \subsection{Verification language}
-The next consideration is 
+The next consideration is
 
 \subsubsection{Dedicated HVL}
 
 \subsubsection{DSL Approach}
 
-\subsection{Separation of Concerns} %---------------------------------------------------------------------------------------------
-Now that the base requirements have been defined, the feature set of the verification framework itself has to be determined. 
+\subsection{Separation of Concerns}
+%---------------------------------------------------------------------------------------------
+Now that the base requirements have been defined, the feature set of the verification framework itself has to be determined.
 
 \subsubsection{The Testbench}
 
@@ -509,9 +668,11 @@ Now that the base requirements have been defined, the feature set of the verific
 
 \subsection{Configurability} %--------------------------------------------------------------------------------------------------
 
-UVM requires a recompilation for each testbench \cite{salemi2013uvm}, we don't need that since a jar can have multiple entry points.
+UVM requires a recompilation for each testbench \cite{salemi2013uvm}, we don't need that since a jar can have
+multiple entry points.
 
-\section{Solution Approaches} %--------------------------------------------------------------------------------------------------
+\section{Solution Approaches}
+%--------------------------------------------------------------------------------------------------
 
 1. SystemVerilog library written for Verilator
 2. dedicated HVL compiling via CIRCT dialects to SV testbench
@@ -522,16 +683,15 @@ UVM requires a recompilation for each testbench \cite{salemi2013uvm}, we don't n
 
 %\subsection{Co-Simulation}
 
-
 \chapter{Implementation} %=====================================================================================================
 
 \section{Simulation} %---------------------------------------------------------------------------------------------------------
 
-\subsection{Generating the Verilated Model} 
+\subsection{Generating the Verilated Model}
 
 \subsection{Interfacing with the Verilated Model}
 
-\subsection{The simulation Runtime} 
+\subsection{The simulation Runtime}
 
 \section{Concurrency} %--------------------------------------------------------------------------------------------------------
 
@@ -540,7 +700,6 @@ UVM requires a recompilation for each testbench \cite{salemi2013uvm}, we don't n
 \section{Phasing}
 
 \section{Register Abstraction}
-
 
 \chapter{Evaluation} %=========================================================================================================
 
@@ -559,8 +718,9 @@ UVM requires a recompilation for each testbench \cite{salemi2013uvm}, we don't n
 - verilator performance features (multi-threading, ...)
 
 - add support for attached models
-  - a function receiving the dut and can do whatever it likes, reading outputs, setting inputs to for instance model a UART/SPI/Memory
-  - simulation loop could call the function in each evaluation step
+- a function receiving the dut and can do whatever it likes, reading outputs, setting inputs to for instance model a
+UART/SPI/Memory
+- simulation loop could call the function in each evaluation step
 
 - integration with scalatest
 
@@ -569,11 +729,6 @@ UVM requires a recompilation for each testbench \cite{salemi2013uvm}, we don't n
 \printbibliography
 
 \end{document}
-
-
-
-
-
 
 \section{Hardware Description Languages}
 
@@ -584,35 +739,24 @@ UVM requires a recompilation for each testbench \cite{salemi2013uvm}, we don't n
 - talk about other concurrency models
 - is UVM actor based?
 
-
-
-
-
-
-
-
-
-
 \subsection{Superlog}
 
 \citeauthor{flake2020a} \cite[Sec. 6, pp. 44-49]{flake2020a}
 - engineers at Co-Design Automation Inc. saw potential in conciseness and closeness to HW in Verilog
-- C was chosen as a source of inspiration for language extensions due to wide spread use in EDA and embedded systems communitites
+- C was chosen as a source of inspiration for language extensions due to wide spread use in EDA and embedded systems
+communitites
 - this turned into superlog
 - additions included:
-  - variable size data types (queues, sparse arrays, associative arrays)
-  - bundled data types with different directions
-  - enumerations
-  - references
-  - C dpi
-  - interfaces as collection of wires, but also exposing of methods of modules without hierarchical references
+- variable size data types (queues, sparse arrays, associative arrays)
+- bundled data types with different directions
+- enumerations
+- references
+- C dpi
+- interfaces as collection of wires, but also exposing of methods of modules without hierarchical references
 
-
-- 
+-
 
 \section{UVM}
-
-
 
 \section{Transaction-Level Modeling}
 
@@ -621,6 +765,3 @@ UVM requires a recompilation for each testbench \cite{salemi2013uvm}, we don't n
 - integration testing
 - system testing
 - black vs. grey vs. white box testing
-
-
-
