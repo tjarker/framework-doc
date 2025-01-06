@@ -1,4 +1,4 @@
-\documentclass[12pt]{book}
+\documentclass[12pt]{report}
 
 \usepackage{comment}
 
@@ -19,11 +19,13 @@
 
 \section*{Acknowledgements} %==================================================================================================
 
+\section*{AI Declaration} %====================================================================================================
+
 \newpage
 
 \tableofcontents
 
-\chapter{Introduction} %=======================================================================================================
+\chapter{Introduction} %///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 - present topic
 - present problem statement
@@ -39,7 +41,7 @@
 - UVM is overly complex and only a subset is actually used \cite{sutherland2015uvm}
 - time to reevaluate verification tools
 
-\chapter{Background \& Related Work} %=========================================================================================
+\chapter{Background \& Related Work} %/////////////////////////////////////////////////////////////////////////////////////////
 
 - what is the purpose of verification
 - what tools do we have to ease verification
@@ -49,13 +51,13 @@
 - in this section a complete picture of what verification includes should be drawn in order to put the foundation for
 understanding what a verification framework should provide
 
-\section{Hardware Verification}
+\section{Verification} %=======================================================================================================
 
-\subsection{Simulation-Based Verification}
+\subsection{Simulation-Based Verification} %-----------------------------------------------------------------------------------
 
-\subsection{Assertion-Based Verification}
+% also talk about assertions
 
-\subsection{Formal Verification}
+\subsection{Formal Verification} %---------------------------------------------------------------------------------------------
 
 Formal verification is an alternative approach to verify the correctness of a design given its specification. Instead
 of observing the behavior of the DUT, properties that should hold for the design are specified mathematically. These
@@ -104,32 +106,34 @@ verification more accessible to design and verification engineers.
 By addressing the gaps left by simulation-based methods, formal verification plays a crucial role in creating robust
 and reliable hardware designs.
 
-\section{Constrained-Random Verification} %------------------------------------------------------------------------------------
+\subsection{Constrained-Random Verification} %---------------------------------------------------------------------------------
 
 \cite{Mehta2021}
 
-\section{Coverage} %-----------------------------------------------------------------------------------------------------------
+\subsection{Bus Functional Models} %-------------------------------------------------------------------------------------------
 
-\subsection{Code Coverage}
+\subsection{Coverage} %--------------------------------------------------------------------------------------------------------
 
-\subsection{Functional Coverage}
+\subsubsection{Code Coverage} %------------------------------------------------------------------------------------------------
 
-\section{Hardware Verification Languages} %-------------------------------------------------------------------------
+\subsubsection{Functional Coverage} %------------------------------------------------------------------------------------------
 
-\subsection{OpenVera}
+\subsection{Reusable Testbenches} %--------------------------------------------------------------------------------------------
 
-\cite[Sec. 7, pp. 51-??]{flake2020a}
+\section{Verification Languages \& frameworks} %===============================================================================
 
-\subsection{The e Language}
+\subsection{SystemVerilog's Predecessors} %------------------------------------------------------------------------------------
 
-\subsection{SystemVerilog}
+OpenVera \cite[Sec. 7, pp. 51-??]{flake2020a}
+
+\subsection{SystemVerilog} %---------------------------------------------------------------------------------------------------
 
 \cite[Sec. 6, pp. 43]{flake2020a}
 - by the mid 1990s Verilog began to show its limitations
 - discussed replacing HDLs altogether with C++ or java for hardware design
 - other option is strengthening Verilog lang
 
-\section{UVM} %----------------------------------------------------------------------------------------------------------------
+\subsection{UVM} %-------------------------------------------------------------------------------------------------------------
 
 The verification features which SV offers are by themselves not enough to create reusable testbenches. They provide
 the raw mechanisms for creating modern constrained-random, self-checking testbenches with coverage collection and
@@ -150,7 +154,7 @@ synchronized components throughout the different steps of a test case. Finally, 
 abstraction of the testbench by working with transactions which encapsulate a potential multi-clock cycle interaction
 with the DUT in one object.
 
-\subsection{UVM Testbench structure}
+\subsubsection{UVM Testbench structure} %--------------------------------------------------------------------------------------
 
 A UVM testbench consists of three main parts. The environment manifests the static infrastructure of the testbench
 which is shared between different test cases. It contains components which direct stimulus generated by the test case
@@ -178,24 +182,42 @@ and complex testbench systems easier. Furthermore, external IP blocks, for insta
 integrate into a testbench. Having looked at the overall structure of a UVM testbench, the following sections will
 concern themselves with the stimulus and the test cases.
 
-- talk about overall structure and show diagram
+% talk about overall structure and show diagram
 
-\subsection{UVM Tests}
+\subsubsection{UVM Tests} %----------------------------------------------------------------------------------------------------
 
-\subsection{UVM Sequence Items and Sequences}
+\subsubsection{UVM Sequence Items and Sequences} %-----------------------------------------------------------------------------
 
-\section{Software Testing Methods} %-------------------------------------------------------------------------------------------
-- unit testing
-- integration testing
-- system testing
-- black vs. grey vs. white box testing
+\subsection{Open-Source Alternatives} %----------------------------------------------------------------------------------------
 
-\chapter{Problem Statement \& Methods} %=======================================================================================
+\subsubsection{Cocotb} %-------------------------------------------------------------------------------------------------------
+
+\subsubsection{Chiseltest} %---------------------------------------------------------------------------------------------------
+
+\subsubsection{PyUVM} %--------------------------------------------------------------------------------------------------------
+
+\section{Software Testing Methods} %===========================================================================================
+
+\subsection{Unit Testing} %----------------------------------------------------------------------------------------------------
+
+\subsection{Integration Testing} %---------------------------------------------------------------------------------------------
+
+\subsection{Property-Based Testing} %------------------------------------------------------------------------------------------
+
+\subsection{Black/Grey/White-Box Testing} %------------------------------------------------------------------------------------
+
+\subsection{Fuzzing} %---------------------------------------------------------------------------------------------------------
+
+\subsection{Mocking} %---------------------------------------------------------------------------------------------------------
+
+\chapter{Problem Statement \& Methods} %///////////////////////////////////////////////////////////////////////////////////////
 
 % talk about company interviews
-\chapter{Industry Survey} %====================================================================================================
+\chapter{Industry Survey} %////////////////////////////////////////////////////////////////////////////////////////////////////
 
-\section{Company 1}
+\section{Interview Outline} %==================================================================================================
+
+\section{Company 1} %==========================================================================================================
 
 Company 1 develops ASICs for the hearing aid industry, with a team of 7-8 dedicated verification engineers. The
 verification tasks they are performing do not need to adhere to ISO standards directly, but these standards are
@@ -324,7 +346,7 @@ Company 1 develops ASICs for the hearing aid industry.
 - like idea of a framework without too many choices
 \end{comment}
 
-\section{Company 2}
+\section{Company 2} %==========================================================================================================
 
 Company 2 offers consulting services for hardware design and verification, including training for UVM, thus bringing
 extensive experience in handling various verification challenges.
@@ -498,7 +520,7 @@ Company 2 offers consulting services for hardware design and verification, inclu
 
 \end{comment}
 
-\section{Company 3}
+\section{Company 3} %==========================================================================================================
 
 Company 3 develops ASICs for the hearing aid industry. Their verification team consists of two dedicated engineers,
 though verification responsibilities are shared with design engineers. Design engineers handle simpler verification
@@ -612,19 +634,45 @@ Company 3 develops ASICs for the hearing aid industry.
 
 \end{comment}
 
-\chapter{Analysis} %===========================================================================================================
+\section{Takeaways from the Industry Survey} %=================================================================================
+
+- companies are generally satisfied with UVM
+- they see it as a tool which may have some shortcomings but it is a standard which is supported by all 3 major EDA vendors
+- they only use a subset which seems to be generally accepted across the industry
+- where UVM does not satisfy their needs, or does not specify a specific way of handling something (like scoreboard), they have developed their own extensions
+
+- the approach of having IP units per interface seems to work well, and encourages reuse
+
+- the phasing system seems to be good to facilitate composability of test scenarios
+
+- although formal methods are acknowlegded as superior, where they work, they can't be applied to verify all parts of a design and a simulation based framework is still needed
+
+- There are different opinions on the UVM factory, it could be interesting to investigate what other options exists and how user friendly they are
+
+- all agreed that the RAL has some issues
+- especially the mapping of one register transaction to one bus sequence item is problematic and easily addressed 
+
+- some point out that SystemVerilog itself limits what UVM can do, so it could be interesting to investigate what other languages could do in the context of hardware verification
+- performance is of concern though
+
+
+
+- there seem to be some issues related to how the test case code gets feedback from the testbench in order to write interactive test case code
+
+\chapter{Analysis} %///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 - here, the requirements should be made and possible approaches outlined
 - this includes possible tools to rely on (also for features which are not part of the final product, e.g. coverage and crv)
 
-\section{Takeaways from the Industry Survey}
+\section{Scope} %==============================================================================================================
 
-\section{Requirements} %-------------------------------------------------------------------------------------------------------
 
-\subsection{Supported HDLs}
+\section{Requirements} %=======================================================================================================
+
+\subsection{Language Support} %------------------------------------------------------------------------------------------------
 The first consideration to be made concerns the hardware description languages to be supported by \name.
 
-\subsection{Simulation Backend}
+\subsection{Simulation Backend} %----------------------------------------------------------------------------------------------
 The second consideration which has to be made is the simulation backend which the verification framework will use.
 This decision is also influenced by the choice of supported HDL's, ease of interfacing with the simulation and
 finally of course performance. Since the project itself aims to be open-source, the choice of a proprietary simulator
@@ -649,71 +697,106 @@ feature, thus matching the capabilities of Icarus Verilog.
 Considering especially the ease of integrating verilated models with other software components in addition to the
 superior performance, Verilator was identified as better option for the verification framework.
 
-\subsection{Verification language}
+\subsection{Simulation Interface} %--------------------------------------------------------------------------------------------
+
+\subsection{Concurrency} %-----------------------------------------------------------------------------------------------------
+
+\subsection{Verification language} %-------------------------------------------------------------------------------------------
 The next consideration is
 
 \subsubsection{Dedicated HVL}
 
 \subsubsection{DSL Approach}
 
-\subsection{Separation of Concerns}
-%---------------------------------------------------------------------------------------------
-Now that the base requirements have been defined, the feature set of the verification framework itself has to be determined.
+\subsection{Coverage} %--------------------------------------------------------------------------------------------------------
 
-\subsubsection{The Testbench}
+\subsection{Constrained-Random Stimuli Generation} %---------------------------------------------------------------------------
 
-\subsubsection{The Interaction Sequences}
+\subsection{Reusable Verification Components} %--------------------------------------------------------------------------------
 
-\subsubsection{The Test cases}
-
-\subsection{Configurability} %--------------------------------------------------------------------------------------------------
+\subsection{Testbench Configurability} %---------------------------------------------------------------------------------------
 
 UVM requires a recompilation for each testbench \cite{salemi2013uvm}, we don't need that since a jar can have
 multiple entry points.
 
-\section{Solution Approaches}
-%--------------------------------------------------------------------------------------------------
+\subsection{Stimulus Sequences} %----------------------------------------------------------------------------------------------
+
+\subsection{Test Phases} %-----------------------------------------------------------------------------------------------------
+
+\subsection{Register Abstraction} %--------------------------------------------------------------------------------------------
+
+\subsection{Logging} %---------------------------------------------------------------------------------------------------------
+
+\subsection{Debugging} %-------------------------------------------------------------------------------------------------------
+
+\subsection{Level of Testing} %------------------------------------------------------------------------------------------------
+
+
+
+\section{Possible Approaches} %================================================================================================
 
 1. SystemVerilog library written for Verilator
 2. dedicated HVL compiling via CIRCT dialects to SV testbench
 3. DSL cosim with simulation backend
 
-%\subsection{Compiled}
-% MLIR
+\subsection{SystemVerilog Library} %-------------------------------------------------------------------------------------------
 
-%\subsection{Co-Simulation}
+\subsection{HVL using CIRCT} %-------------------------------------------------------------------------------------------------
 
-\chapter{Implementation} %=====================================================================================================
+\subsection{DSL Co-Simulation} %-----------------------------------------------------------------------------------------------
 
-\section{Simulation} %---------------------------------------------------------------------------------------------------------
+\section{Chosen Approach} %====================================================================================================
 
-\subsection{Generating the Verilated Model}
 
-\subsection{Interfacing with the Verilated Model}
+\chapter{Implementation} %/////////////////////////////////////////////////////////////////////////////////////////////////////
 
-\subsection{The simulation Runtime}
+\section{Simulation Runtime} %=================================================================================================
 
-\section{Concurrency} %--------------------------------------------------------------------------------------------------------
+\subsection{Generating the Verilated Model} %----------------------------------------------------------------------------------
 
-\section{Component Types}
+\subsection{Interfacing the Verilated Model} %---------------------------------------------------------------------------------
 
-\section{Phasing}
+\subsection{Simulation Interface} %--------------------------------------------------------------------------------------------
 
-\section{Register Abstraction}
+\subsection{Simulation Threads} %----------------------------------------------------------------------------------------------
 
-\chapter{Evaluation} %=========================================================================================================
+\subsection{Simulation Controller} %-------------------------------------------------------------------------------------------
 
-\section{Use Cases} %----------------------------------------------------------------------------------------------------------
+\section{Verification Environment} %===========================================================================================
 
-\section{Results} %------------------------------------------------------------------------------------------------------------
+\subsection{Phases} %----------------------------------------------------------------------------------------------------------
 
-\section{Discussion} %---------------------------------------------------------------------------------------------------------
+\subsection{Component Hierarchy} %---------------------------------------------------------------------------------------------
+
+\subsection{Inter-Component Communication} %-----------------------------------------------------------------------------------
+
+\subsection{Component Configuration} %-----------------------------------------------------------------------------------------
+
+\subsection{Stimulus \& Sequences} %-------------------------------------------------------------------------------------------
+
+\subsection{Test Cases} %------------------------------------------------------------------------------------------------------
+
+\subsection{Register Abstraction} %--------------------------------------------------------------------------------------------
+
+\chapter{Results} %////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+\section{Use-Cases} %----------------------------------------------------------------------------------------------------------
+
+\subsection{Use-Case 1: Simple ALU} %------------------------------------------------------------------------------------------
+
+\subsection{Use-Case 2: Memory-Mapped UART} %----------------------------------------------------------------------------------
+
+\subsection{Use-Case 3: APB Verification IP} %---------------------------------------------------------------------------------
+
+\section{Performance} %--------------------------------------------------------------------------------------------------------
+
+\chapter{Discussion} %/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 - scala 3 was chosen to use newest features and make future proof but that prevents integration with chisel
 
 - annoying to write interface in scala and SV -> simple tool could create scala code from SV
 
-\section{Future Work} %========================================================================================================
+%\section{Future Work} %========================================================================================================
 
 - verilator performance features (multi-threading, ...)
 
@@ -724,7 +807,7 @@ UART/SPI/Memory
 
 - integration with scalatest
 
-\chapter{Conclusion} %=========================================================================================================
+\chapter{Conclusion} %/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 \printbibliography
 
