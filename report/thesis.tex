@@ -1,5 +1,7 @@
 \documentclass[12pt]{book}
 
+\usepackage{comment}
+
 \usepackage[backend=biber,style=ieee]{biblatex}
 \addbibresource{books.bib}
 \addbibresource{papers.bib}
@@ -149,6 +151,23 @@ This compartmentalization of the testbench aims at promoting reuse where possibl
 
 \section{Company 1}
 
+Company 1 develops ASICs for the hearing aid industry, with a team of 7-8 dedicated verification engineers. The verification tasks they are performing do not need to adhere to ISO standards directly, but these standards are already captured in the verification plan. The company prefers using a single language for design to enable incremental compilation and simplify the workflow. All verification IP (VIP) is developed in-house and actively maintained, with reuse being a key focus across projects. Examples of reusable VIP include standard interfaces like APB and SWD. Additionally, they integrate models for external IP, such as EEPROM, using C or Verilog models. Reuse is made easy and encouraged by maintaining a single code base for everything.
+
+Once the specification for a new project is complete, verification begins in parallel with the design process. The basic layout of the testbenches can be created early on, based on the interfaces being used. The company uses module-level testbenches before moving to verification of the top-level. They make extensive use of different UVM runtime phases, particularly reset phases, to improve modularity and composition. Over time, they have developed their own standard scoreboard implementation and rely on the configDB to pass data between agents. Connectivity checks are performed to ensure that specific configurations correctly link different parts of the design.
+
+Their coverage strategy prioritizes functional coverage and FSM code coverage. Debugging is supported by assertion-based verification, with assertions used for runtime checking, formal checking, or both. Debugging remains an unpredictable part of the development process. Known bugs are particularly difficult to work around while trying to progress. 
+
+For simulation, the company uses VCS and employs continuous integration (CI) to manage regression testing. Each regression run includes approximately 6000 simulations, with a total runtime of around six hours. Synthesis is also performed as part of the regression flow, and coverage checks are automatically executed. The CI system ensures that a freshly checked-out version of the project always works. Although they have considered PyUVM as a potential tool, they find the speed insufficient for their needs. Furthermore, they are cautious about adopting new or niche tools, fearing that it could complicate future recruitment efforts.
+
+The testbenches of the company rely heavily on CRV. However, signal data streams are not purely random, but instead they use typical data encountered in real-world scenarios, because change throughout time is difficult to capture in constraints. To support DSP verification, MATLAB models are integrated into the verification environment.
+
+The company is overall satisfied with their usage of UVM, but pointed out some shortcomings. Specifically, they believe that code using the UVM factory is difficult to debug and maintain, while the register abstraction layer (RAL) in UVM is incomplete. For instance, a single register block cannot be mapped into multiple address spaces, so they developed their own extension to address this limitation. Concerning the UVM factory, they not that using callbacks, a feature not available during the development of UVM, would be the better option to keep dependencies modular in the code. They also observe that many UVM examples available online are outdated and focus only on trivial cases. Additionally, they note that UVM was influenced by several companies of which some insisted on incorporating features from their own verification methodologies, sometimes resulting in unnecessary complexity. While they continue to use UVM, they would are not opposed to a framework with fewer options and simpler design choices. They also emphasize that power-aware verification remains a significant challenge.
+
+In terms of recruitment, the company intentionally avoids using all UVM and SystemVerilog features to make hiring easier. They believe that limiting the use of overly complex or non-standard features lowers the learning curve for new engineers. They have observed that it is rare for software engineers to transition into verification roles, so they do not see a need to tailor the verification environment specifically for software engineers. To further ease the process of setting up a verification environmet, they use a setup framework that can automatically generate the basic structure for testbenches and unit tests.
+
+One of the key challenges they face is that the test plan often becomes a bottleneck, more so than the actual development time for testbenches. While development time tends to be predictable, debugging remains highly unpredictable, especially when working around known bugs while trying to maintain progress.
+
+\begin{comment}
 Company 1 develops ASICs for the hearing aid industry. 
 - 7-8 dedicated verification engineers
 
@@ -221,10 +240,33 @@ Company 1 develops ASICs for the hearing aid industry.
 - power aware verification is still difficult
 
 - like idea of a framework without too many choices
+\end{comment}
 
 \section{Company 2}
 
-Company 2 offers consulting services for verification. 
+Company 2 offers consulting services for hardware design and verification, including training for UVM, thus bringing extensive experience in handling various verification challenges.
+
+Verification at its core is about building confidence in the design in their opinion. The process typically follows an evolutionary path: initially, few bugs are found, then many bugs surface as the verification infrastructure matures, and finally, the design stabilizes with no remaining bugs. This approach often involves dividing the verification task into smaller, manageable features and verifying them separately. Effective verification requires robust coverage models, as weak models give misleading results. These coverage models can be validated through intentionally weak tests, which are expected to score low. However, it is important to note that coverage only accounts for known-knowns and known-unknowns; there is no established methodology for addressing unknown-unknowns, i.e. bugs that are not detected by the verification plan. The company follows the best practice of always capturing design assumptions in assertions.
+
+Formal verification is considered a superior tool for proving design correctness but often struggles with the complexity of large designs. Despite these challenges, formal methods remain a critical component of their verification process.
+
+They perceive UVM to be a well-working tool for verification. Like all tools, it is not perfect though, and they note some small issues which they have encountered. The ConfigDB mechanism, can confuse users, in their experience, due to component scoping mechanism. Misunderstanding its usage can lead to spaghetti code, but when used correctly, the ConfigDB solves the essential problem of enabling communication between classes without direct references. It acts as a middleman, allowing information to be passed down from the test to the environment, agents, and drivers. Sometimes they even use the ConfigDB as a channel, where a driver monitors specific keys for changes to receive data.
+
+They note that the UVM factory mechanism generally works well for flexible component creation. In object-oriented programming with static hierarchies, the creation of many small specific factories for component substitution in the hierarchy would be necessary anyways. UVM's global factory addresses this need, reducing the programming overhead for the end-user. But the UVM factory also introduces overhead, due to the indirection of object creation. Best practices include using direct instantiation when no overrides are expected or limiting factory use to scenarios where dynamic changes are really necessary.
+
+Phasing in UVM works well in for the company. But there are some issues concerning the communication of phase completion. Each component can stop the phase from completing by raising an objection. However, this can lead to problems when the main test code finishes injecting stimuli while the testbench still has to wait for responses. The VMM had a consensus object that allowed components to register their “done” conditions, offering a potential solution. In agents, reset should be handled within the run phase. Base tests should handle reset and shutdown phases, while derived tests should handle configuration and main phases. The company has developed its own standard scoreboard infrastructure, which focuses on comparing streams of transactions.
+
+They note that the Register Abstraction Layer (RAL) poses several challenges. It assumes a direct mapping of one register transaction to one bus sequence item. This assumption can be problematic when protocols require multiple transactions to complete the changes implied by the register transaction. Additionally, while the RAL supports writing individual fields, certain protocols do not support this and would need a read-modify-write cycle, resulting again in multiple sequence items. Register locking is available but does not ensure immutability, raising questions about its utility. Register randomization can be achieved using the `rand` keyword on fields, but unlike read/write operations, calls to `rand` are not synchronized if multiple components access the register model in parallel. There are currently multiple ways of injecting constraints into the register model, but none of them work well or are verbose according to the company. 
+
+Certain types of DUTs present unique challenges. In a scenario where a DUT processes a stream, the interface where the input stream is consumed may be separated from the one where the output stream is produced. This means the resulting processed stream items flow though a different agent than the input stream items. An issue arises, if the test case would like to make a decision based on the processed stream. The test case can only receive feedback from a driver that it has sent a transaction to. In this case, it would like to receive feedback from a completely different agent. This case is not considered in UVM. A solution was outlined, where the agent receiving the processed stream would receive dummy transactions from the test case, such that it could answer with items from the processed stream. 
+
+DUTs that only produce outputs, such as random number generators, pose another issue: determining when to stop the test. Timing-related challenges also arise when one has to determined whether transactions occur simultaneously across multiple interfaces. The analysis ports of all interfaces would have to send either data or null each clock cycle, reducing significant overhead, if this was to be determined. Another issue revolves around DUTs like filters, which require initial stabilization before producing valid output. This could be handled by using metadata in transactions or RTL signals to indicate readiness.
+
+The company is satisfied with commercial verification tools, but they note that access to these tools remains a challenge in educational settings, where they are typically available only during courses. They believe that this educational space should be filled by open-source alternatives such as PyUVM, which they are actively exploring.
+
+\begin{comment}
+
+Company 2 offers consulting services for hardware design and verification, including training for UVM.
 
 - one issue with the RAL is register randomization, they have their own implementation
 - scoreboard: have their own standard scoreboard implementation
@@ -252,14 +294,186 @@ Company 2 offers consulting services for verification.
 
 - verification engineer also has implicit assumptions about how to attack the problem of proving that something is correct
 
+- coverage only contains the known-knowns and known-unknowns
+- no methodology to find unknown-unknowns
+
+- for companies, the commercial tools are fine
+- they see problem for education, where access to the commercial tools is only available during the course
+
+- verification is about confidence in the design
+- divide and conquer, by splitting into features and verifying them separately
+
+
+
+- configDB often confuses people due to the scoping mechanism
+- can lead to spaghetti code, if one does not know what they are doing
+- but it solves one essential problem: talking to a class you don't know
+- allows communication between two classes without them holding a handle to each other
+- configDB is the middle man
+- maybe it would be a good idea to have a configDB without scoping, too
+- config is passed down from test -> env -> agents -> driver
+- sometimes use configDB as channel -> driver monitors configDB for changes at a certain key
+
+- satisfied with UVM factory
+- in OOP program a static hierarchy exists
+- if you want to change out components in the hierarchy, you would build your own micro-factory anyways
+- why not have a global real factory
+- factory comes with overhead though, so use new when it is known that no override will occur
+- or limit construction to those times strictly necessary, e.g. at an actual value change
+
+- phasing is a good idea
+- reset and shutdown should be provided by base test
+- config and main phase should be provided by the derived tests
+- agents or any other component should only have a run phase
+- one issue is the communication of when a phase is done
+- raise and drop objection is used
+- but sometimes the test code is done injection stimulus, but the TB should wait until all responses have been received
+- VMM had a consensus object where objects register a "done" condition
+
+- in an agent, the reset should also be handled in the run phase
+
+- the scoreboard is application specific, but the infrastructure can be generalized
+- this was presented in a paper at DVCon
+
+- one issue is reactive slave
+- DUT with interface to producer and consumer, consumer agent should be passive
+- but what if test case needs access to values received by consumer?
+- need to make consumer active and send one seq item per value, to get feedback
+- can't use objections here, else you get stuck
+
+- another issue are DUTs which only have outputs, like an random number generator
+- how to know when to stop the test?
+
+- another issue is timing related: when do transactions actually happen at the same time?
+- for instance a coverage collector listening to 3 interfaces and should only sample if transaction at the same time on all three interfaces
+- in current UVM, monitors would have to send null or transactions every cycle
+
+- another issue are DUTs like filters where some data is needed for the DUT to stabilize and produce valid output
+- could use meta data in the transaction
+- could also use RTL signal as event to signal that the DUT is ready
+
+- RAL is very big, 25\% of UVM class description
+- can write fields individually, what if protocol does not support that? Would need read-modify-write cycle on the bus
+- assumes mapping of one register transaction to one bus sequence item, what if multiple are needed?
+- should allow translation of register transaction to sequence of bus transactions
+- registers have a lock method, but that doesn't mean they are immutable, why is this there?
+
+- randomization of registers can be done by using rand keyword on fields
+- calls to rand are not synchronized though, in contrast to read and writes to the register model
+- difficult to inject constraints into register model, without being verbose
+- also difficult to randomize only one specific reg -> DVCon paper
+
+- general perspective
+- verification progress isn't linear -> sometimes hard to communciate between engineers and managers
+- the spec isn't always perfect
+- sees hope in AI DSL for spec 
+- formal is the better tool, but struggles with complexity
+
+\end{comment}
+
 \section{Company 3}
 
-\section{Conclusions}
+Company 3 develops ASICs for the hearing aid industry. Their verification team consists of two dedicated engineers, though verification responsibilities are shared with design engineers. Design engineers handle simpler verification tasks, while the verification engineers focus on more complex aspects. The company follows a waterfall development model.
+
+About six years ago, they transitioned to UVM and have since adopted a standardized subset of UVM to ensure consistency across projects. Agents are frequently reused since most projects rely on the same interfaces. Their Testbenches are employed not only for functional verification but also for gate-level simulations. While external VIPs have been used and integrated successfully, most VIPs are developed in-house. Formal methods are used mostly for their to application-specific instruction-set processors (ASIPs), but outside of that, formal verification is used only in cases where it is easily applicable.
+
+Their verification framework includes both module-level and top-level testbenches, with UVM environments from the former being reused in the latter. They also maintain a basic test framework for simpler verification needs. The employed reference model are mostly transaction-accurate and Matlab models are used for verifying DSP blocks.
+
+The company uses code coverage, but mainly focusses on functional coverage. Like in Company 1, CRV is used except for the modelling of audio streams where representative data streams are used instead. They note that debugging is one of the most time-consuming parts of the verification process, often taking up to 70\% of the overall verification effort.
+
+The team makes use of all UVM run phases, setting up the DUT and handling all analysis during the appropriate reset, configuration and shutdown phases to simplify the work of test case developers. They find the UVM Config DB effective for parameter passing, in part because they view parameterization of classes in SystemVerilog as cumbersome. Over the years, they have developed their own UVM extensions, including a custom scoreboard implementation. One issue they note concerning phasing is the handling of reset during the test. A solution is to do phase-hopping to go back to the reset phase, which is a messy solution according to them.
+
+Rather than seeing limitations inherent in the UVM, they see more limitations in SystemVerilog itself. For instance parameterized interfaces can cause issues, and the language's verbosity and boilerplate code could be improved according to them. Clocking blocks are also avoided due to frequent problems with multiple driver conflicts. While they generally have no issues with the UVM factory, they believe it would be helpful if unsuccessful overrides specified via the command line generated explicit error messages. The UVM factory is primarily used by the team to adjust constraints and replace general sequences with more specific ones when necessary.
+
+Overall, the team places a high priority on maintaining clear and understandable verification code, particularly so that RTL engineers can easily work with it, too. They prefer straightforward, maintainable code over overly complex features such as event callbacks.
+
+\begin{comment}
+
+Company 3 develops ASICs for the hearing aid industry.
+
+- 2 dedicated verification engineers
+
+- work in waterfall model
+- verification engineer only involved in complex verification tasks, else design engineer does verification
+
+- ISO standard requirements are already encoded in verification plan
+
+
+
+- switched to UVM around 6 years ago
+
+- many interfaces are repeated, agents can be reused
+
+- reuse testbenches also for gate level simulation
+
+- have used external VIP, was easy to integrate
+- but many develope their own VIP
+
+- there is a "standard" UVM subset
+
+- CRV not used for data audio streams
+- coverage is important though
+
+- use code coverage, but disable it for some parts of the design
+
+- use formal methods especially for their ASIPs 
+- else use formal only in obvious cases
+
+- have their own basic test framework
+- module level + top level testbenches
+- UVM environment from module level testbenches is reused in top level testbenches
+
+- reference models are cycle or transaction accurate
+- some matlab models generate RTL -> model comes for free 
+
+- bottleneck is verification, around 70/%
+- but out of this, debugging takes the longest time
+- soemtimes need to argue why error is actually not an error
+- communication overhead and manpower
+
+- use all UVM run phases
+- set up everything behind the scenes for the test developer
+
+- config DB works well for them for passing parameters
+- thinks that parameterization of classes does not work well in SystemVerilog
+
+- clocking blocks offen suffer from multiple driver problems, because the tools can't understand them
+- tend to not use clocking blocks
+
+- does not see a problem with the UVM factory
+- only unsuccesful overrides through CLI don't give errors, but should
+- are used to change constraints
+- used to replace general sequences with specific ones
+
+- have own UVM extensions and methodology
+- have own scoreboard implementation
+
+- one issue is reset handling in CRV
+- own agent for reset handling
+- phase hopping is difficult and messy
+
+- see most issues with SV limitations
+- parameterized interfaces 
+- verbose
+- boiler plate
+
+- but prefers guidelines over limitations for UVM
+
+- prefers to keep verification code simle and understandable, also for RTL engineers
+- does not like overly complex features like event callbacks
+
+\end{comment}
+
+
 
 \chapter{Analysis} %===========================================================================================================
 
 - here, the requirements should be made and possible approaches outlined
 - this includes possible tools to rely on (also for features which are not part of the final product, e.g. coverage and crv)
+
+\section{Takeaways from the Industry Survey}
+
+
 
 
 \section{Requirements} %-------------------------------------------------------------------------------------------------------
