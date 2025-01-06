@@ -639,25 +639,28 @@ Company 3 develops ASICs for the hearing aid industry.
 - companies are generally satisfied with UVM
 - they see it as a tool which may have some shortcomings but it is a standard which is supported by all 3 major EDA vendors
 - they only use a subset which seems to be generally accepted across the industry
-- where UVM does not satisfy their needs, or does not specify a specific way of handling something (like scoreboard), they have developed their own extensions
+- where UVM does not satisfy their needs, or does not specify a specific way of handling something (like scoreboard),
+they have developed their own extensions
 
 - the approach of having IP units per interface seems to work well, and encourages reuse
 
 - the phasing system seems to be good to facilitate composability of test scenarios
 
-- although formal methods are acknowlegded as superior, where they work, they can't be applied to verify all parts of a design and a simulation based framework is still needed
+- although formal methods are acknowlegded as superior, where they work, they can't be applied to verify all parts of
+a design and a simulation based framework is still needed
 
-- There are different opinions on the UVM factory, it could be interesting to investigate what other options exists and how user friendly they are
+- There are different opinions on the UVM factory, it could be interesting to investigate what other options exists
+and how user friendly they are
 
 - all agreed that the RAL has some issues
-- especially the mapping of one register transaction to one bus sequence item is problematic and easily addressed 
+- especially the mapping of one register transaction to one bus sequence item is problematic and easily addressed
 
-- some point out that SystemVerilog itself limits what UVM can do, so it could be interesting to investigate what other languages could do in the context of hardware verification
+- some point out that SystemVerilog itself limits what UVM can do, so it could be interesting to investigate what
+other languages could do in the context of hardware verification
 - performance is of concern though
 
-
-
-- there seem to be some issues related to how the test case code gets feedback from the testbench in order to write interactive test case code
+- there seem to be some issues related to how the test case code gets feedback from the testbench in order to write
+interactive test case code
 
 \chapter{Analysis} %///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -665,7 +668,6 @@ Company 3 develops ASICs for the hearing aid industry.
 - this includes possible tools to rely on (also for features which are not part of the final product, e.g. coverage and crv)
 
 \section{Scope} %==============================================================================================================
-
 
 \section{Requirements} %=======================================================================================================
 
@@ -731,8 +733,6 @@ multiple entry points.
 
 \subsection{Level of Testing} %------------------------------------------------------------------------------------------------
 
-
-
 \section{Possible Approaches} %================================================================================================
 
 1. SystemVerilog library written for Verilator
@@ -746,7 +746,6 @@ multiple entry points.
 \subsection{DSL Co-Simulation} %-----------------------------------------------------------------------------------------------
 
 \section{Chosen Approach} %====================================================================================================
-
 
 \chapter{Implementation} %/////////////////////////////////////////////////////////////////////////////////////////////////////
 
