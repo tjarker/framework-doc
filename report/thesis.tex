@@ -155,7 +155,9 @@ The UVM provides standardized ways to create testbench infrastructure which is h
 responsibilities are divided over different components. Furthermore, it introduces the concept of phases,
 synchronizing components throughout the different steps of a test case. Finally, the UVM raises the level of
 abstraction of the testbench by working with transactions which encapsulate a potential multi-clock cycle interaction
-with the DUT in one object \cite[ch. 4.1]{mehta2018asic}. In the rest of this section, the core concepts of the UVM will be introduced. The focus will be primarily on the functionality and ideas. Implementation details will only be highlighted when they are relevant to the discussion.
+with the DUT in one object \cite[ch. 4.1]{mehta2018asic}. In the rest of this section, the core concepts of the UVM
+will be introduced. The focus will be primarily on the functionality and ideas. Implementation details will only be
+highlighted when they are relevant to the discussion.
 
 \subsubsection{UVM Testbench Structure} %--------------------------------------------------------------------------------------
 
@@ -163,7 +165,8 @@ The UVM offers a separation of concern between three different perspectives: the
 the environment writer \cite{sutherland2015uvm}. The test writer constructs a test case to exercise a specific
 feature by chaining a series of sequences together and applying them to the DUT by handing them to the environment.
 He does not need to know how the sequences are constructed or how the DUT is driven. The sequence writer creates
-sequences of transactions, so-called sequence items, which achieve a specific goal in the DUT. He does not need to know how the transactions are
+sequences of transactions, so-called sequence items, which achieve a specific goal in the DUT. He does not need to
+know how the transactions are
 driven onto the DUT either. Only the environment writer concerns themselves with the translation of transactions into
 pin-level signals and the driving of these signals onto the DUT. The environment writer also creates the analysis and
 checking infrastructure of the testbench like coverage collectors or scoreboards. The environment manifests the
@@ -187,13 +190,22 @@ collectors. Active agents also accept transactions which they drive onto the int
 
 This compartmentalization of the testbench aims at promoting reuse where possible and should make maintaining large
 and complex testbench systems easier. Furthermore, external IP blocks, for instance an AXI agent, should be easy to
-integrate into a testbench. 
+integrate into a testbench.
 
 \subsubsection{Communication between components} %----------------------------------------------------------------------------
 
 The communication between the different components of the testbench is facilitated by the TLM (Transaction Level
-Model) interface. The TLM is built around the idea of push and pull channels. The active side of a channel connection (the producer in a push channel, the consumer in a pull channel) is called the \ttt{port} while the passive side is called the \ttt{export}. The \ttt{export} provides a method for handling the receiving or sending of a transaction which is triggered by the \ttt{port}. Most of the time, two components are connected with a buffer between them such that a buffered channel is created. In this case the buffer provides the two passive channel ends such that the sender can call \ttt{put} at any time and the receiver can call \ttt{get} at any time. Calls to these methods are blocking when no data is in the buffer. In the testbench, ports can be forwarded from a child component to a parent component, exposing the port at a higher hierarchy level. This is for instance the case in an active agent, where the port for the transaction stream to the driver is exposed by the agent itself. Next to single-producer-single-consumer channels, the TLM also provides one-to-many channels with so-called \ttt{analysis\_port}'s. These are used to broadcast transactions to multiple analysis components like coverage collectors or scoreboards \cite[ch. 4.5]{mehta2018asic}.
-
+Model) interface. The TLM is built around the idea of push and pull channels. The active side of a channel connection
+(the producer in a push channel, the consumer in a pull channel) is called the \ttt{port} while the passive side is
+called the \ttt{export}. The \ttt{export} provides a method for handling the receiving or sending of a transaction
+which is triggered by the \ttt{port}. Most of the time, two components are connected with a buffer between them such
+that a buffered channel is created. In this case the buffer provides the two passive channel ends such that the
+sender can call \ttt{put} at any time and the receiver can call \ttt{get} at any time. Calls to these methods are
+blocking when no data is in the buffer. In the testbench, ports can be forwarded from a child component to a parent
+component, exposing the port at a higher hierarchy level. This is for instance the case in an active agent, where the
+port for the transaction stream to the driver is exposed by the agent itself. Next to single-producer-single-consumer
+channels, the TLM also provides one-to-many channels with so-called \ttt{analysis\_port}'s. These are used to
+broadcast transactions to multiple analysis components like coverage collectors or scoreboards \cite[ch. 4.5]{mehta2018asic}.
 
 \subsubsection{Phases}
 Another concept introduced by the UVM are phases. Working with more elaborate DUTs with complex reset sequences, it
@@ -231,20 +243,38 @@ evident by the name \cite[ch. 4.6]{mehta2018asic}.
 \subsubsection{Component Types} %----------------------------------------------------------------------------------------------
 
 % driver
-A driver has a port on which it can receive transactions. Normally, a driver enters an infinite loop in the \ttt{run} phase where it wait for transactions and applies them either directly to the DUT or does so via a BFM. In order to interact with the DUT, it is necessary in SystemVerilog to use a \textit{virtual interface} which effectively is a handle to the pins of the DUT. The driver gets the next transaction through a call of \ttt{get\_next\_item} and signals that the transaction has been applied by calling \ttt{item\_done}. The driver can provide feedback to the code generating the sequence by passing a new transaction to the \ttt{item\_done} call. Special care has to be taken when an interface is pipelined, i.e. when the DUT can accept multiple transactions before the first one is acknowledged. In this case, the driver has to keep track of the transactions which are in flight and has to make sure that the transactions are applied in the correct order \cite[ch. 4.7]{mehta2018asic}.
+A driver has a port on which it can receive transactions. Normally, a driver enters an infinite loop in the \ttt{run}
+phase where it wait for transactions and applies them either directly to the DUT or does so via a BFM. In order to
+interact with the DUT, it is necessary in SystemVerilog to use a \textit{virtual interface} which effectively is a
+handle to the pins of the DUT. The driver gets the next transaction through a call of \ttt{get\_next\_item} and
+signals that the transaction has been applied by calling \ttt{item\_done}. The driver can provide feedback to the
+code generating the sequence by passing a new transaction to the \ttt{item\_done} call. Special care has to be taken
+when an interface is pipelined, i.e. when the DUT can accept multiple transactions before the first one is
+acknowledged. In this case, the driver has to keep track of the transactions which are in flight and has to make sure
+that the transactions are applied in the correct order \cite[ch. 4.7]{mehta2018asic}.
 
 % sequencer
-The transactions a driver receives could come from multiple sequences which are run at the same time. For this purpose, the UVM introduces the sequencer which is located in an agent. The test case can hand of multiple sequences to the sequencer which then decides how to interleave the transactions from the sequences depending on its implementation. Usually 
+The transactions a driver receives could come from multiple sequences which are run at the same time. For this
+purpose, the UVM introduces the sequencer which is located in an agent. The test case can hand of multiple sequences
+to the sequencer which then decides how to interleave the transactions from the sequences depending on its
+implementation. Usually
 
 % monitor
-A monitor holds, like the driver, a handle to the pins of the DUT. It observes the state of the pins and translates the observed activity into transactions which are published via one or multiple analysis ports. 
+A monitor holds, like the driver, a handle to the pins of the DUT. It observes the state of the pins and translates
+the observed activity into transactions which are published via one or multiple analysis ports.
 
 % subscriber
-A series of subscribers can then receive these transactions and act upon them, for instance collecting coverage information or comparing the transactions to a model. A coverage collector looks at the incoming transactions and uses SystemVerilog functional coverage features to keep track of statistics such as whether a read was performed after a write.
+A series of subscribers can then receive these transactions and act upon them, for instance collecting coverage
+information or comparing the transactions to a model. A coverage collector looks at the incoming transactions and
+uses SystemVerilog functional coverage features to keep track of statistics such as whether a read was performed after a write.
 
 % scoreboard
-The task of verifying that the transactions produced by the DUT are correct is handled by the scoreboard in the UVM. The UVM does not prescribe a way of how exactly to achieve this. Since correctness has to be checked for an arbitrary stream of transactions, some form of a model is usually needed. Depending on the complexity, this model could be included in the scoreboard or be its own component which just like the DUT receives one or multiple transaction streams and produces another set of transaction streams. The scoreboard is in this case reduced to comparing the result streams of the DUT and the model.
-
+The task of verifying that the transactions produced by the DUT are correct is handled by the scoreboard in the UVM.
+The UVM does not prescribe a way of how exactly to achieve this. Since correctness has to be checked for an arbitrary
+stream of transactions, some form of a model is usually needed. Depending on the complexity, this model could be
+included in the scoreboard or be its own component which just like the DUT receives one or multiple transaction
+streams and produces another set of transaction streams. The scoreboard is in this case reduced to comparing the
+result streams of the DUT and the model.
 
 \subsubsection{Configurability} %----------------------------------------------------------------------------------------------
 %- Configurability
@@ -253,27 +283,38 @@ The task of verifying that the transactions produced by the DUT are correct is h
 
 \subsubsection{UVM Tests} %----------------------------------------------------------------------------------------------------
 
-
-
 \subsubsection{UVM Sequence Items and Sequences} %-----------------------------------------------------------------------------
 
 \subsection{Open-Source Alternatives} %----------------------------------------------------------------------------------------
 
 \subsubsection{Cocotb} %-------------------------------------------------------------------------------------------------------
 
-Cocotb is an open-source project under the FOSSi foundation, which focuses on providing a productive and vendor-agnostic testbench framework for Verilog, VHDL and even mixed-signal designs \cite{cocotb}. Cocotb, short for Coroutine-based Co-simulation Testbench, uses coroutines in python as an efficient way of having many simulation threads cooperatively interface one simulation. Simulation events are modelled as asynchronous function calls which can be awaited, resulting in the waiting thread to suspend execution until the simulation backend triggers the event.
+Cocotb is an open-source project under the FOSSi foundation, which focuses on providing a productive and
+vendor-agnostic testbench framework for Verilog, VHDL and even mixed-signal designs \cite{cocotb}. Cocotb, short for
+Coroutine-based Co-simulation Testbench, uses coroutines in python as an efficient way of having many simulation
+threads cooperatively interface one simulation. Simulation events are modelled as asynchronous function calls which
+can be awaited, resulting in the waiting thread to suspend execution until the simulation backend triggers the event.
 
-While taking advantage of the low learning-curve and rich library ecosystem of Python, Cocotb also suffers from the drawbacks of python like the lack of static typing and the overhead of the Python interpreter. Due to its ease of use and support for all major simulators, including commercial ones, Cocotb is a popular choice for a modern open-source testbench framework. It does however not provide the infrastructure for building scalable and reusable testbenches like the UVM does.
+While taking advantage of the low learning-curve and rich library ecosystem of Python, Cocotb also suffers from the
+drawbacks of python like the lack of static typing and the overhead of the Python interpreter. Due to its ease of use
+and support for all major simulators, including commercial ones, Cocotb is a popular choice for a modern open-source
+testbench framework. It does however not provide the infrastructure for building scalable and reusable testbenches
+like the UVM does.
 
 \subsubsection{Chiseltest} %---------------------------------------------------------------------------------------------------
 
-Chiseltest was developed as part of the Chisel hardware construction language and is a Scala-based testbench framework \cite{chiseltest}. Due to a change in the Chisel compiler infrastructure, it has been recently deprecated, but a replacement is under development by the Chisel community. While meant to be used with Chisel designs, Verilog designs can also be included via Chisel. The number of supported simulators is more limited compared to Cocotb, supporting only Verilator, Icarus Verilog and Synopsys VCS when using Verilog designs. Chiseltest is integrated with the scalatest testing framework, which allows for an efficient way to organize and run tests.
+Chiseltest was developed as part of the Chisel hardware construction language and is a Scala-based testbench
+framework \cite{chiseltest}. Due to a change in the Chisel compiler infrastructure, it has been recently deprecated,
+but a replacement is under development by the Chisel community. While meant to be used with Chisel designs, Verilog
+designs can also be included via Chisel. The number of supported simulators is more limited compared to Cocotb,
+supporting only Verilator, Icarus Verilog and Synopsys VCS when using Verilog designs. Chiseltest is integrated with
+the scalatest testing framework, which allows for an efficient way to organize and run tests.
 
-Chiseltest provides a simple peek/poke/step interface to the simulation and allows for multi-threaded testbenches using a fork-join model. However, it doesn't provide any level of abstraction and infrastructure for building complex testbenches, focussing on directed unit-test-style testbenches.
-
+Chiseltest provides a simple peek/poke/step interface to the simulation and allows for multi-threaded testbenches
+using a fork-join model. However, it doesn't provide any level of abstraction and infrastructure for building complex
+testbenches, focussing on directed unit-test-style testbenches.
 
 \subsubsection{ChiselVerify} %-------------------------------------------------------------------------------------------------
-
 
 \subsubsection{PyUVM} %--------------------------------------------------------------------------------------------------------
 
