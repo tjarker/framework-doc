@@ -126,7 +126,56 @@ and reliable hardware designs.
 
 \subsection{SystemVerilog's Predecessors} %------------------------------------------------------------------------------------
 
+In the mid 1990s, some of Verilog's limitations became apparent as the complexity of designs grew significantly. Next to movements trying to replace HDLs altogether with general-purpose programming languages through high-level synthesis, others tried to strengthen Verilog by making it more capable especially in terms of its specification and verification features \cite[Sec. 6]{flake2020a}. 
+
+One such attempt was Superlog. A team at Co-Design Automation Inc. thought that Verilog lacked features of general-purpose languages to be efficient for verification. Being focused preserving the high performance of Verilog simulators, the group turned to C for inspiration. The resulting Superlog language added C data types like enums and structs, dynamic memory allocation, but also dynamic data types likes strings, dynamic arrays and queues. Another reason to draw inspiration from C was to make C code and Superlog easily interoperable which was useful for integrating C models in verification code \cite[Sec. 6]{flake2020a}.
+
+Another addition over Verilog was the introduction of interfaces, which on the one hand allow bundling of signals with directionality, and on the other hand allow for exposing functions from one module to another. The latter feature was deemed useful for transaction level models, allowing Superlog to be used as a specification language \cite[Sec. 6]{flake2020a}.
+
+Another direction of development focused only on the verification aspects and lead to the development of hardware verification languages (HVL). These were languages specifically tailored to the task of verifying hardware designs, adjusting the level of abstraction and the expressiveness of the language to needs of the verification tasks. One of these languages was Vera, initially developed at Sun Microsystems in 1994 \cite[Sec. 7]{flake2020a}.
+
+The Vera language was built around a co-simulation engine which could interface different hardware simulators, and was meant to be HDL agnostic. The level of abstraction in interacting with the DUT is slightly lifted, by removing the need for explicit timing and focusing instead on clock cycle based interaction. The IO of the DUT is captured in interfaces which are associated with a clock, outputs defining a skew relative to a clock edge when they should be driven and inputs defining a skew relative to a clock edge where they should be sampled. These interfaces can be bound to ports which in turn can be passed around the testbench to provide access to the DUT. Signals can be directly referenced and assigned in the code, with the runtime taking care of the actual timing in the simulation running in the background \cite[Sec. 7]{flake2020a}.
+
+Vera offers flexibility in scheduling interactions with the DUT through the @ operator, which allows to defer assignments and assertions to future clock cycles or synchronize the current thread with a signal change. Assertion have a timing dimension, e.g. allowing to specify intervals in which the condition should become true or continuously hold . A Vera program starts in a single thread, from which it can spawn new threads using a fork-join model. Multi-threading constructs such as synchronization events, semaphores and mailboxes are part of the language \cite[Sec. 7]{flake2020a}. 
+
+One of the maybe most important features added by Vera is the inclusion of object-oriented programming (OOP). Vera introduces classes and inheritance, which allows for a more structured and modular testbench design. Equally as important are the addition of contrained randomization and functional coverage collection. Class fields in very can be marked with the rand keyword. A call to the \ttt{randomize} method on an object of the class will then randomize all fields marked with rand according to the constraints specified in the class. Functional coverage can be collected by defining bins for states, transitions and general expressions or the cross-product of these. A later addition to the Vera language when it was adopted as an open standard by Accellera as OpenVera, was the introduction of Open Vera Assertions (OVA). These rely on linear temporal logic, a type of formal logic used to describe sequences of events over time, which allows to capture highly complex behavior in assertions \cite[Sec. 7]{flake2020a}.
+
+\begin{comment}
+
+- mid 1990s Verilogs limitations became apparent as design complexity grew
+- discussed replacing HDLs altogether with C++ or java for hardware design
+- movement to strengthen Verilog lang -> Superlog 
+- verilog lacked features of general purpose programming language to be efficient for verification
+- Superlog mostly superset of verilog with inspiration from C for data types like enums and structs and primitives ike strings and arrays, queues, dynamic memory allocation
+- easy to interface with C code
+- introduces interface construct to bundle signals but also allow exposing functions for transaction level modelling by associating them with an interface, they can operate on the signals of the interface
+
+- other developments focussed only on the verification aspects
+- verilog not designed for modular complex testbenches
+- not very concise in expressing verification intent
+- lead to development of HVLs
+
+- one of these was Vera
+- a cosimulation engine interfacing with hardware simulators
+- language agnostic
+- lifts abstraction level by focussing on steady state behavior
+- for this signals are associated with clock and samples relative to that clock
+- skews relative to clock edges are provided to define sampling and drive times
+- IO of dut is captured in interface which can be bound to ports which can be freely passed around the testbench to provide access to the DUT
+- signals can be directly referenced and assigned in the code, the runtime takes care of the actual timing
+- interactions can be deferred to future clock cycles using the @ operator
+- assertions can be directly written as boolean expressions with a potential interval or point in time when the condition should hold
+- synchronization apart from the clock cycle granularity is provided by @(signal) or @(posedge signal) 
+- program starts from single thread and can spawn new threads using fork-join model
+- multi-threading constructs like events for synchronization, mailboxes and semaphores are part of the language
+- adds object oriented features like classes and inheritance
+- adds crv features by marking class fields with rand keyword and specifying constraints
+- finally vera adds functional coverage by allowing to define coervage bins for states, transitions and general expressions
+- a later addition to vera was OVA open vera assertions, which relied on LTL to specify complex temporal properties
+
 OpenVera \cite[Sec. 7, pp. 51-??]{flake2020a}
+
+\end{comment}
 
 \subsection{SystemVerilog} %---------------------------------------------------------------------------------------------------
 
@@ -311,7 +360,7 @@ supporting only Verilator, Icarus Verilog and Synopsys VCS when using Verilog de
 the scalatest testing framework, which allows for an efficient way to organize and run tests.
 
 Chiseltest provides a simple peek/poke/step interface to the simulation and allows for multi-threaded testbenches
-using a fork-join model. However, it doesn't provide any level of abstraction and infrastructure for building complex
+using a fork-join model. Work has also been done on formal verification features. However, it doesn't provide any level of abstraction and infrastructure for building complex
 testbenches, focussing on directed unit-test-style testbenches.
 
 \subsubsection{ChiselVerify} %-------------------------------------------------------------------------------------------------
