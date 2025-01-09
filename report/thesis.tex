@@ -51,7 +51,6 @@
 - 70\% of design effort is used on verification \cite[Ch. 1]{bergeron2012writing}
 - testbenches manifest up to 80\% of code base \cite[Ch. 1]{bergeron2012writing}
 
-
 - verification is important to make ASIC design a first time success \cite[Ch. 3]{bergeron2012writing}
 
 \chapter{Background \& Related Work} %/////////////////////////////////////////////////////////////////////////////////////////
@@ -64,21 +63,43 @@
 - in this section a complete picture of what verification includes should be drawn in order to put the foundation for
 understanding what a verification framework should provide
 
-- to understand current state of verification, we need to look at general approaches, the langauges and their features, frameworks, as well as methodologies
+- to understand current state of verification, we need to look at general approaches, the langauges and their
+features, frameworks, as well as methodologies
 
 \section{Verification} %=======================================================================================================
 
-Verifying a hardware design is about making sure that everything works as expected. \citeauthor{bergeron2012writing} provides his definition as: \textit{"Verification is a process used to demonstrate the functional correctness of a design"} \cite[Ch. 1]{bergeron2012writing}.
+Verifying a hardware design is about making sure that everything works as expected. \citeauthor{bergeron2012writing}
+provides his definition as: \textit{"Verification is a process used to demonstrate the functional correctness of a
+design"} \cite[Ch. 1]{bergeron2012writing}.
 
-On the surface the task seems well-defined and straight-forward. However, looking closer, a series of challenges become apparent.The specification, unless captured in a formal language, is open to interpretation. A misunderstanding could lead to a slightly wrong implementation. The likelihood of catching this can be increased by letting a different engineers implement and test the implementation, but it can't be reduced to zero \cite[Ch. 1]{bergeron2012writing}.
+On the surface the task seems well-defined and straight-forward. However, looking closer, a series of challenges
+become apparent.The specification, unless captured in a formal language, is open to interpretation. A
+misunderstanding could lead to a slightly wrong implementation. The likelihood of catching this can be increased by
+letting a different engineers implement and test the implementation, but it can't be reduced to zero \cite[Ch.
+1]{bergeron2012writing}.
 
-Unless a formal language is used for the specification, it is also impossible to \textit{prove} that an implementation matches the specification. This is why \citeauthor{bergeron2012writing} uses the word \textit{demonstrate} instead. Verification is thus question of confidence and about convincing oneself that the implementation matches the intent captured in the specification. This confidence is built by demonstrating that the implementation behaves as the specification prescribes in a selection of scenarios \cite[Ch. 1]{bergeron2012writing}. 
+Unless a formal language is used for the specification, it is also impossible to \textit{prove} that an
+implementation matches the specification. This is why \citeauthor{bergeron2012writing} uses the word
+\textit{demonstrate} instead. Verification is thus question of confidence and about convincing oneself that the
+implementation matches the intent captured in the specification. This confidence is built by demonstrating that the
+implementation behaves as the specification prescribes in a selection of scenarios \cite[Ch. 1]{bergeron2012writing}.
 
-These scenarios are captured in a verification plan. It holds a list of features and a set of conditions under which a certain behavior should be observed. In short, it defines a series of test cases for each feature, which by itself should demonstrate that the feature works correctly. Whether all edge-cases have been captured in these demonstrations is another question, which the verification team has to convince themselves of through a thorough process \cite[Ch. 1]{bergeron2012writing}.
+These scenarios are captured in a verification plan. It holds a list of features and a set of conditions under which
+a certain behavior should be observed. In short, it defines a series of test cases for each feature, which by itself
+should demonstrate that the feature works correctly. Whether all edge-cases have been captured in these
+demonstrations is another question, which the verification team has to convince themselves of through a thorough
+process \cite[Ch. 1]{bergeron2012writing}.
 
-The fact that correctness can't be proven based on a non-formal specification can't be helped by using model checking methods either, which can prove that a certain property holds for a given implementation. The properties themselves are an interpretation of the specification and thus subject to the same ambiguities and misunderstandings \cite[Ch. 1]{bergeron2012writing}.
+The fact that correctness can't be proven based on a non-formal specification can't be helped by using model checking
+methods either, which can prove that a certain property holds for a given implementation. The properties themselves
+are an interpretation of the specification and thus subject to the same ambiguities and misunderstandings \cite[Ch.
+1]{bergeron2012writing}.
 
-The tool by which correct behavior of a feature is demonstrated is the \textit{testbench} in a process referred to as \textit{functional verification}. Functional verification focuses on design intent and that the implementation provides certain functionality. The testbench is a closed system which tries to emulate the environment of the design in a controlled manner. It exercises the design such that it becomes evident, by manual or automatic inspection, that a feature is working as intended \cite[Ch. 1]{bergeron2012writing}.
+The tool by which correct behavior of a feature is demonstrated is the \textit{testbench} in a process referred to as
+\textit{functional verification}. Functional verification focuses on design intent and that the implementation
+provides certain functionality. The testbench is a closed system which tries to emulate the environment of the design
+in a controlled manner. It exercises the design such that it becomes evident, by manual or automatic inspection, that
+a feature is working as intended \cite[Ch. 1]{bergeron2012writing}.
 
 \begin{comment}
 
@@ -113,28 +134,65 @@ The tool by which correct behavior of a feature is demonstrated is the \textit{t
 - other extreme is white-box testing where full visibility of the internals is used in the test, it suffers from its lack of generality -> a change in the DUV requires a change in the testbench
 - a compromise between both can be referred to as grey-box testing, tries to limit dependency on implementation specific stuff while still providing good observability and controllability
 
-
 \end{comment}
 
 \subsection{Functional Verification} %-----------------------------------------------------------------------------------
 
 % also talk about assertions
 
-Functional verification can be differentiated by the degree on which signals internal to the device under verification (DUV) are used to determine the correctness of the design. From a maintainability perspective, it makes most sense to defer from accessing any internal signals in the implementation as part of the testbench and seeing the DUV as a black-box with a certain interface. Changes in the implementation would in this case require no changes in the testbench. It also means that different implementation attempts sharing the same interface could reuse the same testbench. However, this approach can suffer from a low controllability and observability. Controllability refers to how easily a certain functionality can be triggered inside the DUV by driving its inputs. Observability on the other hand, refers to how easily the effect of a certain functionality being triggered becomes visible at the outputs of the DUV \cite[Ch. 1]{bergeron2012writing}.
+Functional verification can be differentiated by the degree on which signals internal to the device under
+verification (DUV) are used to determine the correctness of the design. From a maintainability perspective, it makes
+most sense to defer from accessing any internal signals in the implementation as part of the testbench and seeing the
+DUV as a black-box with a certain interface. Changes in the implementation would in this case require no changes in
+the testbench. It also means that different implementation attempts sharing the same interface could reuse the same
+testbench. However, this approach can suffer from a low controllability and observability. Controllability refers to
+how easily a certain functionality can be triggered inside the DUV by driving its inputs. Observability on the other
+hand, refers to how easily the effect of a certain functionality being triggered becomes visible at the outputs of
+the DUV \cite[Ch. 1]{bergeron2012writing}.
 
-In complex designs some features may suffer from low controllability and/or observability. In this case, white-box testing can be used, which provides full access to the internals of the DUV. Register state as well as outputs of functional units related to the functionality under test can be directly accessed to verify its correctness. This approach suffers from the fact that each change in the implementation may require a change in the testbench. A compromise between black-box and white-box testing is grey-box testing. It tries to balance the dependency on implementation details with maximizing observability and controllability \cite[Ch. 1]{bergeron2012writing}.
+In complex designs some features may suffer from low controllability and/or observability. In this case, white-box
+testing can be used, which provides full access to the internals of the DUV. Register state as well as outputs of
+functional units related to the functionality under test can be directly accessed to verify its correctness. This
+approach suffers from the fact that each change in the implementation may require a change in the testbench. A
+compromise between black-box and white-box testing is grey-box testing. It tries to balance the dependency on
+implementation details with maximizing observability and controllability \cite[Ch. 1]{bergeron2012writing}.
 
-Functional verification using testbenches and test cases can be aided by assertions, a way to check if a property holds in the implementation. Assertions can for instance be used to check if a certain condition holds at a certain point in time, over a certain period of time or when another condition holds. They are placed directly in the source code next to the functionality that they are checking a property of. This gives them maximum visibility leading to maximum observability. These assertions can be used alongside a normal testbench which applies stimulus to the DUV though its interfaces. Should a property specified in an assertion at any point not hold, the error will point directly to the source of the problem. This is in contrast to a traditional testbench where an error occurring on the interface has to be traced back to the actual cause \cite[Ch. 14]{mehta2021introduction}.
+Functional verification using testbenches and test cases can be aided by assertions, a way to check if a property
+holds in the implementation. Assertions can for instance be used to check if a certain condition holds at a certain
+point in time, over a certain period of time or when another condition holds. They are placed directly in the source
+code next to the functionality that they are checking a property of. This gives them maximum visibility leading to
+maximum observability. These assertions can be used alongside a normal testbench which applies stimulus to the DUV
+though its interfaces. Should a property specified in an assertion at any point not hold, the error will point
+directly to the source of the problem. This is in contrast to a traditional testbench where an error occurring on the
+interface has to be traced back to the actual cause \cite[Ch. 14]{mehta2021introduction}.
 
-Up until now, only dynamic functional verification has been discussed, where the behavior of the implemented design is observed by \textit{simulating} it. This is in contrast to static functional or \textit{formal} verification, where a tool will try to disprove the property by analyzing the logic of the design itself. If the tool is able to disprove the property, it will also have a counter-example which shows how the property can be violated. If the tools is not able to disprove the property, it is guaranteed to hold under any condition which the design can be exposed to \cite[Ch. 14]{mehta2021introduction}. 
+Up until now, only dynamic functional verification has been discussed, where the behavior of the implemented design
+is observed by \textit{simulating} it. This is in contrast to static functional or \textit{formal} verification,
+where a tool will try to disprove the property by analyzing the logic of the design itself. If the tool is able to
+disprove the property, it will also have a counter-example which shows how the property can be violated. If the tools
+is not able to disprove the property, it is guaranteed to hold under any condition which the design can be exposed to
+\cite[Ch. 14]{mehta2021introduction}.
 
-This can obviously be a powerful tool for finding bugs in an implementation. The limitations however are twofold. Properties are effectively small formal models of the functionality under test and are hard to develop. Also, the performance of analyzing a property deteriorates quickly with the complexity of the design. The process suffers from the so-called "state space explosion" problem. The tool has to analyze how applying a certain set of inputs will develop cause future state transitions. In a complex design, the number of possible choices which a system has, leading to new choices and so on, just becomes to large to handle within reasonable time. As a solution, hybrid approaches exist, where static methods are combined with dynamic ones. The design is lead to a certain state in a simulation and then it is statically checked whether the property can be violated from this state \cite[Ch. 14]{mehta2021introduction}.
+This can obviously be a powerful tool for finding bugs in an implementation. The limitations however are twofold.
+Properties are effectively small formal models of the functionality under test and are hard to develop. Also, the
+performance of analyzing a property deteriorates quickly with the complexity of the design. The process suffers from
+the so-called "state space explosion" problem. The tool has to analyze how applying a certain set of inputs will
+develop cause future state transitions. In a complex design, the number of possible choices which a system has,
+leading to new choices and so on, just becomes to large to handle within reasonable time. As a solution, hybrid
+approaches exist, where static methods are combined with dynamic ones. The design is lead to a certain state in a
+simulation and then it is statically checked whether the property can be violated from this state \cite[Ch.
+14]{mehta2021introduction}.
 
 \subsection{Bus Functional Models} %-------------------------------------------------------------------------------------------
 
 \subsection{Constrained-Random Verification} %---------------------------------------------------------------------------------
 
-With ever increasing design complexity, it is not feasible to write directed test cases to methodically exercise and verify each feature. Instead, randomized stimulus can provide a way to increase productivity by exercising many of these features with a single very long random stimulus stream \cite[Ch. 1]{bergeron2005verification}. If the stimulus generator is properly constrained to produce valid transaction patterns, it may not only produce the test cases captured in the verification plan, but may even lead to conditions not considered in the verification plan, like some hard-to-trigger edge cases \cite[Ch. 3]{bergeron2012writing}.
+With ever increasing design complexity, it is not feasible to write directed test cases to methodically exercise and
+verify each feature. Instead, randomized stimulus can provide a way to increase productivity by exercising many of
+these features with a single very long random stimulus stream \cite[Ch. 1]{bergeron2005verification}. If the stimulus
+generator is properly constrained to produce valid transaction patterns, it may not only produce the test cases
+captured in the verification plan, but may even lead to conditions not considered in the verification plan, like some
+hard-to-trigger edge cases \cite[Ch. 3]{bergeron2012writing}.
 
 \cite[Ch. 13]{mehta2021introduction}
 
@@ -244,9 +302,17 @@ OpenVera \cite[Sec. 7, pp. 51-??]{flake2020a}
 
 \subsection{SystemVerilog} %---------------------------------------------------------------------------------------------------
 
-Towards the early 2000s, motions where made to combine the progress which had been made in the development of more modern hardware design and verification languages like Superlog and Vera into one standardized language. The idea was to have one language for design and verification, enabling modern verification techniques such as CRV, functional coverage collection and complex assertions. The result was SystemVerilog which was first publicized as a standard in 2002 by Accellera and after several revisions and rework was made a IEEE standard in 2005 \cite[Sec. 9]{flake2020a}. 
+Towards the early 2000s, motions where made to combine the progress which had been made in the development of more
+modern hardware design and verification languages like Superlog and Vera into one standardized language. The idea was
+to have one language for design and verification, enabling modern verification techniques such as CRV, functional
+coverage collection and complex assertions. The result was SystemVerilog which was first publicized as a standard in
+2002 by Accellera and after several revisions and rework was made a IEEE standard in 2005 \cite[Sec. 9]{flake2020a}.
 
-SystemVerilog is mostly based on Superlog and Vera, the API of latter only being slightly changed to harmonize the syntax with the rest of the language. The SystemVerilog subset for assertions wasn't only based on Vera's OVA, but also drew inspirations from other specification languages such as the property specification language PSL, an Accellera and later IEEE standard based on temporal logic. As such SystemVerilog is actually four languages in one \cite[Ch. 1]{mehta2021introduction}:
+SystemVerilog is mostly based on Superlog and Vera, the API of latter only being slightly changed to harmonize the
+syntax with the rest of the language. The SystemVerilog subset for assertions wasn't only based on Vera's OVA, but
+also drew inspirations from other specification languages such as the property specification language PSL, an
+Accellera and later IEEE standard based on temporal logic. As such SystemVerilog is actually four languages in one
+\cite[Ch. 1]{mehta2021introduction}:
 
 \begin{enumerate}
   \item A subset for synthesis
@@ -254,9 +320,6 @@ SystemVerilog is mostly based on Superlog and Vera, the API of latter only being
   \item A subset for coverage collection
   \item A subset for assertions
 \end{enumerate}
-
-
-
 
 \subsection{UVM} %-------------------------------------------------------------------------------------------------------------
 
@@ -443,7 +506,6 @@ testbenches, focussing on directed unit-test-style testbenches.
 \subsubsection{PyUVM} %--------------------------------------------------------------------------------------------------------
 
 \subsubsection{UVM support in Verilator} %-------------------------------------------------------------------------------------
-
 
 \section{Software Design Patterns} %===========================================================================================
 
