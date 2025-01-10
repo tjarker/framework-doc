@@ -5,6 +5,19 @@
 \usepackage{hyperref}
 \usepackage{xcolor}
 
+\usepackage{listings}
+\lstset{
+  language=Scala,         % Language of the code
+  basicstyle=\ttfamily\small,  % Font style and size
+  keywordstyle=\color{blue},   % Keyword color
+  commentstyle=\color{green},  % Comment color
+  stringstyle=\color{red},     % String color
+  numbers=left,                % Line numbers on the left
+  numberstyle=\tiny\color{gray}, % Line number style
+  frame=single,                % Frame around the code
+  breaklines=true              % Line breaking
+}
+
 \usepackage[backend=biber,style=ieee]{biblatex}
 \addbibresource{books.bib}
 \addbibresource{papers.bib}
@@ -34,6 +47,11 @@
 
 \chapter{Introduction} %///////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+\begin{lstlisting}
+@main def helloWorld : Unit = 
+    println("Hello, world!")
+\end{lstlisting}
 - present topic
 - present problem statement
 - why is this relevant
@@ -183,13 +201,24 @@ approaches exist, where static methods are combined with dynamic ones. The desig
 simulation and then it is statically checked whether the property can be violated from this state \cite[Ch.
 14]{mehta2021introduction}.
 
-\subsection{Bus Functional Models} %-------------------------------------------------------------------------------------------
-
 \subsection{Constrained-Random Verification} %---------------------------------------------------------------------------------
 
 With ever increasing design complexity, it is not feasible to write directed test cases to methodically exercise and
-verify each feature. Instead, randomized stimulus can provide a way to increase productivity by exercising many of
-these features with a single very long random stimulus stream \cite[Ch. 1]{bergeron2005verification}. If the stimulus
+verify each feature under each possible condition as outlined in the verification plan. Instead, randomized stimulus 
+can provide a way to increase productivity. If a long enough steam of random stimulus is applied to the interfaces of the DUV, it is likely that many of the test cases outlined in the verification plan will occur naturally, without any additional effort. It is even possible that a random stream of stimulus may create unforeseen conditions, improving the thoroughness of the verification effort \cite[Ch. 1]{bergeron2005verification}. 
+
+Of course, it does not make sense to apply completely random stimulus to the DUV interfaces. Only a fraction of the applied stimulus would often be valid for complex interfaces like ethernet or PCIe ports. A mechanism to define what a valid transaction for a given interface looks like is needed. This is achieved by constraining the random stimulus. Constraints limit the set of legal assignments to the set of random variables used to derive a random stimulus for a given interface \cite[Ch. 3]{bergeron2012writing}. These constraints could for instance capture that the length field of an ethernet frame has to match the actual length of the payload, but also that the address in a bus transaction has to be aligned to the size of the transfer.
+
+The verification runtime will, given the constraints on the random variables, generate a set of assignments which satisfies all constraints. In addition to inter-variable constraints, distribution constraints are highly relevant, in order to ensure that the random stimulus is representative of the actual behavior of the DUV \cite[Sec. 7.5]{flake2020a}.
+
+The verification approach of using random stimulus alongside constraints is called constrained-random verification (CRV). It promises an increase in productivity, which is given by a single CRV testbench being able to exercise potentially many of the test cases outlined in the verification plan. This allows for an approach where verification is started off using CRV, and only then more specific tests are developed to target functionality which is difficult to exercise using CRV \cite[Ch. 3]{bergeron2012writing}. The question of couse is, how to measure what has been tested and what has not.
+
+\begin{comment}
+
+start of with CRV and then add specific tests with constrains for uncovered features \cite[Ch. 3]{bergeron2012writing}
+
+by exercising many of
+these features with a single, very long stream of random stimulus . If the stimulus
 generator is properly constrained to produce valid transaction patterns, it may not only produce the test cases
 captured in the verification plan, but may even lead to conditions not considered in the verification plan, like some
 hard-to-trigger edge cases \cite[Ch. 3]{bergeron2012writing}.
@@ -199,17 +228,62 @@ hard-to-trigger edge cases \cite[Ch. 3]{bergeron2012writing}.
 - idea is quite simple
 - but achieving actually exhaustive random stimulus can be difficult
 
+\end{comment}
+
 \subsection{Coverage} %--------------------------------------------------------------------------------------------------------
 
-\subsubsection{Code Coverage} %------------------------------------------------------------------------------------------------
+A testbench is measuring how well the DUV lives up to the specification. But how well is the collection of testbenches living up to checking all aspects outlined in the specification? In a case, where only directed tests are used, the answer is simple since each test case can be traced back to a specific feature in the specification. When CRV is used on the other hand, it becomes essential to have some kind of tool which can actually measure which functionality has been exercised and which has not \cite[Ch. 15]{mehta2021introduction}.
 
-\subsubsection{Functional Coverage} %------------------------------------------------------------------------------------------
+One tool which can give an idea about how thoroughly a design has been tested is code coverage. It provides insight into how much of the source code, structurally but also semantically, has been exercised by a test suite. By adding instrumentation to the design, the activity of certain aspects of the design can be monitored while running a testbench \cite[Ch. 2]{bergeron2012writing}. 
 
-- essentially about monitoring state, state transitions, changes to variables and expressions \cite[Sec. 7]{flake2020a}
-- one bin for each state, transition... which corresponds to a functional aspect of the DUT
-- all bins shut have hits
+At the most basic level, line coverage checks whether a line of code has been executed. More useful is statement coverage which considers each individual statement independent of its position in the code. A statement could for instance be an assignment operation. Branch coverage concerns itself with control flow such as if-statements, measuring how many of the different paths through a piece of code have been taken. Finally, finite-state machine (FSM) coverage recognizes FSM patterns in the source code. It can report which states of the FSM have been visited and which transitions have occurred. FSM coverage doesn't know about valid transitions though and as such all possible transitions are reported. Illegal ones have to be filtered out manually to extract a useful metric out of FSM coverage data \cite[Ch. 15]{mehta2021introduction}.
+
+Code coverage doesn't however know anything about the functionality of the design. A low code coverage indicates that some functionality of the design has not been exercised and thus tested. A 100\% code coverage on the other hand does not mean that the verification task is done \cite[Ch. 2]{bergeron2012writing}.
+
+To measure the coverage of a test suite at the functional level, a more general tool is needed. This so-called functional coverage is manifestation of the verification plan and thus of the design specification, tracking whether each functionality has been exercised under all relevant conditions \cite[Sec. 7.6]{flake2020a}. It can't be automatically derived from a non-formal specification and thus has to be manually defined \cite[Ch. 15]{mehta2021introduction}. 
+
+The idea behind functional coverage is to monitor state, transitions, changes to variables or expressions and a combination of these (so-called cross-coverage). For each functionality, different cases of interest have to be defined and declared as so-called bins. Signals or variables can have different bins for specific values or ranges which can be augmented with predicates. At a given sampling event these bins record whether they have been hit, i.e. whether the condition they represent has been observed. The goal is to have all bins hit at least once, indicating that all aspects of the design have been exercised \cite[Sec. 7.6]{flake2020a}.
+
+Achieving 100\% functional coverage means that all functionality has been exercised in the way defined by the verification plan.
+
+\begin{comment}
+
+\cite[Ch. 15]{mehta2021introduction}
+- how to measure how well the testbench is performing?
+- especially in the case of CRV this becomes essential, since it is not clear what functionality has been tested under which conditions
+
+\cite[Ch. 2]{bergeron2012writing}
+- code coverage provides insight into how much of the source code or structure of the DUV has been exercised by a test suite 
+- via adding instrumentation to the design, the activity of certain aspects of the design is monitored
+
+\cite[Ch. 15]{mehta2021introduction}
+- at the simplest level, line coverage checks whether a line of code has been executed
+- more useful is statement coverage which looks at each statement independent of its position in the code
+- branch coverage concerns itself with control flow, it measures how many of the different paths through a piece of code have been taken
+- finally, FSM coverage recognizes FSM patterns in the source code
+- it can report which states have been visited, which transitions have occurred
+- does not know about valid transitions though, illegal ones have to be filtered out manually
+
+- code coverage can indicate that the verification is NOT down, never whether it is done \cite[Ch. 2]{bergeron2012writing}
+
+
+- a more general concept of coverage is needed, functional coverage \cite[Sec. 7]{flake2020a}
+- it has to be based on the design specification, can't be derived and thus manual work \cite[Ch. 15]{mehta2021introduction}
+
+\cite[Sec. 7]{flake2020a}
+- essentially about monitoring state, state transitions, changes to variables and expressions and combinations of these (cross)
+- one bin for each state, transition, cross... which corresponds to a functional aspect of the DUT
+- all bins should have hits
+
+\end{comment}
+
+\subsection{Testbench Abstractions} %------------------------------------------------------------------------------------------
+
+- talk about BFMs
 
 \subsection{Reusable Testbenches} %--------------------------------------------------------------------------------------------
+
+
 
 \section{Verification Languages \& frameworks} %===============================================================================
 
@@ -255,7 +329,7 @@ Multi-threading constructs such as synchronization events, semaphores and mailbo
 
 One of the maybe most important features added by Vera is the inclusion of object-oriented programming (OOP). Vera
 introduces classes and inheritance, which allows for a more structured and modular testbench design. Equally as
-important are the addition of contrained randomization and functional coverage collection. Class fields in very can
+important are the addition of constrained randomization and functional coverage collection. Class fields in very can
 be marked with the rand keyword. A call to the \ttt{randomize} method on an object of the class will then randomize
 all fields marked with rand according to the constraints specified in the class. Functional coverage can be collected
 by defining bins for states, transitions and general expressions or the cross-product of these. A later addition to
@@ -1037,6 +1111,8 @@ The next consideration is
 \subsection{Coverage} %--------------------------------------------------------------------------------------------------------
 
 \subsection{Constrained-Random Stimuli Generation} %---------------------------------------------------------------------------
+
+- for signal processing purposes it may be interesting to have a continuous random signal i.e. a random walk
 
 \subsection{Reusable Verification Components} %--------------------------------------------------------------------------------
 
