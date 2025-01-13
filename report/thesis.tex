@@ -571,7 +571,15 @@ The cleanup phases in the UVM are used for analysis components to determine whet
 and whether secondary goals such as coverage were met. The purpose of each phase in this group is very narrow and is
 evident by the name \cite[ch. 4.6]{mehta2018asic}.
 
+\subsubsection{UVM Sequence Items and Sequences} %-----------------------------------------------------------------------------
+
+\cite[Ch. 4.3]{mehta2018asic} pp. 25-26
+
+first talk about sequences after rough structure of UVM testbench is established
+
 \subsubsection{Component Types} %----------------------------------------------------------------------------------------------
+
+now dive deeper into what the individual components do
 
 % driver
 A driver has a port on which it can receive transactions. Normally, a driver enters an infinite loop in the \ttt{run}
@@ -588,7 +596,10 @@ that the transactions are applied in the correct order \cite[ch. 4.7]{mehta2018a
 The transactions a driver receives could come from multiple sequences which are run at the same time. For this
 purpose, the UVM introduces the sequencer which is located in an agent. The test case can hand of multiple sequences
 to the sequencer which then decides how to interleave the transactions from the sequences depending on its
-implementation. Usually
+implementation. Usually \todo{finish}
+
+\todo{virtual sequencer and sequences}
+\cite[Ch. 23]{salemi2013uvm} p. 175
 
 % monitor
 A monitor holds, like the driver, a handle to the pins of the DUT. It observes the state of the pins and translates
@@ -612,17 +623,37 @@ result streams of the DUT and the model.
 %  - factory
 %  - configDB
 
+The introduction of the component system, each with their well defined responsibilities, is only one part of the way towards reusable and scalable testbenches. Not only concepts and abstractions are necessary, but also guidelines and programming patterns for how the testbench code should be implemented. How can a specialized component be derived from another for a specific test case? How can different versions of a component be easily swapped out? How can a component implementation be made configurable in a way that also works well with derived components?
+
+The answer to the first question is inheritance, which is available through SystemVerilogs OOP features. A component can be derived from another and override methods to specialize its behavior. The answer to the question of how to swap out different versions easily which the designers of UVM and its predecessors chose, is the factory pattern. In a factory pattern, objects aren't created through their constructor, but through a factory method which dynamically determines which object to create, possibly based on a set of standardized parameters. In UVM, all UVM objects are registered with a global factory. When a certain component A should be used instead of another component B, a factory override can be issued, resulting in the creation of component A in all places where component B would normally have been created. Of course A should be a subtype of B, such that A and B share the same interface. This allows for very simples swapping out of components in a testbench without making the test code parameterizable with respect to the different component implementations \cite[Ch. 13]{salemi2013uvm}.
+
+Due to the global nature of the UVM factory, a one-siz-fits-all approach has to be adopted for what parameters may be passed to the factory method. In the UVM, only the name for the object is given when an instance is produced: \ttt{my\_class::type\_id::create("MyName")}. This raises the question of how to configure instances of UVM objects, since it is impossible to pass parameters as it would usually be done in a constructor. The UVM solves this problem with a configuration database, the so-called \ttt{uvm\_config\_db}, a global dictionary which is aware of the component hierarchy in the testbench. One component can set a parameter in the configuration database and a sub-component will be able to query the database for the parameter. In order to allow for a component to have multiple sub-components of the same type with different configurations, the configuration database accepts a hierarchical path when depositing a value in the dictionary. The deposited value will only be visible to the referenced component and all its potential sub-components \cite{} \todo{what reference for configdb}.
+
+Together, the factory and configuration database provide the means for a test case to tailor the static testbench environment to its needs. The factory is responsible for swapping out full implementations, while the configuration database makes it possible to change the parameters a specific component works with \cite[Ch. 4.3]{mehta2018asic}.
+
+\begin{comment}
+
+- components are one step towards a reusable and scalable verification environment, providing concepts and abstractions
+- but reuse and scalability also have to be tackled at the programming level
+
 - not alone good enough to provide primitives
 - we also need to concern ourselves with software design patterns to create resuable testbenches
 - how do we swap out different implementations? -> factory
 - how do we specialize an implementation? -> inheritance
 - how do we make an implementation configurable? -> configdb
 
+\end{comment}
+
+
+
 \subsubsection{UVM Tests} %----------------------------------------------------------------------------------------------------
 
-\subsubsection{UVM Sequence Items and Sequences} %-----------------------------------------------------------------------------
 
 \todo{RAL is actually just a transactor system with a reg model to generate meaningful transactions}
+
+\todo{utilities: macros, reporting...}
+
+\cite[Ch. 19]{salemi2013uvm}
 
 \subsection{Open-Source Alternatives} %----------------------------------------------------------------------------------------
 
