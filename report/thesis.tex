@@ -218,7 +218,7 @@ of an ethernet frame has to match the actual length of the payload, but also tha
 has to be aligned to the size of the transfer.
 
 The verification runtime will, given the constraints on the random variables, generate a set of assignments which
-satisfies all constraints. In addition to inter-variable constraints, distribution constraints are highly relevant,
+satisfies all constraints using a constraint satisfaction problem (CSP) solver. In addition to inter-variable constraints, distribution constraints are highly relevant,
 in order to ensure that the random stimulus is representative of the actual behavior of the DUV \cite[Sec. 7.5]{flake2020a}.
 
 The verification approach of using random stimulus alongside constraints is called constrained-random verification
@@ -279,11 +279,11 @@ automatically derived from a non-formal specification and thus has to be manuall
 The idea behind functional coverage is to monitor state, transitions, changes to variables or expressions and a
 combination of these (so-called cross-coverage). For each functionality, different cases of interest have to be
 defined and declared as so-called bins. Signals or variables can have different bins for specific values or ranges
-which can be augmented with predicates. At a given sampling event these bins record whether they have been hit, i.e.
+which may be augmented with predicates. At a given sampling event these bins record whether they have been hit, i.e.
 whether the condition they represent has been observed. The goal is to have all bins hit at least once, indicating
 that all aspects of the design have been exercised \cite[Sec. 7.6]{flake2020a}.
 
-Achieving 100\% functional coverage means that all functionality has been exercised in the way defined by the verification plan.
+\todo{maybe give more concrete example, especially for cross coverage}
 
 \begin{comment}
 
@@ -315,13 +315,48 @@ Achieving 100\% functional coverage means that all functionality has been exerci
 
 \end{comment}
 
-\subsection{Testbench Abstractions} %------------------------------------------------------------------------------------------
+\subsection{Testbench Abstractions \& Reusability} %------------------------------------------------------------------------------------------
 
-- talk about BFMs
+It is clear that it is not sustainable to write monolithic testbenches to demonstrate the correctness of each feature in a design. The testbenches would become too complex and large to maintain, and a lot of development time would be used to code some of the foundations each testbench relies on. A testbench can be split into two parts at the highest level: the part which eases the interaction with the DUV programmatically, the so-called test harness, and the part which is specific to the test case \cite[Ch. 6]{bergeron2012writing}.
 
-\subsection{Reusable Testbenches} %--------------------------------------------------------------------------------------------
+If these two parts were to be split such that the test harness could be reused across all testbenches for a given DUV, the question of what interface the test harness exposes to the test case code arises. Since no abstraction is achieved by working with the ports of the DUV directly, a higher level of abstraction is needed. This is where the concept of transactions comes in. A transaction is an operation on an interface, as abstract as the transmission of a TCP package but also low level like an AXI bus write operation \cite[Ch. 1]{bergeron2005verification}.
+
+Given the abstraction level of transactions, components are needed to bridge the gap between the transaction level and the pin level of the DUV. These components are called transactors. Since the gap between the highest level of abstraction and actual pin interactions can be quite large, such as in the case of TCP packages, intermediate levels of abstraction should be introduced, with transactors bridging the gap between them. This means that transactors can be layered and composed to meet the needs of a specific test case \cite[Ch. 4]{bergeron2012writing}.
+
+The lowest levels of transactors, which interfaces the pins of the DUV, are called bus-functional models (BFM). In contrast to other transactors, BFMs are concerned with timing \cite[Ch. 4]{bergeron2012writing}. They encapsulate the protocols of an interface and translate a transaction into a potentially multi-clock cycle interaction with the interface pins of the DUV \cite[Ch. 3]{salemi2013uvm}.
+
+Transactors assume that the DUV correctly handles all interactions of the abstraction levels below it. As such, a test should exist, verifying that each level of abstraction is correctly handled by the DUV. For instance, in a packet based system with multi-cycle transmission, one test should verify that parts of a packet are correctly sent, such that all other test can safely assume this property \cite[Ch. 6]{bergeron2012writing}. This methodology centered around transactions and transactors allows for the structuring of a testbench into reusable components, which can be composed to meet the needs of a specific test case and thus can increase the test case development productivity.
+
+
+\begin{comment}
+
+\cite[Ch. 1]{bergeron2005verification}
+- transaction is an operation on an interface, as abstract as the transmission of a TCP package but also low level like an AXI bus write operation
+
+\cite[Ch. 6]{bergeron2012writing}
+- tb has two parts test harness and test case specific code
+- harness is possible to reuse
+
+- it is clear that 
+
+\cite[Ch. 3]{salemi2013uvm}
+- BFM concerned with signal level -> first step towards transactions
+- BFM encapsulates the protocols of an interface
+- instead of driving signals, call methods which advance sim time while driving pins
+- in SV this is implemented using the interface construct
+
+\cite[Ch. 6]{bergeron2012writing}
+- BFMs can be layered, where a higher level BFM calls a lower level BFM
+- each BFM assumes correctness of some interaction with the DUT
+- this can be demonstrated in one separate test such that all others can rely on this
+
+\end{comment}
+
+
 
 \section{Verification Languages \& frameworks} %===============================================================================
+
+\todo{meta text}
 
 \subsection{SystemVerilog's Predecessors} %------------------------------------------------------------------------------------
 
@@ -577,11 +612,21 @@ result streams of the DUT and the model.
 %  - factory
 %  - configDB
 
+- not alone good enough to provide primitives
+- we also need to concern ourselves with software design patterns to create resuable testbenches
+- how do we swap out different implementations? -> factory
+- how do we specialize an implementation? -> inheritance
+- how do we make an implementation configurable? -> configdb
+
 \subsubsection{UVM Tests} %----------------------------------------------------------------------------------------------------
 
 \subsubsection{UVM Sequence Items and Sequences} %-----------------------------------------------------------------------------
 
+\todo{RAL is actually just a transactor system with a reg model to generate meaningful transactions}
+
 \subsection{Open-Source Alternatives} %----------------------------------------------------------------------------------------
+
+\todo{meta text}
 
 \subsubsection{Cocotb} %-------------------------------------------------------------------------------------------------------
 
@@ -612,6 +657,15 @@ level of abstraction and infrastructure for building complex
 testbenches, focussing on directed unit-test-style testbenches.
 
 \subsubsection{ChiselVerify} %-------------------------------------------------------------------------------------------------
+
+- functional coverage only on ports
+- no sampling events for coverage
+- but more complex timing relationship for cross coverage, i.e. not just simultaneous hits
+
+- concerns itself with adding systemverilog verification capabilities
+- does not provide methods to build reusable scalable testbenches
+
+
 
 \subsubsection{PyUVM} %--------------------------------------------------------------------------------------------------------
 
@@ -1147,6 +1201,9 @@ superior performance, Verilator was identified as better option for the verifica
 
 \subsection{Concurrency} %-----------------------------------------------------------------------------------------------------
 
+- should allow for event based blocks which fire everytime a certain event occurs -> always blocks  
+- can be done by checking at start of time step all conditions and adding release events for threads which should be triggered
+
 \subsection{Verification language} %-------------------------------------------------------------------------------------------
 The next consideration is
 
@@ -1156,11 +1213,35 @@ The next consideration is
 
 \subsection{Coverage} %--------------------------------------------------------------------------------------------------------
 
+\begin{lstlisting}
+val g = covergroup {
+  coverpoint(a) {
+    bin("a0", 0 until 10)
+    bin("a1", 10 until 20)
+  }
+  coverpoint(b) {
+    bin("b0", 0 until 10)
+    bin("b1", 10 until 20)
+  }
+}
+\end{lstlisting}
+
+functional coverage should be able to collect coverage for scala values! transactions are where coverage is measured
+
+a covergroup with its sampling event should be passed to verification runtime
+
 \subsection{Constrained-Random Stimuli Generation} %---------------------------------------------------------------------------
 
 - for signal processing purposes it may be interesting to have a continuous random signal i.e. a random walk
 
 \subsection{Reusable Verification Components} %--------------------------------------------------------------------------------
+
+
+- do we actually need static components? why is the driver not just a function? transactors are just functions mapping one abstraction level to another...
+- the sequencer is just a generator, a thing we can get new values from, a driver is just a function, it is the test case that should call the driver and let that code block until the transaction is done, or fork the interaction to continue
+
+- the whole control flow surrounding sequences in the UVM seems weird
+- a sequence aka generator should be passed to a sequencer, which should run in its own thread and generate transactions on the driver port pulling from different incomin sequences aka a channel mux in gears
 
 \subsection{Testbench Configurability} %---------------------------------------------------------------------------------------
 
