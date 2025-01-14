@@ -729,6 +729,12 @@ testbenches, focussing on directed unit-test-style testbenches.
 
 \subsubsection{ChiselVerify} %-------------------------------------------------------------------------------------------------
 
+ChiselVerify is a verification library for Chisel designs built on top of Chiseltest \cite{chiselverify}. It aims to improve the verification capabilities in the Chisel ecosystem by providing verification tools such as functional coverage, constrained randomization and formal verification features. While showcasing how a BFM can be built using scala and Chiseltest through a general AXI4 BFM, the framework does not provide guidelines and abstractions on how to build standardized, scalable and reusable testbenches.
+
+Functional coverage can only be collected at the IO of the DUT in ChiselVerify. It is not possible to collect coverage at the transaction level which would require the monitoring of scala variables in addition to Chisel IO ports. However, ChiselVerify allows for the expression of more complex cross coverage relationships. It not only supports simultaneous hits between the cross-coverage bins but also timed relationships, for instance that a hit to a bin results eventually in a hit to the crossed bin.
+
+\begin{comment}
+
 - functional coverage only on ports
 - no sampling events for coverage
 - but more complex timing relationship for cross coverage, i.e. not just simultaneous hits
@@ -736,14 +742,48 @@ testbenches, focussing on directed unit-test-style testbenches.
 - concerns itself with adding systemverilog verification capabilities
 - does not provide methods to build reusable scalable testbenches
 
+\end{comment}
+
 \subsubsection{PyUVM} %--------------------------------------------------------------------------------------------------------
+
+PyUVM is a project which aims to make UVM more accessible through the use of Python and by relying on open-source tools \cite{pyuvm}. The project implements a subset of the UVM standard, which they describe as most frequently used, in Python. As a motivation for implementing the project in Python, its ease of use due to light syntax and dynamic typing are highlighted, and the existing verification infrastructure surrounding cocotb. The project tries to take advantage of Pythons flexibility where possible to reduce the verbosity inherent in SystemVerilog. Among the UVM features implemented in PyUVM are the factory, the configuration database, all component types, the TLM interface, UVM phases, sequences and the register abstraction layer.
 
 \subsubsection{UVM support in Verilator} %-------------------------------------------------------------------------------------
 
+In addition to bringing modern verification features to new languages and environments to increase the accessibility, work is also in progress to bring UVM support to Verilator \cite{uvm_verilator}. Verilator is a popular open-source Verilog simulator which transpiles Verilog code to executable C++ models of the hardware design. The effort lead by the Tools Workgroup in CHIPS Alliance aims to make Verilator fully capable of running UVM testbenches. In its current state Verilator only supports a subset of SystemVerilog features. One crucial element is the addition of dynamic scheduling in Verilator which is necessary for dynamically triggered events used in UVM. The effort of enabling all SystemVerilog features required for a full UVM testbench is still in an early phase.
+
 \section{Software Design Patterns} %===========================================================================================
 
-- inversion of control
-- dependency injection
+
+Software design patterns offer general solutions to reoccurring problems in software design. They provide template-like solutions which prescribe a certain structure and organization of code. They represent a variety of best practice approaches to software design. Design patterns can be grouped into three categories. Creational patterns are concerned with making the instantiation of classes more flexible. Structural patterns are concerned with the composition of classes and objects. Lastly, behavioral patterns are concerned with how objects communicate and interact \cite[Ch. 1]{design_patterns}.
+
+One creational design pattern was already encountered when discussing the UVM: the factory pattern. The factory pattern decouples the decision of which object to create from the actual creation of the object. In place of the constructor, a function is used which returns an object with a known interface. The function can be provided in two ways. It could be provided by a so-called abstract factory, which is an object with an interface known to provide the factory function. It could also be provided by a factory method, which derived classes implement to define which object should be created \cite[Ch. 3]{design_patterns}. 
+
+A class C can be written purely relying on the factory for creating objects with interface L. The end-user has the option to define what object with interface L should be created everywhere \textit{without} modifying the code for class C. The factory does not have to be a global singleton as in the UVM, but could also be a parameter to the constructor of class C. Furthermore, a factory is usually specific to a certain group of classes which share an interface and common parameters. This is in contrast to the UVM, where one factory is used for all components, with the only shared parameter being the parent component and the name of the component \cite[Ch. 3]{design_patterns}.
+
+There are other creational design patterns which also facilitate the swapping out of different implementations of interfaces used in a class. The dependency injection pattern relies on the user to actually construct the object it depends upon and then provide them to the class through its constructor or setter-methods. The class works with the object handel it has been provided, without knowing which concrete implementation of the interface it actually works with. Unlike the factory pattern, no infrastructure for object creation is created, but instead the responsibility of object creation is pushed up to the user of the class \cite{ioc_di}.
+
+Another useful pattern is the observer pattern. It is a behavioral pattern, which is also known as the publish-subscribe pattern. In a system where multiple objects, the observers, are interested in changes of the state of another object, the subject, this pattern describes how observers should be notified. It is the subject which maintains a list of observers and has the responsibility to notify them when its state changes \cite[Ch. 5]{design_patterns}. This pattern can be seen in the UVM where analysis components like the scoreboard or coverage collectors are notified of transactions on the DUT interfaces through the monitor. In this case it is not directly a change of state which the observers are notified about, but the occurrence of an event.
+
+\begin{comment}
+
+
+
+- factory pattern
+- inversion of control \& dependency injection \cite{ioc_di}
+- service locator pattern
+  - kind of like factory, an object know how to create the right other objects, if global singleton it its kind of like factory
+- strategy pattern
+- observer pattern
+
+
+- publish subscribe pattern
+- actor pattern \cite{actors}
+
+\end{comment}
+
+
+\begin{comment}
 
 \section{Software Testing Methods} %===========================================================================================
 
@@ -759,10 +799,36 @@ testbenches, focussing on directed unit-test-style testbenches.
 
 \subsection{Mocking} %---------------------------------------------------------------------------------------------------------
 
+\end{comment}
+
 \chapter{Problem Statement \& Methods} %///////////////////////////////////////////////////////////////////////////////////////
+
+The UVM provides abstractions to compartmentalize a testbench in a standardized way. Instead of each engineer or company defining their own abstractions, the UVM provides a shared abstraction. This makes it possible to quickly understand an unknown testbench and to reuse parts of it in other projects. It also makes the exchange of verification components possible and eases the hiring of new verification engineers. 
+
+However, the UVM is a complex and large framework. A lot of the literature on UVM focusses on how the UVM wants us to build testbenches, but not necessarily why it was designed that way. It is clear that the UVM is something which grew out of series of other methodologies and carries a lot of legacy with it. It seems the UVM always tries to anticipate every possible use-case, leading to its size and complexity. It is therefore worth an investigation whether all of its features are actually used in the industry and whether some of the features could be simplified.
+
+While other open-source projects have explored bringing modern verification features like functional coverage, constrained randomization and complex assertions to new languages, little concern has been given to how scalable and flexible verification environments could and should be developed in the respective languages. Languages like Python or Scala used in PyUVM or ChiselVerify bring more features to the table than SystemVerilog in terms of general-purpose programming, but it is not clear how these can be taken advantage of to build scalable and reusable testbenches. Could a productivity gain be achieved by adapting the concepts and abstractions of the UVM and their implementation such that they better fit these high-level languages? Which parts of the UVM should be carried over to such a revised and adapted methodology?
+
+
+
+\begin{enumerate}
+  \item Is everything in the UVM standard actually used by companies in the industry?
+  \item Can the concepts and abstractions of the UVM and their implementation be condensed and simplified?
+  \item 
+\end{enumerate}
+
+\todo{method}
+
+\begin{comment}
 
 - a lot of the literature talks about HOW the UVM does things, but not necessarily WHY
 - I want to try to answer that
+
+- UVM provides abstractions to compartmentalize a testbench
+- the engineer would else have to make them up himself -> each engineer would invent their own methodology
+- UVM provides a standard way of doing things
+- makes it easy to understand an unknown testbench
+-> communication is also a big factor of why a methodology should be adapted
 
 - can concepts in UVM be condensed/simplified?
 - is all of UVM used/necessary for modern verification?
@@ -776,6 +842,8 @@ method:
 - informal interview with relevant companies in the industry from the copenhagen area
 - look at other modern verification frameworks
 - other published sources critically analyzing UVM
+
+\end{comment}
 
 % talk about company interviews
 \chapter{Industry Survey} %////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1232,6 +1300,11 @@ interactive test case code
 - here, the requirements should be made and possible approaches outlined
 - this includes possible tools to rely on (also for features which are not part of the final product, e.g. coverage and crv)
 
+
+- there are two levels to the design:
+  - the concepts, abstractions that the testbench is strucured by
+  - the coding principles which facilitate the flexible nature of the testbench
+
 \section{Scope} %==============================================================================================================
 
 \section{Requirements} %=======================================================================================================
@@ -1326,6 +1399,9 @@ multiple entry points.
 - static hierarchy, and we want to switch out components -> need to anticipate switch
 - why not do dependency injection? then the compiler will help us guarantee that the switch works
 - this causes problem with UVM
+
+- if the factory is used, we could pass a small config db to the factory
+- each component should then specify its parameters such that the factory checks automatically if all paramters are defined
 
 \subsection{Stimulus Sequences} %----------------------------------------------------------------------------------------------
 
