@@ -78,6 +78,9 @@
 
 \chapter{Background \& Related Work} %/////////////////////////////////////////////////////////////////////////////////////////
 
+\todo{meta text}
+
+\begin{comment}
 - what is the purpose of verification
 - what tools do we have to ease verification
 - what tools do we have to measure verification progress
@@ -88,6 +91,8 @@ understanding what a verification framework should provide
 
 - to understand current state of verification, we need to look at general approaches, the langauges and their
 features, frameworks, as well as methodologies
+\end{comment}
+
 
 \section{Verification} %=======================================================================================================
 
@@ -493,6 +498,8 @@ Accellera and later IEEE standard based on temporal logic. As such SystemVerilog
 
 \subsection{UVM} %-------------------------------------------------------------------------------------------------------------
 
+\todo{figures}
+
 The verification features which SV offers are by themselves not enough to create reusable testbenches. They provide
 the raw mechanisms for creating modern constrained-random, self-checking testbenches with coverage collection and
 bus-functional models, but the language itself does not prescribe a way of organizing the different responsibilities
@@ -604,7 +611,7 @@ In the UVM, transactions are derived from the \texttt{uvm\_sequence\_item} base 
 
 To maximize reuse, sequences should themselves be composable. Combining sequences should not be done by the test case itself, since this would again not allow for reuse of the composed sequences. The UVM solves this by allowing for so-called virtual sequences, which are sequences that "play" other sequences in their body. A test case can reference such a virtual sequence instead of composing the individual sequences itself. The individual sequences in a virtual sequences do not have to necessarily target the same consumers, which means that sequences can be sent to different drivers in parallel. This allows for the encapsulation of cross-interface interactions with the DUV in a single construct \cite[Ch. 23]{salemi2013uvm}.
 
-\todo{talk about sequencer: the entry point of transactions into the static infrastructure of the testbench}
+One aspect which has not been discussed yet, is how the transactions actually enter the static infrastructure of the testbench. Instead of being directly sent to a driver, transactions pass through a so-called sequencer in the UVM before ending in a driver. When a sequence is started, i.e. it starts producing transactions, it is handed a reference to a sequencer. The sequencer has a TLM port to which it forwards the transactions it receives from the sequence. A sequencer can possibly receive transactions from multiple sequences at the same time, and it is up to the implementation to arbitrate the order in which the transactions streams are merged \cite[Ch. 23]{salemi2013uvm}.
 
 \begin{comment}
 \cite[Ch. 23]{salemi2013uvm}
@@ -640,8 +647,10 @@ To maximize reuse, sequences should themselves be composable. Combining sequence
 
 \subsubsection{Component Types} %----------------------------------------------------------------------------------------------
 
+\todo{fix citations}
 
 Now that the high level structure and way of functioning of a UVM testbench has been introduced, a more thorough description of the different static building blocks of a UVM testbench will be given.
+
 
 
 % driver
@@ -656,19 +665,16 @@ acknowledged. In this case, the driver has to keep track of the transactions whi
 that the transactions are applied in the correct order \cite[ch. 4.7]{mehta2018asic}.
 
 % sequencer
-The transactions a driver receives could come from multiple sequences which are run at the same time. For this
-purpose, the UVM introduces the sequencer which is located in an agent. The test case can hand of multiple sequences
-to the sequencer which then decides how to interleave the transactions from the sequences depending on its
-implementation. Usually \todo{finish}
+The sequencer is the entry point of transactions into the static structure of the testbench. It merges and forwards possibly multiple transaction streams to a single TLM port. This port is usually connected to a driver which applies the transactions to the DUV's IO \cite[Ch. 23]{salemi2013uvm}.
 
 % monitor
 A monitor holds, like the driver, a handle to the pins of the DUT. It observes the state of the pins and translates
-the observed activity into transactions which are published via one or multiple analysis ports.
+the observed activity into transactions which are published via one or multiple analysis ports \cite{}.
 
 % subscriber
 A series of subscribers can then receive these transactions and act upon them, for instance collecting coverage
 information or comparing the transactions to a model. A coverage collector looks at the incoming transactions and
-uses SystemVerilog functional coverage features to keep track of statistics such as whether a read was performed after a write.
+uses SystemVerilog functional coverage features to keep track of statistics such as whether a read was performed after a write \cite{}.
 
 % scoreboard
 The task of verifying that the transactions produced by the DUT are correct is handled by the scoreboard in the UVM.
@@ -676,7 +682,7 @@ The UVM does not prescribe a way of how exactly to achieve this. Since correctne
 stream of transactions, some form of a model is usually needed. Depending on the complexity, this model could be
 included in the scoreboard or be its own component which just like the DUT receives one or multiple transaction
 streams and produces another set of transaction streams. The scoreboard is in this case reduced to comparing the
-result streams of the DUT and the model.
+result streams of the DUT and the model \cite{}.
 
 \subsubsection{Configurability} %----------------------------------------------------------------------------------------------
 %- Configurability
@@ -730,11 +736,19 @@ database makes it possible to change the parameters a specific component works w
 
 \subsubsection{UVM Tests} %----------------------------------------------------------------------------------------------------
 
-\todo{RAL is actually just a transactor system with a reg model to generate meaningful transactions}
+Now that the static infrastructure of a UVM testbench and the mechanisms for creating stimulus have been introduced, all that is left for a complete testbench is the test case itself. The test case holds the actual purpose of why this test is needed encoded in the stimulus stream it applies to the DUV. To achieve this, it creates an instance of the top-level environment which will hold all the static testbench infrastructure. It may or may not configure the environment such that it fits its needs. Then, the test case creates instances of relevant sequences and directs them to the relevant sequencers in the environment. The checking of the DUV's behavior and other analysis tasks like functional coverage collection are all handled by the static infrastructure of the testbench. The test case only has to start the sequences and wait for the test to finish \cite[Ch. 4.3]{mehta2018asic}.
+
+\subsubsection{Register Abstraction Layer} %-----------------------------------------------------------------------------------
+
+\todo{RAL}
+
+%-RAL is actually just a transactor system with a reg model to generate meaningful transactions
+
+\subsubsection{Utilities} %----------------------------------------------------------------------------------------------------
 
 \todo{utilities: macros, reporting...}
 
-\cite[Ch. 19]{salemi2013uvm}
+%\cite[Ch. 19]{salemi2013uvm}
 
 \subsection{Open-Source Alternatives} %----------------------------------------------------------------------------------------
 
