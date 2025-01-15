@@ -1,4 +1,4 @@
-\documentclass[12pt]{report}
+\documentclass[11pt]{report}
 
 \usepackage{comment}
 \usepackage{graphicx}
@@ -596,15 +596,53 @@ The cleanup phases in the UVM are used for analysis components to determine whet
 and whether secondary goals such as coverage were met. The purpose of each phase in this group is very narrow and is
 evident by the name \cite[ch. 4.6]{mehta2018asic}.
 
-\subsubsection{UVM Sequence Items and Sequences} %-----------------------------------------------------------------------------
+\subsubsection{Transactions} %-----------------------------------------------------------------------------
 
-\cite[Ch. 4.3]{mehta2018asic} pp. 25-26
+We have seen that the stimulus for the DUT is abstracted as transactions in the UVM. Transactions are passed around the testbench through TLM channels, decoupling the actual data in the transactions from the static structure of the testbench. But transactions rarely come alone. Usually, a series of transactions is needed to test a specific feature of the DUT. These sequences of transactions should not be produced in the test case itself, since that would not allow them to be reused across different test cases. Instead the test case should rely on predefined sequences of transactions which it composes to achieve the desired stimulus \cite[Ch. 23]{salemi2013uvm}.
 
-first talk about sequences after rough structure of UVM testbench is established
+In the UVM, transactions are derived from the \texttt{uvm\_sequence\_item} base class. A sequence item consists of fields, some of which can be randomized subject to constraints, which encode a transaction. Sequences of transactions are derived from the \ttt{uvm\_sequence} base class. The resemble generators, as they can be found in Python or F\#, where a code body is executed which produces an ordered sequence of items. In Python and F\#, the \ttt{yield} keyword is used to produce items. In the body of a UVM sequence, the \ttt{start\_item} method synchronizes the sequence with a potential consumer. A call to \ttt{finish\_item} signals that the item is ready and it is sent to the consumer. A feature which is not a part of usual generators is, that the consumer can answer itself with a transaction of a potentially different type to the transaction it received from the generator \cite[Ch. 4.3]{mehta2018asic}.
+
+To maximize reuse, sequences should themselves be composable. Combining sequences should not be done by the test case itself, since this would again not allow for reuse of the composed sequences. The UVM solves this by allowing for so-called virtual sequences, which are sequences that "play" other sequences in their body. A test case can reference such a virtual sequence instead of composing the individual sequences itself. The individual sequences in a virtual sequences do not have to necessarily target the same consumers, which means that sequences can be sent to different drivers in parallel. This allows for the encapsulation of cross-interface interactions with the DUV in a single construct \cite[Ch. 23]{salemi2013uvm}.
+
+\todo{talk about sequencer: the entry point of transactions into the static infrastructure of the testbench}
+
+\begin{comment}
+\cite[Ch. 23]{salemi2013uvm}
+- in order to make testbench reusable, structure should be separated from data i.e. Transactions
+- this also includes the stimulus that is the ordered sequences of transactions
+- the ordered sequences could also be used across different test cases -> test case should not decide the specific transactions
+- instead test case could operate on collections of transactions which are used like a library
+
+
+\cite[Ch. 4.3]{mehta2018asic}
+- sequence items are the base class for transactions in the UVM
+- just class which consist of random and non-random fields with constraints
+- sequences represent a stream of sequence items
+- in the code they resemble generators
+- a body method is invoked and new sequence items are produced as part of the sequence by calling a method
+- a special thing is through that when a sequence item is produced, a response may also be obtained which could be another transaction type
+- the start\_item method passes the reference to the sequence item to the receiver and waits until a receiver is ready
+- when finish\_item is called, the receiver is informed that the item is valid and can be processed
+- the sequence is paused until the receiver signals that it is done with the item and a response item may follow that confirmation
+
+
+\cite[Ch. 23]{salemi2013uvm}
+- but what if we want to compose sequences such that the combination is reusable
+- can't be done in the test case
+- instead a virtual sequence can be used
+- it can play other sequences in its body
+- sequences can be played in parallel and may be sent to different targets
+- this gives control on how interactions on different interfaces are interleaved
+
+\end{comment}
+
+
 
 \subsubsection{Component Types} %----------------------------------------------------------------------------------------------
 
-now dive deeper into what the individual components do
+
+Now that the high level structure and way of functioning of a UVM testbench has been introduced, a more thorough description of the different static building blocks of a UVM testbench will be given.
+
 
 % driver
 A driver has a port on which it can receive transactions. Normally, a driver enters an infinite loop in the \ttt{run}
@@ -622,9 +660,6 @@ The transactions a driver receives could come from multiple sequences which are 
 purpose, the UVM introduces the sequencer which is located in an agent. The test case can hand of multiple sequences
 to the sequencer which then decides how to interleave the transactions from the sequences depending on its
 implementation. Usually \todo{finish}
-
-\todo{virtual sequencer and sequences}
-\cite[Ch. 23]{salemi2013uvm} p. 175
 
 % monitor
 A monitor holds, like the driver, a handle to the pins of the DUT. It observes the state of the pins and translates
@@ -674,7 +709,7 @@ component hierarchy in the testbench. One component can set a parameter in the c
 sub-component will be able to query the database for the parameter. In order to allow for a component to have
 multiple sub-components of the same type with different configurations, the configuration database accepts a
 hierarchical path when depositing a value in the dictionary. The deposited value will only be visible to the
-referenced component and all its potential sub-components \cite{} \todo{what reference for configdb}.
+referenced component and all its potential sub-components \cite{configdb}.
 
 Together, the factory and configuration database provide the means for a test case to tailor the static testbench
 environment to its needs. The factory is responsible for swapping out full implementations, while the configuration
@@ -780,6 +815,8 @@ SystemVerilog features required for a full UVM testbench is still in an early ph
 
 \section{Software Design Patterns} %===========================================================================================
 
+\todo{meta text}
+
 Software design patterns offer general solutions to reoccurring problems in software design. They provide
 template-like solutions which prescribe a certain structure and organization of code. They represent a variety of
 best practice approaches to software design. Design patterns can be grouped into three categories. Creational
@@ -878,7 +915,7 @@ As such, it seems like there is a research opportunity to investigate the UVM, i
   \item Can the features of a modern general-purpose language be taken advantage of to build a more powerful and flexible verification framework?
 \end{enumerate}
 
-To answer these questions, the following methods will be used. First, an informal interview will be conducted with a small number of companies in the Copenhagen area which use UVM in their verification efforts. The goal of the interview is to get an understanding of how the UVM is received in the industry, how and what parts of the UVM are used and what improvements the companies themselves could imagine. Taking account the insight gained from the interviews, the UVM will be analyzed to identify the design decisions behind it and alternative design choices will be reflected upon to synthesize a set of requirements for a verification framework embedded in a modern general-purpose language. Finally, an implementation attempt will be made following the established requirements to evaluate the feasibility of the proposed framework and its ease of use compared to the UVM.
+To answer these questions, the following methods will be used. First, a small survey concerning UVM and verification will be conducted through informal interviews with a small number of companies in the Copenhagen area which use UVM in their verification efforts. The goal of the interview is to get an understanding of how the UVM is received in the industry, how and what parts of the UVM are used and what improvements the companies themselves could imagine. Taking account the insight gained from the interviews, the UVM will be analyzed to identify the design decisions behind it and alternative design choices will be reflected upon to synthesize a set of requirements for a verification framework embedded in a modern general-purpose language. Finally, an implementation attempt will be made following the established requirements to evaluate the feasibility of the proposed framework and its ease of use compared to the UVM.
 
 \begin{comment}
 
@@ -908,6 +945,8 @@ method:
 
 % talk about company interviews
 \chapter{Industry Survey} %////////////////////////////////////////////////////////////////////////////////////////////////////
+
+\todo{meta text}
 
 \section{Interview Outline} %==================================================================================================
 
@@ -1415,11 +1454,15 @@ It is also clear that only a subset of all the functionality which UVM offers is
 
 Although formal methods are acknowledged as superior, allowing quick and exhaustive checking of a certain feature, all companies only use it where the performance of current tools allows them to. Dynamic verification is thus still highly relevant and the reusability mechanisms in the UVM seem to be appreciated and used by the companies to lower the effort of developing new testbenches. 
 
-The opinions on the UVM factory differ, with some companies seeing it as a key part of creating flexible testbenches and others seeing it as the source of hard to debug errors. It could be interesting to investigate what other options exist and how user friendly they are. 
+
 
 Some companies note languages limitations in SystemVerilog itself which proves the point of investigating verification frameworks in more powerful languages. Due to long simulation times for their tests, performance is of concern though, and has inhibited the use of co-simulation frameworks like cocotb in the production environment. Also compilation times seem to be an issue for some companies. 
 
 As it can be seen in the example provided by Company 2, UVM is not perfect in facilitating dynamic tests, where the test case produces stimuli as a reaction to the DUV's responses when these are spread over different interfaces. The model of how the test case can get feedback from the DUV should therefore be investigated.
+
+The opinions on the UVM factory differ, with some companies seeing it as a key part of creating flexible testbenches and others seeing it as the source of hard to debug errors. It could be interesting to investigate what other options exist and how user friendly they are. 
+
+The RAL seems to be a common point of criticism, with all companies pointing out that it has some issues. This should also be investigated.
 
 
 \begin{comment}
