@@ -47,6 +47,12 @@
 
 \chapter{Introduction} %///////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+\todo{
+  - "the" UVM
+  - configDB
+}
+
 \begin{lstlisting}
 @main def helloWorld : Unit =
     println("Hello, world!")
@@ -845,9 +851,9 @@ change of state which the observers are notified about, but the occurrence of an
 \chapter{Problem Statement \& Methods} %///////////////////////////////////////////////////////////////////////////////////////
 
 The UVM provides abstractions to compartmentalize a testbench in a standardized way. Instead of each engineer or
-company defining their own abstractions, the UVM provides a shared abstraction. This makes it possible to quickly
-understand an unknown testbench and to reuse parts of it in other projects. It also makes the exchange of
-verification components possible and eases the hiring of new verification engineers.
+company defining their own abstractions, the UVM provides shared abstractions and a standardized application programming interface (API). This makes it possible to quickly
+understand an unknown testbench and to reuse parts of it in other projects. It also facilitates the exchange of
+verification components between different entities and eases the hiring of new verification engineers.
 
 However, the UVM is a complex and large framework. A lot of the literature on UVM focusses on how the UVM wants us to
 build testbenches, but not necessarily why it was designed that way. It is clear that the UVM is something which grew
@@ -864,13 +870,15 @@ testbenches. Could a productivity gain be achieved by adapting the concepts and 
 implementation such that they better fit these high-level languages? Which parts of the UVM should be carried over to
 such a revised and adapted methodology?
 
+As such, it seems like there is a research opportunity to investigate the UVM, its design choices and its usage in the industry in order to define a verification framework in a modern general-purpose language. There are two levels to this process: on the one hand, the concepts and abstractions of the UVM have to be considered, and on the other hand their implementation in SystemVerilog has to be examined. These considerations lead to the following research questions:
+
 \begin{enumerate}
-  \item Is everything in the UVM standard actually used by companies in the industry?
+  \item Is everything in the UVM standard necessary and used by companies in the industry?
   \item Can the concepts and abstractions of the UVM and their implementation be condensed and simplified?
-  \item
+  \item Can the features of a modern general-purpose language be taken advantage of to build a more powerful and flexible verification framework?
 \end{enumerate}
 
-\todo{method}
+To answer these questions, the following methods will be used. First, an informal interview will be conducted with a small number of companies in the Copenhagen area which use UVM in their verification efforts. The goal of the interview is to get an understanding of how the UVM is received in the industry, how and what parts of the UVM are used and what improvements the companies themselves could imagine. Taking account the insight gained from the interviews, the UVM will be analyzed to identify the design decisions behind it and alternative design choices will be reflected upon to synthesize a set of requirements for a verification framework embedded in a modern general-purpose language. Finally, an implementation attempt will be made following the established requirements to evaluate the feasibility of the proposed framework and its ease of use compared to the UVM.
 
 \begin{comment}
 
@@ -903,13 +911,92 @@ method:
 
 \section{Interview Outline} %==================================================================================================
 
+The interviews were conducted relatively freely but with a set of questions in mind to guide the conversation. The interviews started off with a set of questions about the company itself. This concerned facts like the size of the verification department or the usual size and application of projects. The conversation would then move on to their verification pipeline, starting from the specification to the tape-out. The tools used in the process would be discussed alongside the verification methods employed. Of special interest was the fact whether the company had or could consider open-source verification framework alternative like for instance cocotb. One area of interest was whether any industry standards for testing like ISO standards were directly impacting the verification work. The different levels at which a system were tested and their usage of reference models would be discussed. 
+
+From here, the interview would move on to UVM-specific questions. It would be discussed which features were used, how well the reuse mechanisms were working and whether external verification IP (VIP) was used. Features like UVM phasing, configurability mechanisms like the configuration database and the UVM factory would be discussed. Room for criticism of the UVM would be given, and the interviewee would be asked to point out any limitations they had encountered. 
+
+The interview would then move to a general critical perspective, considering things like bottlenecks in the verification process, unique issues the engineers had encountered and what they wished to see in future developments in the verification area.
+
+\begin{comment}
+# General Questions
+
+Verification Pipeline
+- describe the general flow of your verification process from spec to signoff
+- what are the interactions with the design team?
+- do you use UVM
+
+Automation
+- have you integrated any automated tools or scripts into your verification flow to speed up repetitive tasks?
+
+Standards
+- Are you following any standards (e.g. ISO) in your verification process? If so, how do you ensure compliance?
+
+Verification IP reuse
+- how do you reuse VIP going from specification models to rtl to netlists
+- do you develope your VIP inhouse or do you also obtain external VIP
+- UVM is about reuse, how successful have you been in reusing components across different projects? And what difficulties have you encountered?
+
+Special DSP needs
+- have you done any special customization on top of UVM for DSP verification?
+
+Verification methods
+- how much do you use formal methods
+- how do you define which parts to test using formal methods and which parts using simulation based methods
+
+Tools
+- which eda tools are you using
+- have you looked at alternative frameworks like cocotb in python?
+- cosim vs. compiled in sv
+- what is your opinion on integrating verification language with rtl language?
+
+Test scales
+- do you use different approaches for testing smaller design units
+
+Coverage
+- what coverage metrics do you use? Code coverage?
+- what are the most important coverage metrics for you?
+
+Debugging & verification
+- how do you use your verification environment for debugging?
+- do you use interactive running of testbenches?
+
+Golden models
+- how do you consrruct scoreboard?
+- what do you put in your scoreboard?
+- is it always a cycle/transaction accurate model?
+
+Bottlenecks
+- what are the biggest bottlenecks in your verification process? How do you address them?
+
+# UVM Specific Questions
+
+Phasing
+- which phases do you use apart from uvm standard phases
+- have you added custom logic to different phases
+
+Configurability
+- how satisfied are you with the configuration mechanisms in UVM
+- how much do you use the configDB and uvm factory
+- what would be the advantages over using formal parameters and generic class instead
+
+Reuse
+- how extensively do you use more complex inheritance to allow for reuse
+
+# Open criticism
+
+Criticism
+- what limitations of uvm have you encountered
+- Are there any language limitations that you encounter while developing your verification environment? If so, how do you work around them?
+- did you have any use case where you needed to adapt your verification methods?
+\end{comment}
+
 \section{Company 1} %==========================================================================================================
 
 Company 1 develops ASICs for the hearing aid industry, with a team of 7-8 dedicated verification engineers. The
 verification tasks they are performing do not need to adhere to ISO standards directly, but these standards are
 already captured in the verification plan. The company prefers using a single language for design to enable
 incremental compilation and simplify the workflow. All verification IP (VIP) is developed in-house and actively
-maintained, with reuse being a key focus across projects. Examples of reusable VIP include standard interfaces like
+maintained, with reuse being a key focus across projects. Examples of reusable VIP include agents for standard interfaces like
 APB and SWD. Additionally, they integrate models for external IP, such as EEPROM, using C or Verilog models. Reuse is
 made easy and encouraged by maintaining a single code base for everything.
 
@@ -938,12 +1025,12 @@ constraints. To support DSP verification, MATLAB models are integrated into the 
 The company is overall satisfied with their usage of UVM, but pointed out some shortcomings. Specifically, they
 believe that code using the UVM factory is difficult to debug and maintain, while the register abstraction layer
 (RAL) in UVM is incomplete. For instance, a single register block cannot be mapped into multiple address spaces, so
-they developed their own extension to address this limitation. Concerning the UVM factory, they not that using
+they developed their own extension to address this limitation. Concerning the UVM factory, they note that using
 callbacks, a feature not available during the development of UVM, would be the better option to keep dependencies
 modular in the code. They also observe that many UVM examples available online are outdated and focus only on trivial
 cases. Additionally, they note that UVM was influenced by several companies of which some insisted on incorporating
 features from their own verification methodologies, sometimes resulting in unnecessary complexity. While they
-continue to use UVM, they would are not opposed to a framework with fewer options and simpler design choices. They
+continue to use UVM, they are not opposed to a framework with fewer options and simpler design choices. They
 also emphasize that power-aware verification remains a significant challenge.
 
 In terms of recruitment, the company intentionally avoids using all UVM and SystemVerilog features to make hiring
@@ -955,7 +1042,7 @@ basic structure for testbenches and unit tests.
 
 One of the key challenges they face is that the test plan often becomes a bottleneck, more so than the actual
 development time for testbenches. While development time tends to be predictable, debugging remains highly
-unpredictable, especially when working around known bugs while trying to maintain progress.
+unpredictable, especially when working around known bugs while trying to progress the verification effort.
 
 \begin{comment}
 Company 1 develops ASICs for the hearing aid industry.
@@ -1047,12 +1134,12 @@ accounts for known-knowns and known-unknowns; there is no established methodolog
 i.e. bugs that are not detected by the verification plan. The company follows the best practice of always capturing
 design assumptions in assertions.
 
-Formal verification is considered a superior tool for proving design correctness but often struggles with the
+Formal verification is considered a superior tool for proving design correctness by the company but often struggles with the
 complexity of large designs. Despite these challenges, formal methods remain a critical component of their verification process.
 
 They perceive UVM to be a well-working tool for verification. Like all tools, it is not perfect though, and they note
-some small issues which they have encountered. The ConfigDB mechanism, can confuse users, in their experience, due to
-component scoping mechanism. Misunderstanding its usage can lead to spaghetti code, but when used correctly, the
+some small issues which they have encountered. The ConfigDB mechanism, can confuse users, in their experience, due to its
+hierarchical scoping mechanism. Misunderstanding its usage can lead to spaghetti code, but when used correctly, the
 ConfigDB solves the essential problem of enabling communication between classes without direct references. It acts as
 a middleman, allowing information to be passed down from the test to the environment, agents, and drivers. Sometimes
 they even use the ConfigDB as a channel, where a driver monitors specific keys for changes to receive data.
@@ -1064,10 +1151,10 @@ the end-user. But the UVM factory also introduces overhead, due to the indirecti
 include using direct instantiation when no overrides are expected or limiting factory use to scenarios where dynamic
 changes are really necessary.
 
-Phasing in UVM works well in for the company. But there are some issues concerning the communication of phase
+Phasing in UVM works well for the company. But there are some issues concerning the communication of phase
 completion. Each component can stop the phase from completing by raising an objection. However, this can lead to
 problems when the main test code finishes injecting stimuli while the testbench still has to wait for responses. The
-VMM had a consensus object that allowed components to register their “done” conditions, offering a potential
+UVM predecessor VMM had a consensus object that allowed components to register their “done” conditions, offering a potential
 solution. In agents, reset should be handled within the run phase. Base tests should handle reset and shutdown
 phases, while derived tests should handle configuration and main phases. The company has developed its own standard
 scoreboard infrastructure, which focuses on comparing streams of transactions.
@@ -1076,7 +1163,7 @@ They note that the Register Abstraction Layer (RAL) poses several challenges. It
 register transaction to one bus sequence item. This assumption can be problematic when protocols require multiple
 transactions to complete the changes implied by the register transaction. Additionally, while the RAL supports
 writing individual fields, certain protocols do not support this and would need a read-modify-write cycle, resulting
-again in multiple sequence items. Register locking is available but does not ensure immutability, raising questions
+again in multiple sequence items. Locking registers by calling \ttt{.lock()} is available but does not ensure immutability, raising questions
 about its utility. Register randomization can be achieved using the `rand` keyword on fields, but unlike read/write
 operations, calls to `rand` are not synchronized if multiple components access the register model in parallel. There
 are currently multiple ways of injecting constraints into the register model, but none of them work well or are
@@ -1322,11 +1409,27 @@ Company 3 develops ASICs for the hearing aid industry.
 
 \section{Takeaways from the Industry Survey} %=================================================================================
 
+In general, companies seem to be satisfied with what the UVM can offer them. They acknowledge that it may have some shortcomings, but it is an industry standard which most importantly is supported by all major EDA vendors, saving the companies from the infamous vendor-lock. Having a standard also eases the hiring process, since new employees knowing UVM can more easily understand the existing infrastructure. 
+
+It is also clear that only a subset of all the functionality which UVM offers is actually used by the companies. This subset seems to consist of the core ideas behind UVM and seems to be generally accepted. Where UVM does not satisfy their needs, companies have gone to implement their own extensions like for the scoreboard of the register abstraction layer. This of course partially defeats the purpose of UVM, but is also a product of the universalism of UVM, where abstractions have to fit all use cases and thus may need extra work before being able to be used for any of those use cases.
+
+Although formal methods are acknowledged as superior, allowing quick and exhaustive checking of a certain feature, all companies only use it where the performance of current tools allows them to. Dynamic verification is thus still highly relevant and the reusability mechanisms in the UVM seem to be appreciated and used by the companies to lower the effort of developing new testbenches. 
+
+The opinions on the UVM factory differ, with some companies seeing it as a key part of creating flexible testbenches and others seeing it as the source of hard to debug errors. It could be interesting to investigate what other options exist and how user friendly they are. 
+
+Some companies note languages limitations in SystemVerilog itself which proves the point of investigating verification frameworks in more powerful languages. Due to long simulation times for their tests, performance is of concern though, and has inhibited the use of co-simulation frameworks like cocotb in the production environment. Also compilation times seem to be an issue for some companies. 
+
+As it can be seen in the example provided by Company 2, UVM is not perfect in facilitating dynamic tests, where the test case produces stimuli as a reaction to the DUV's responses when these are spread over different interfaces. The model of how the test case can get feedback from the DUV should therefore be investigated.
+
+
+\begin{comment}
 - companies are generally satisfied with UVM
 - they see it as a tool which may have some shortcomings but it is a standard which is supported by all 3 major EDA vendors
 - they only use a subset which seems to be generally accepted across the industry
 - where UVM does not satisfy their needs, or does not specify a specific way of handling something (like scoreboard),
 they have developed their own extensions
+
+- compilation times seem to be an issue for some companies
 
 - the approach of having IP units per interface seems to work well, and encourages reuse
 
@@ -1347,6 +1450,9 @@ other languages could do in the context of hardware verification
 
 - there seem to be some issues related to how the test case code gets feedback from the testbench in order to write
 interactive test case code
+\end{comment}
+
+
 
 \chapter{Analysis} %///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
