@@ -325,7 +325,7 @@ that all aspects of the design have been exercised \cite[Sec. 7.6]{flake2020a}.
 
 \end{comment}
 
-\subsection{Testbench Abstractions \& Reusability}
+\subsection{Testbench Abstractions and Reusability}
 %------------------------------------------------------------------------------------------
 
 Writing monolithic testbenches to demonstrate the correctness of each feature
@@ -380,7 +380,7 @@ composed to meet the needs of a specific test case and thus can increase the tes
 
 \end{comment}
 
-\section{Verification Languages \& frameworks} %===============================================================================
+\section{Verification Languages and frameworks} %===============================================================================
 
 \todo{meta text}
 
@@ -929,7 +929,7 @@ change of state which the observers are notified about, but the occurrence of an
 \begin{comment}
 
 - factory pattern
-- inversion of control \& dependency injection \cite{ioc_di}
+- inversion of control and dependency injection \cite{ioc_di}
 - service locator pattern
   - kind of like factory, an object know how to create the right other objects, if global singleton it its kind of like factory
 - strategy pattern
@@ -958,7 +958,7 @@ change of state which the observers are notified about, but the occurrence of an
 
 \end{comment}
 
-\chapter{Problem Formulation \& Methods} %///////////////////////////////////////////////////////////////////////////////////////
+\chapter{Problem Formulation and Methods} %///////////////////////////////////////////////////////////////////////////////////////
 
 The UVM provides abstractions to compartmentalize a testbench in a standardized way. Instead of each engineer or
 company defining their own abstractions, the UVM provides shared abstractions and a standardized application
@@ -1609,7 +1609,7 @@ other languages could do in the context of hardware verification
 interactive test case code
 \end{comment}
 
-\chapter{Analysis \& Design} %///////////////////////////////////////////////////////////////////////////////////////////////////////////
+\chapter{Analysis and Design} %///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 - here, the requirements should be made and possible approaches outlined
 - this includes possible tools to rely on (also for features which are not part of the final product, e.g. coverage and crv)
@@ -1617,6 +1617,37 @@ interactive test case code
 - there are two levels to the design:
 - the concepts, abstractions that the testbench is strucured by
 - the coding principles which facilitate the flexible nature of the testbench
+
+
+
+story:
+- first define the scope of this project
+  - we look at UVM features as the current status quo and evaluate them and if they are considered useful, determine how to be integrate them into a new framework
+- then some basic decisions have to be made since they limit the design choices
+  - the simulation backend has to be chosen
+  - the verification language has to be chosen
+    - should it be a embedded DSL or a dedicated Language
+    - reflection should be made even though the answer is clear -> DSL is the only realistic path
+    - here the approach using CIRCT should be mentioned
+- having established the basic infrastructure, the requirements can be made
+- first the basic simulation infrastructure has to be established
+  - how should the simulation be interacted with?
+    - what kind of data types are necessary to interface with the simulation?
+    - how should the interface be captured in the DSL?
+    - what actions can be performed on the interface?
+    - what are the timing semantics? clocks and steps
+    - timing resolution?
+    - concurrency -> the simulation thread
+    - thread interaction with simulation
+    - interthread interaction
+    - test entry point
+- then the test bench abstractions and concepts should be defined
+  - what phases does a test bench have?
+  - what are the basic components and the basic structure of a test bench?
+  - how are test cases defined?
+- then design patterns for reuse should be defined
+  - how can components be swapped out?
+  - how are components configured?
 
 \section{Scope} %==============================================================================================================
 
@@ -1643,26 +1674,111 @@ Before version 5, Verilator ignored delay statements in the Verilog source code 
 Considering especially the ease of integrating verilated models with other software components in addition to the
 superior performance, Verilator was identified as better option for the verification framework.
 
-\section{Host }
+\section{Verification language} %-------------------------------------------------------------------------------------------
+
+DSL pros:
+- reuse of host language features
+  - libraries -> especially true for python
+  - expressiveness in higher-level languages
+- a DSL requires less infrastructure
+  - no compiler/interpreter has to be developed and maintained
+  - leverage IDE support of host language -> here true software languages have a big advantage over HDLs
+  - dependency management may come for free
+- easier to learn since it is a subset of the host language
+- sometimes hard to integrate DSL into the look and feel of the host language while still providing easy syntax
+
+DSL cons:
+- performance may be worse
+  - in traditional HDL setup, verification code and design code are compiled directly together
+  - in DSL setup, it depends on the implementation
+    - message parsin interface with simulator?
+    - linked library?
+    - JVM to native transitions?
+- may also be hearder to learn since the whole language has to be known to take full advantage of the DSL
+  - a standalone language only has required features for verification
+
+
+HVL pros:
+- 
+
+- also a question of multi-language environments
+  - should design and verification be done in the same language?
+  - the advantage of a common language is that some verification features are better placed in the design code like assertions
+  - 
+
+- especially to experiment with a new features a DSL is the only realistic choice since the overhead of developing a new language is too high
 
 \section{Requirements} %=======================================================================================================
 
 
 \subsection{Simulation Interface} %--------------------------------------------------------------------------------------------
 
+
+- two issues:
+  - how to control the interface of the DUT i.e. the pins
+  - how to manipulate time
+
+- the first requires a way to reference ports, associate them with hardware types and set and get their values 
+- the second is about to progress to points of interest in simulation time
+- question is what are the mechanisms taking you to that point in time 
+  - easiest: just allow delays, i.e. wait for x ns
+  - possible to write all test code but it quickly becomes annoying to handle time
+  - instead the core points of interest can be seen as events which the test code can wait for
+    - rising edges of signals
+    - changes in signals
+    - falling edges of signals
+    - a certain passage of time can also be seen as event
+  - this allows for more readable and powerful testbenches
+  - can we abstract more?
+  - sequential design in hardware means clock cycles
+  - each cycle inputs may be changed, potentially based on outputs, then the clock ticks and outputs change
+  - for a simulation of clock based design it is thus enough to have a way to advance to the next clock cycle
+  - this is what Vera uses with its @1 syntax and chiseltest with its step command
+  - no need to worry about aligning to the clock edges, code will always be executed in a region where the clock is stable
+  - this is a powerful abstraction which allows for easy writing of testbenches
+
+  - but what about multi-clock designs?
+  - in pure event based testbenches, each clocks rising edge can be used as an alignement point
+  - in Vera the single clock associated to the interface is used
+  - in chiseltest .step could be called on multiple clocks but this will cause an error because it is not implemented
+
+  - of course this pushes the responsibility of driving signals at a specific point in time to the framework
+  - in chiseltest driving signals is always done at the falling edge of the clock assuming positive clocks
+  - thus the simulation is always advanced from falling edge to falling edge
+  - in vera, skews relative to the clocks are possible
+    - inputs are driven respecting the skew
+    - outputs are samples respecting the skew
+  - this allows for the modelling of more accurat timing for instance in case a gate level simulation with accurate gate delays is used
+  - this opens the question: when is the test code in a clock cycle actually run
+  - in order to have the newest version of all outputs, the test code as to wait until the output which has to be sampled latest in time
+  - 
+
+- we need to support basic data types to be able to describe the interface to the DUT
+- what about complex data types like structs or interfaces?
+  - verilator sets limitation, no interface at top level
+  - structs are translated into wide bit vectors with fields concatenated
+- what about arrays?
+
+- like in Vera, the user will need to declare ports to the DUT
+
+- what is the multiple driver behavior?
+  - in the case where one thread releases the valid signal and another wants to assert it?
+  - this requires different regions...
+  - release should only be applied if no other driver exists
+
+- cocotb seems to allow for monitor region using "await ReadOnly"
+
+
 - black-box or also white-box/grey-box? we could expose the internal state of the DUT to the testbench (i.e. register access)
 
 \subsection{Concurrency} %-----------------------------------------------------------------------------------------------------
 
+- concurrency is a key feature for working with hardware designs which are inherently parallel
+- 
+
 - should allow for event based blocks which fire everytime a certain event occurs -> always blocks
 - can be done by checking at start of time step all conditions and adding release events for threads which should be triggered
 
-\subsection{Verification language} %-------------------------------------------------------------------------------------------
-The next consideration is
-
-\subsubsection{Dedicated HVL}
-
-\subsubsection{DSL Approach}
 
 \subsection{Test Phases} %-----------------------------------------------------------------------------------------------------
 
@@ -1748,6 +1864,9 @@ a covergroup with its sampling event should be passed to verification runtime
 
 \subsection{Reusable Verification Components} %--------------------------------------------------------------------------------
 
+
+\cite{sutherland2015uvm} -> what is a practical subset for UVM
+
 - a UVM testbench is close to a hdl test harness with static components
 
 - do we actually need static components? why is the driver not just a function? transactors are just functions
@@ -1826,7 +1945,7 @@ multiple entry points.
 
 \subsection{Component Configuration} %-----------------------------------------------------------------------------------------
 
-\subsection{Stimulus \& Sequences} %-------------------------------------------------------------------------------------------
+\subsection{Stimulus and Sequences} %-------------------------------------------------------------------------------------------
 
 \subsection{Test Cases} %------------------------------------------------------------------------------------------------------
 
