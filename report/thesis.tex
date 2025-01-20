@@ -576,7 +576,15 @@ port for the transaction stream to the driver is exposed by the agent itself. Ne
 channels, the TLM also provides one-to-many channels with so-called \ttt{analysis\_port}'s. These are used to
 broadcast transactions to multiple analysis components like coverage collectors or scoreboards \cite[ch. 4.5]{mehta2018asic}.
 
-\subsubsection{Phases}
+\subsubsection{Phases} %-------------------------------------------------------------------------------------------------------
+
+\begin{figure}
+  \centering
+\includegraphics[width=0.7\textwidth]{diagrams/phases.pdf}
+\caption{Overview of the UVM phases. Top-down phases are red, bottom-up phases are yellow and the run phases are blue.}
+\label{fig:uvm_phases}
+\end{figure}
+
 Another concept introduced by the UVM are phases. Working with more elaborate DUTs with complex reset sequences, it
 becomes natural to split the handling resetting the DUT from the actual test case. In a parallel system like UVM
 where multiple components run concurrently, the challenge then is how the components should agree when the test case
@@ -1980,6 +1988,17 @@ sampled latest in time
 - black-box or also white-box/grey-box? we could expose the internal state of the DUT to the testbench (i.e. register access)
 
 \subsection{Concurrency} %-----------------------------------------------------------------------------------------------------
+
+
+Concurrency is a necessary feature for complex testbenches. It makes it easy to separate different tasks into separated units which progress through time in their own manner, for instance waiting for different transitions to occur. For hardware designs with multiple interfaces this becomes especially important, since each interface may be controlled by its own thread instead of having to interleave the control of all interfaces in a single thread.
+
+SystemVerilog and Chiseltest both use a fork-join model for concurrency. A code block can be executed in a new thread by the keyword \ttt{fork}. The parent thread will continue its execution after spawning the new thread, but may wait for the spawned thread to finish by calling \ttt{join}. This is a simple model which allows for easy parallelization of tasks. 
+
+The same model shall be used for the verification framework due to its familiarity and ease of use. One question which has to be answered is how the running of the threads is coordinated with the simulation. Here the following semantics are chosen: Threads can be in two states, running or sleeping. While running, they can interact with the DUT, for instance by driving signals or sampling outputs. Once they reach a \ttt{step} command in their code, they will sleep and inform the simulation when they should be woken up again. The simulation will wait for all running threads to reach a sleep point before advancing to the next clock cycle where a thread wants to be woken up. 
+
+Since all threads run concurrently, the ordering of \ttt{peek} and \ttt{poke} accesses is non-deterministic. The accesses are serialized in the simulation runtime. Multiple \ttt{poke} accesses to the same signal will cause a warning, but the last value will be used. Sometimes a thread has to monitor an input signal for a certain transition. To be certain that all \ttt{poke} commands have occurred before the monitor thread receives the signal value, the \ttt{peekMonitor} command is used. No more \ttt{poke} commands can be issued after this command before the next time step, since this may invalidate the value another thread received when calling \ttt{peekMonitor}.
+
+In the UVM, components communicate via TLM channels.
 
 - concurrency is a key feature for working with hardware designs which are inherently parallel
 - threads can be running or sleeping
