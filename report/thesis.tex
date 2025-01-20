@@ -1,11 +1,20 @@
-\documentclass[11pt]{report}
+\documentclass[11pt,a4paper]{report}
 
 \usepackage{comment}
 \usepackage{graphicx}
 \usepackage{hyperref}
 \usepackage{xcolor}
+\usepackage{siunitx}
+\usepackage{float}
+
+\usepackage[skip=8pt plus1pt]{parskip}
 
 \usepackage{listings}
+
+\floatstyle{plain}
+\newfloat{listing}{tbp}{lop}[chapter] % Change [chapter] to [section] or remove it as needed.
+\floatname{listing}{Listing}
+
 \lstset{
   language=Scala,         % Language of the code
   basicstyle=\ttfamily\small,  % Font style and size
@@ -15,7 +24,7 @@
   numbers=left,                % Line numbers on the left
   numberstyle=\tiny\color{gray}, % Line number style
   frame=single,                % Frame around the code
-  breaklines=true              % Line breaking
+  breaklines=true,              % Line breaking
 }
 
 \usepackage[backend=biber,style=ieee]{biblatex}
@@ -825,7 +834,7 @@ like the UVM does.
 
 \subsubsection{Chiseltest} %---------------------------------------------------------------------------------------------------
 
-Chiseltest was developed as part of the Chisel hardware construction language and is a Scala-based testbench
+Chiseltest was developed as part of the Chisel hardware construction language \cite{chiselpaper} and is a Scala-based testbench
 framework \cite{chiseltest}. Due to a change in the Chisel compiler infrastructure, it has been recently deprecated,
 but a replacement is under development by the Chisel community. While meant to be used with Chisel designs, Verilog
 designs can also be included via Chisel. The number of supported simulators is more limited compared to Cocotb,
@@ -1611,6 +1620,12 @@ interactive test case code
 
 \chapter{Analysis and Design} %///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+\todo{meta}
+
+In this chapter, ideas for a verification framework embedded in a modern programming language will be developed based on the understanding of existing tools and frameworks as well as the insights gained from the industry survey. 
+
+\begin{comment}
 - here, the requirements should be made and possible approaches outlined
 - this includes possible tools to rely on (also for features which are not part of the final product, e.g. coverage and crv)
 
@@ -1648,35 +1663,75 @@ story:
 - then design patterns for reuse should be defined
   - how can components be swapped out?
   - how are components configured?
+\end{comment}
+
+
 
 \section{Scope} %==============================================================================================================
 
+First of all, a overall scope for the verification framework has to be outlined. The goal is to develop a verification framework which is embedded in a modern programming language and which takes inspiration from UVM for reusable testbenches. The framework should provide a set of features such that it could be used instead of SystemVerilog and UVM for the development of testbenches. 
 
-\section{Simulation Backend} %----------------------------------------------------------------------------------------------
-The first consideration which has to be made is the simulation backend which the verification framework will use.
-This decision is also influenced by the choice of supported HDL's, ease of interfacing with the simulation and
-finally of course performance. Since the project itself aims to be open-source, the choice of a proprietary simulator
-is not an option. The two most popular open-source simulators are Icarus Verilog and Verilator. Icarus Verilog
-compiles a Verilog design into its own intermediate representation which can be executed by a separate simulation runtime engine, a kind of interpreter \cite{iverilog}. Using Icarus Verilog as a simulation backend would require interfacing with this simulation runtime. The newest partially supported Verilog standard is IEEE1800-2012 which includes some SystemVerilog features.
+At its core, the framework has to provide a simulation interface in order to allow the user to interact with an instance of the DUT. The simulation interface should allow for multiple threads to control and access the DUT concurrently. The tool responsible for simulating design should support general RTL designs. 
 
-Verilator, on the other hand, transpiles the Verilog design into C++ or SystemC classes which can then be compiled
-to machine code \cite{verilator}. This makes Verilator very suitable for co-simulation with other models
-or software components, since it can easily be interfaced at the C/C++ level. The only interface to a verilated
-model, apart from setting inputs and reading outputs, is the \texttt{eval} function which runs a static schedule to
-update the model's state. The model is used simply by creating an instance of the associated C++ class, assigning the input variables values and evaluating the model. Since the model is in the end compiled to a native executable with no additional simulation
-runtime, the performance of Verilator is significantly better than Icarus Verilog, with speedups of 100x on a single
-thread being reported by the developers \cite{verilator}. Verilator supports nearly fully the IEEE 1364-2005
-standard, partially the IEEE 1800-2005 standard and some very specific features of newer standards. The IEEE
-1800-2005 standard includes SystemVerilog features, of which some like classes and interfaces are supported by Verilator.
+A modern testbench would not be complete without a way to generate constrained randomize and collect coverage information. As such, mechanisms for both features in the language of choice should be provided.
 
-Before version 5, Verilator ignored delay statements in the Verilog source code which are necessary to add timing information to a simulation. The newer version now support this feature, thus matching the capabilities of Icarus Verilog.
+The previous requirements provide the foundation for constructing testbenches. To facilitate the development of reusable testbench infrastructure, the framework should provide a set of primitives similar to those found in the UVM. This includes some form of verification base components responsible for different tasks in the testbench, a phasing system to structure the testbench execution and a way to organize stimulus into sequences. All these features should be easily composable into testbenches and test cases.
 
-Considering especially the ease of integrating verilated models with other software components in addition to the
-superior performance, Verilator was identified as better option for the verification framework.
 
-\section{Verification language} %-------------------------------------------------------------------------------------------
+\todo{should functional coverage and crv be considered outside of the scope from the start? But why talk about them in the background then. Maybe they can be described more shallow}
 
-DSL pros:
+\todo{elaborate}
+
+\begin{comment}
+- a library of primitives for reusable testbench infrastructure 
+
+- purpose: ideas for a verification framework in a modern language which takes inspiration from UVM for reusable testbench components and could provide a replacement for SystemVerilog+UVM
+- not all features will be implemented necessarily
+- on the one hand, a simulation framework for hardware designs
+- should be multi threaded
+- the level of simulation depends on the backend (for instance 4 state logic)
+- could be its own language,but this would be too complex for the time frame
+- instead an embedded dsl should be used 
+- a modern language should be used
+
+- simulation framework should feature coverage collection integrated with simulation backend for sampling
+- should feature constrained randomization library for random objects
+
+- on the other hand, primitives for a reusable testbench environment should be provided in a library
+- there are two levels to this design process:
+  - the abstractions and concepts
+  - the coding principles which facilitate the flexible nature of the testbench
+- it is clear that the coding principles are deeply interwoven with the implementation 
+- this includes some form of verification components responsible for different tasks in the testbench
+- some kind of phasing system should be designed to compartmentalize the execution of the testbench
+- some form of organization of stimulus into sequences should be provided
+- a easy interface for running tests should be provided
+\end{comment}
+
+\section{Verification Language} %-------------------------------------------------------------------------------------------
+
+The first choice to be made is, which language the verification framework should be integrated into. The examples which have been discussed were cocotb and PyUVM using Python, but also Scala being used by Chiseltest and ChiselVerify. Before reflecting over these languages and other options, it is also worth considering the advantages and disadvantages of embedding a verification framework into another language compared to developing a standalone language such as Vera or even integrating it into the design language itself such as it is the case in SystemVerilog.
+
+One of the primary advantages of embedding a verification framework into a general-purpose language instead of developing a standalone hardware verification language or a shared design and verification language, is the effort associated with developing all the necessary tools and infrastructure. A standalone language requires its own compiler or interpreter which will have to be maintained. Any additional functionality which is not part of the language itself has to be developed from the ground since no library ecosystem exists, as it is the case for general-purpose languages. Additionally, many modern languages provide a dependency management system, which can be leveraged to share and reuse code. Finally, quality of life features such as IDE support of the host language can also be leveraged.
+
+When performance is considered, a combined design and verification language has a clear advantage, since everything can be compiled and optimized together. In a standalone language or an embedded language, a simulation has to be interfaced by a runtime. Depending on the implementation, this can lead to a significant performance overhead. 
+
+When it comes to ease of use and the learning experience, dedicated languages have the advantage of being able to tailor their syntax to the domain, making it easy and concise to express the concepts of the domain. On the other hand, a whole new syntax has to be learned, which can be a hurdle for new users. For an embedded language, if the host language is already known, the learning curve is lower than for a standalone language since it is equivalent to learning a new library. If the host language is not known, the learning curve is much higher though, since aside from the verification constructs a whole language has to be learned.
+
+Due to the time constraints of this thesis, and the focus on higher level infrastructure for testbenches, embedding a verification language into a general-purpose programming language is the only realistic choice. When it comes to the choice of a host language, several factors have to be considered. 
+
+\todo{host language}
+
+- OOP
+- functional would be nice to try out what it can do (expands options for design)
+- garbage collected
+- performant 
+- static typing
+
+
+
+\begin{comment}
+  DSL pros:
 - reuse of host language features
   - libraries -> especially true for python
   - expressiveness in higher-level languages
@@ -1707,12 +1762,79 @@ HVL pros:
   - 
 
 - especially to experiment with a new features a DSL is the only realistic choice since the overhead of developing a new language is too high
+\end{comment}
+
+
+
+
+\section{Simulation Backend} %----------------------------------------------------------------------------------------------
+
+\todo{should this go into the implementation part?}
+
+One key decision which has to be made, concerns the simulation backend which the verification framework will use.
+This decision is also influenced by the choice of supported HDL's, ease of interfacing with the simulation and
+finally of course performance. Since the project itself aims to be open-source, the choice of a proprietary simulator
+is not an option. The two most popular open-source simulators are Icarus Verilog and Verilator. Icarus Verilog
+compiles a Verilog design into its own intermediate representation which can be executed by a separate simulation runtime engine, a kind of interpreter \cite{iverilog}. Using Icarus Verilog as a simulation backend would require interfacing with this simulation runtime. The newest partially supported Verilog standard is IEEE1800-2012 which includes some SystemVerilog features.
+
+Verilator, on the other hand, transpiles the Verilog design into C++ or SystemC classes which can then be compiled
+to machine code \cite{verilator}. This makes Verilator very suitable for co-simulation with other models
+or software components, since it can easily be interfaced at the C/C++ level. The only interface to a verilated
+model, apart from setting inputs and reading outputs, is the \texttt{eval} function which runs a static schedule to
+update the model's state. The model is used simply by creating an instance of the associated C++ class, assigning the input variables values and evaluating the model. Since the model is in the end compiled to a native executable with no additional simulation
+runtime, the performance of Verilator is significantly better than Icarus Verilog, with speedups of 100x on a single
+thread being reported by the developers \cite{verilator}. Verilator supports nearly fully the IEEE 1364-2005
+standard, partially the IEEE 1800-2005 standard and some very specific features of newer standards. The IEEE
+1800-2005 standard includes SystemVerilog features, of which some like classes and interfaces are supported by Verilator.
+
+Before version 5, Verilator ignored delay statements in the Verilog source code which are necessary to add timing information to a simulation. The newer version now support this feature, thus matching the capabilities of Icarus Verilog.
+
+Considering especially the ease of integrating verilated models with other software components in addition to the
+superior performance, Verilator was identified as better option for the verification framework.
+
+
 
 \section{Requirements} %=======================================================================================================
 
 
 \subsection{Simulation Interface} %--------------------------------------------------------------------------------------------
 
+An interface to a simulation backend has to be established. The two ways to interact with a simulation are: accesses to the DUT's ports and control of time. Concerning the former, a mechanism of referencing ports is required. Furthermore, each port has to be associated with a type. This type decides what values a port is allowed to be driven with and how the bits sampled on a port should be interpreted, i.e. as a signed or unsigned integer. 
+
+Controlling time in a simulation is about letting time progress of points of interest. These points of interest can be absolute points in time, but also events like signal transitions. At the most simple level, a simulation interface can allow for delays which for instance advance time by a certain amount of nanoseconds. This becomes quickly tedious, since one is most of the time interested in events such as clock edges which would have to be checked for manually. A more powerful abstraction is to let the user wait for events like rising edges of signals as a synchronization point. The intent of the test code becomes more clear this way. However, the timing relative to the clock edges when inputs should be driven and outputs should be sampled, still has to be managed explicitly by the user. Can the control of time be abstracted even further? 
+
+In a sequential digital design, the system behavior is defined by the clock. Each clock cycle, new inputs can be applied and lead to a state change once the active edge of the clock occurs. A new abstraction can thus be created, where in each clock cycle the test code can sample outputs to decide new inputs and then advance the simulation to the next clock cycle. This way, the test code is always executed in a time region where the clock is stable and the user does not have to worry about aligning the simulation time to the clock edges. The Vera \cite[Sec. 7]{flake2020a} HVL and the Chiseltest \cite{chiseltest} framework both use this approach. In Vera, the user controls time using the \ttt{@N} syntax, where \ttt{N} is the number of clock cycles to advance time by. In Chiseltest, the \ttt{clock.step(N)} method is used to advance time by \ttt{N} clock cycles. For purely sequential designs, this interface allows for concise and readable test code.
+
+While this abstraction is powerful, it poses two challenges: how to control the actual signal timing and how to handle multi-clock designs. 
+
+%signal timing
+The responsibility of driving the inputs and sampling the outputs at the correct time is delegated to the simulation runtime when the clock cycle based abstraction is used. The question is, when are the correct times to sample and drive? Chiseltest has a simple solution: The time resolution of a simulation is fixed to \SI{1}{ps} while the clock is fixed to a \SI{2}{ps} period. This means that the simulation is always advanced from falling edge to falling edge of the clock. In Vera on the other hand, the user can specify skews relative to clock edges for when inputs should be driven and outputs should be sampled on a per signal basis. This allows for more accurate timing modeling, which may for instance be necessary in gate-level simulations with delay models of the gates. The question is, when is the test code actually run within a clock cycle? It should be run after all outputs have been sampled to have the newest version of their state, but also before the new inputs are driven. With inputs which have to be driven early and outputs which have to be sampled late, this is not possible. It is not clear which semantics Vera chooses for this case. Instead of sampling all outputs at once, the runtime could sample them only when accessed, advancing time only when necessary. This could still create situations where an input missed its drive slot in the current clock cycle. Considering these issues, it can be seen that the introduction of the clock cycle abstraction for advancing time has its own challenges. The solution Chiseltest provides, limits the modeling capabilities in terms of driving and sampling of inputs and outputs. This is acceptable for designs at the RTL where usually no component delay is modeled. Vera on the other hand, tries to model the interface timing accuratly, but this opens questions about the ordering driving and sample events and dependencies between them. 
+
+
+%multi-clock designs
+Neither Vera nor Chiseltest support testing a design with multiple clock domains \cite[Sec. 7]{flake2020a}\cite{chiseltest_multiclock}. In Vera, the interface to the DUT is associated with a single clock. In Chiseltest, the \ttt{Module} case type contains a single clock which is driven by Chiseltest. Due to the lack of fine-grained control of time in either language, clock ports can't be driven with arbitrary frequencies by user code either. 
+
+
+% design
+Having established the design considerations and existing solutions cocerning the interface with the simulation, a interface for a new framework will be proposed. Since the source code for the DUT will be located in SystemVerilog files, a mechanism will be necessary to replicate the interface to the DUT in Scala. This will be done through a interface declaration as it can be found in Vera. An example is shown in Listing \ref{lst:interface}. There are four basic port types: clock ports, reset ports as well as inputs and outputs which are associated with a data type. The data types are inspired by Chisel \cite{chiselpaper}.
+
+
+\todo{what about 4 state logic? It should be included but won't be, verilator actually does not support it}
+%listing
+\begin{listing}
+\begin{lstlisting}[language=scala, captionpos=b, caption=Example for an interface declaration in Scala. Each data signal is assocaited with a clock domain.,label=lst:interface]
+class MyInterface extends ModuleInterface(
+          "path/to/file1.sv", "path/to/file2.sv") {
+  val clk = ClockPort(5.ns)
+  val rst = ResetPort()
+  val data = Input(UInt(8.W))
+  val valid = Input(Bool())
+  val ready = Output(Bool())
+
+  domain(clk, rst)(data, valid, ready)
+}
+\end{lstlisting}
+\end{listing}
 
 - two issues:
   - how to control the interface of the DUT i.e. the pins
@@ -1774,10 +1896,23 @@ HVL pros:
 \subsection{Concurrency} %-----------------------------------------------------------------------------------------------------
 
 - concurrency is a key feature for working with hardware designs which are inherently parallel
-- 
+- threads can be running or sleeping
+- while running they can interact with the DUT
+- when they have done all they need to do for current clock cycle, i.e. they call step, they sleep until their wakeup time
+- all threads need to have reached a sleep point before the simulation can advance
 
-- should allow for event based blocks which fire everytime a certain event occurs -> always blocks
-- can be done by checking at start of time step all conditions and adding release events for threads which should be triggered
+- fork join is used in SystemVerilog and Chiseltest
+- offers an easy way to spawn threads
+
+- join puts thread into sleep mode until the clock cycle where the forked thread finishes
+
+- communication between threads is important
+- for this purposes channels shall be used
+- channel objects allow to send and receive messages between threads
+- when waiting for a message, the thread is put to sleep until the clock cycle where a message is sent
+- channels are not buffered, sending will put to sleep until clock cycle where message receiver is available
+
+- simulation starts in one root thread which can be forked
 
 
 \subsection{Test Phases} %-----------------------------------------------------------------------------------------------------
@@ -1830,7 +1965,13 @@ HVL pros:
 
 
 
-\subsection{Coverage} %--------------------------------------------------------------------------------------------------------
+\subsection{Functional Coverage} %---------------------------------------------------------------------------------------------
+
+
+- functional coverage 
+
+- coverage groupps can be hieararchy aware! 
+
 
 \begin{lstlisting}
 val g = covergroup {
