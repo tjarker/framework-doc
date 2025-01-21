@@ -580,9 +580,9 @@ broadcast transactions to multiple analysis components like coverage collectors 
 
 \begin{figure}
   \centering
-\includegraphics[width=0.7\textwidth]{diagrams/phases.pdf}
-\caption{Overview of the UVM phases. Top-down phases are red, bottom-up phases are yellow and the run phases are blue.}
-\label{fig:uvm_phases}
+  \includegraphics[width=0.7\textwidth]{diagrams/phases.pdf}
+  \caption{Overview of the UVM phases. Top-down phases are red, bottom-up phases are yellow and the run phases are blue.}
+  \label{fig:uvm_phases}
 \end{figure}
 
 Another concept introduced by the UVM are phases. Working with more elaborate DUTs with complex reset sequences, it
@@ -830,7 +830,9 @@ accesses \cite{uvm_ral}.
 
 In addition to the core concepts and their implementation, the UVM also provides small utilities which are a part of
 handling testbenches. This includes most notably a standardized reporting and verbosity system. Macros are provided
-for infos, warnings, errors and fatal errors, which automatically annotate the message with the hierarchical path of the component that issued it. At the end of running a UVM testbench, a summary of how many warnings and errors were encountered is
+for infos, warnings, errors and fatal errors, which automatically annotate the message with the hierarchical path of
+the component that issued it. At the end of running a UVM testbench, a summary of how many warnings and errors were
+encountered is
 provided to the user. The amount of information printed to the console can be controlled by setting a verbosity level
 \cite[Ch. 19]{salemi2013uvm}.
 
@@ -858,7 +860,9 @@ and support for all major simulators, including commercial ones, Cocotb is a pop
 testbench framework. It does however not provide the infrastructure for building scalable and reusable testbenches
 like the UVM does.
 
-Due to its popularity, a series of other extensions have been developed around Cocotb. Examples are the cocotb-coverage \cite{crvpython} and PyVSC \cite{pyvsc} libraries which both add functional coverage collection and constrained random stimulus generation capabilities to a Cocotb testbench.
+Due to its popularity, a series of other extensions have been developed around Cocotb. Examples are the
+cocotb-coverage \cite{crvpython} and PyVSC \cite{pyvsc} libraries which both add functional coverage collection and
+constrained random stimulus generation capabilities to a Cocotb testbench.
 
 \subsubsection{Chiseltest} %---------------------------------------------------------------------------------------------------
 
@@ -1721,7 +1725,6 @@ in the background then. Maybe they can be described more shallow}
 
 \todo{elaborate}
 
-
 \begin{comment}
 - a library of primitives for reusable testbench infrastructure
 
@@ -1750,7 +1753,10 @@ in the background then. Maybe they can be described more shallow}
 
 \section{Verification Language} %-------------------------------------------------------------------------------------------
 
-The first choice to be made is, which language the verification framework should be integrated into. On the one hand, this can be seen as an implementation choice, but on the other hand, the chosen language may limit the design choices in terms of capabilities and syntax. Therefore the decision is made prior to designing the functionality of the framework. The examples
+The first choice to be made is, which language the verification framework should be integrated into. On the one hand,
+this can be seen as an implementation choice, but on the other hand, the chosen language may limit the design choices
+in terms of capabilities and syntax. Therefore the decision is made prior to designing the functionality of the
+framework. The examples
 which have been discussed were cocotb and PyUVM using Python, but also Scala being used by Chiseltest and
 ChiselVerify. Before reflecting over these languages and other options, it is also worth considering the advantages
 and disadvantages of embedding a verification framework into another language compared to developing a standalone
@@ -1778,9 +1784,24 @@ the verification constructs a whole language has to be learned.
 
 Due to the time constraints of this thesis, and the focus on higher level infrastructure for testbenches, embedding a
 verification language into a general-purpose programming language is the only realistic choice. When it comes to the
-choice of a host language, several factors have to be considered. The language should have object-oriented features to allow for inheritance based composability. It would be interesting to also have functional programming features such as closures and higher-order functions to be able to experiment with different design patterns. While the language should be performant, it should not be a low-level language with explicit memory management, since this would introduce the chances of memory bugs. Instead a garbage collected language would be preferable.
+choice of a host language, several factors have to be considered. The language should have object-oriented features
+to allow for inheritance based composability. It would be interesting to also have functional programming features
+such as closures and higher-order functions to be able to experiment with different design patterns. While the
+language should be performant, it should not be a low-level language with explicit memory management, since this
+would introduce the chances of memory bugs. Instead a garbage collected language would be preferable.
 
-Python is an interpreted language with dynamic typing, object-oriented features and closures. Java is a compiled object-oriented language with garbage collection running on a virtual machine. A modern alternative to Java is Scala, which offers object-oriented and functional programming features and runs on the same infrastructure as Java. Many other languages either do not offer all required features, are too low level or are tailored to a specific domain, making them less attractive as a host language. While Java is a proven language, Scala offers more modern features and a more concise syntax, making it the preferred choice. This leaves Python and Scala as the two main candidates. Python has the advantage of being easier to learn and having a larger ecosystem of libraries, while Scala generally offers better performance. One significant difference between the two is that Python is dynamically typed, while Scala is statically typed. The dynamic typing of Python can make it easy to write code, but it also means that basically all errors are only caught at runtime. For potentially very large testbench systems with long running simulations, this should be considered a drawback. Considering this alongside Scala's flexibility in implementing embedded languages with a natural syntax, it is decided to implement the verification framework in Scala.
+Python is an interpreted language with dynamic typing, object-oriented features and closures. Java is a compiled
+object-oriented language with garbage collection running on a virtual machine. A modern alternative to Java is Scala,
+which offers object-oriented and functional programming features and runs on the same infrastructure as Java. Many
+other languages either do not offer all required features, are too low level or are tailored to a specific domain,
+making them less attractive as a host language. While Java is a proven language, Scala offers more modern features
+and a more concise syntax, making it the preferred choice. This leaves Python and Scala as the two main candidates.
+Python has the advantage of being easier to learn and having a larger ecosystem of libraries, while Scala generally
+offers better performance. One significant difference between the two is that Python is dynamically typed, while
+Scala is statically typed. The dynamic typing of Python can make it easy to write code, but it also means that
+basically all errors are only caught at runtime. For potentially very large testbench systems with long running
+simulations, this should be considered a drawback. Considering this alongside Scala's flexibility in implementing
+embedded languages with a natural syntax, it is decided to implement the verification framework in Scala.
 
 \begin{comment}
   DSL pros:
@@ -1824,13 +1845,16 @@ HVL pros:
 
 \section{Simulation Backend} %----------------------------------------------------------------------------------------------
 
-Another key decision which has to be made, concerns the simulation backend which the verification framework will use. Like the choice of host language, this has implications on the design of the framework, such as whether 4-state logic or only 2-state logic is supported.
+Another key decision which has to be made, concerns the simulation backend which the verification framework will use.
+Like the choice of host language, this has implications on the design of the framework, such as whether 4-state logic
+or only 2-state logic is supported.
 The decision is influenced by the choice of supported HDL's, ease of interfacing with the simulation and
 finally of course performance. Since the project itself aims to be open-source, a proprietary simulator
 is not an option. The two most popular open-source simulators are Icarus Verilog and Verilator. Icarus Verilog
 compiles a Verilog design into its own intermediate representation which can be executed by a separate simulation
 runtime engine, a kind of interpreter \cite{iverilog}. Using Icarus Verilog as a simulation backend would require
-interfacing with this simulation runtime. It is built to support nearly all of the IEEE-1364-2005 Verilog standard, but also supports some of the SystemVerilog features of the IEEE1800-2012 standard.
+interfacing with this simulation runtime. It is built to support nearly all of the IEEE-1364-2005 Verilog standard,
+but also supports some of the SystemVerilog features of the IEEE1800-2012 standard.
 
 Verilator, on the other hand, transpiles the Verilog design into C++ or SystemC classes which can then be compiled
 to machine code \cite{verilator}. This makes Verilator very suitable for co-simulation with other models
@@ -1847,9 +1871,13 @@ standard, partially the IEEE 1800-2005 standard and some very specific features 
 Before version 5, Verilator ignored delay statements in the Verilog source code which are necessary to add timing
 information to a simulation. The newer version now support this feature, thus matching the capabilities of Icarus Verilog.
 
-One feature not supported by Verilator is the use of 4-state logic. Verilator only supports 2-state logic and uses static analysis of the source code instead to identify initialization issues and warn the user about them. Icarus Verilog supports 4-state logic as defined in the Verilog standard.
+One feature not supported by Verilator is the use of 4-state logic. Verilator only supports 2-state logic and uses
+static analysis of the source code instead to identify initialization issues and warn the user about them. Icarus
+Verilog supports 4-state logic as defined in the Verilog standard.
 
-In terms of language support and capabilities, both simlators are close to each other. The lacking support of 4-state logic in Verilator is deemed acceptable, since initialization errors are still caught. Considering the ease of integrating verilated models with other software components in addition to the
+In terms of language support and capabilities, both simlators are close to each other. The lacking support of 4-state
+logic in Verilator is deemed acceptable, since initialization errors are still caught. Considering the ease of
+integrating verilated models with other software components in addition to the
 superior performance, Verilator is identified as the better option for a simulation backend of the verification framework.
 
 \section{Requirements} %=======================================================================================================
@@ -1932,7 +1960,6 @@ class MyInterface extends ModuleInterface(
 \end{lstlisting}
 \end{listing}
 
-
 \begin{comment}
 
 - two issues:
@@ -1997,18 +2024,41 @@ sampled latest in time
 
 \subsection{Concurrency} %-----------------------------------------------------------------------------------------------------
 
+Concurrency is a necessary feature for complex testbenches. It makes it easy to separate different tasks into
+separated units which progress through time in their own manner, for instance waiting for different transitions to
+occur. For hardware designs with multiple interfaces this becomes especially important, since each interface may be
+controlled by its own thread instead of having to interleave the control of all interfaces in a single thread.
 
-Concurrency is a necessary feature for complex testbenches. It makes it easy to separate different tasks into separated units which progress through time in their own manner, for instance waiting for different transitions to occur. For hardware designs with multiple interfaces this becomes especially important, since each interface may be controlled by its own thread instead of having to interleave the control of all interfaces in a single thread.
+SystemVerilog and Chiseltest both use a fork-join model for concurrency. A code block can be executed in a new thread
+by the keyword \ttt{fork}. The parent thread will continue its execution after spawning the new thread, but may wait
+for the spawned thread to finish by calling \ttt{join}. A thread waiting for another will sleep until the clock cycle
+when the child thread finishes. This is a simple model which allows for easy parallelization of tasks.
 
-SystemVerilog and Chiseltest both use a fork-join model for concurrency. A code block can be executed in a new thread by the keyword \ttt{fork}. The parent thread will continue its execution after spawning the new thread, but may wait for the spawned thread to finish by calling \ttt{join}. A thread waiting for another will sleep until the clock cycle when the child thread finishes. This is a simple model which allows for easy parallelization of tasks. 
+The same model shall be used for the verification framework due to its familiarity and ease of use. One question
+which has to be answered is how the running of the threads is coordinated with the simulation. Here the following
+semantics are chosen: Threads can be in two states, running or sleeping. While running, they can interact with the
+DUT, for instance by driving signals or sampling outputs. Once they reach a \ttt{step} command in their code, they
+will sleep and inform the simulation when they should be woken up again. The simulation will wait for all running
+threads to reach a sleep point before advancing to the next clock cycle where a thread wants to be woken up.
 
-The same model shall be used for the verification framework due to its familiarity and ease of use. One question which has to be answered is how the running of the threads is coordinated with the simulation. Here the following semantics are chosen: Threads can be in two states, running or sleeping. While running, they can interact with the DUT, for instance by driving signals or sampling outputs. Once they reach a \ttt{step} command in their code, they will sleep and inform the simulation when they should be woken up again. The simulation will wait for all running threads to reach a sleep point before advancing to the next clock cycle where a thread wants to be woken up. 
+Since all threads run concurrently, the ordering of \ttt{peek} and \ttt{poke} accesses is non-deterministic. The
+accesses are serialized in the simulation runtime. Multiple \ttt{poke} accesses to the same signal will cause a
+warning, but the last value will be used. Sometimes a thread has to monitor an input signal for a certain transition.
+To be certain that all \ttt{poke} commands have occurred before the monitor thread receives the signal value, the
+\ttt{peekMonitor} command is used. No more \ttt{poke} commands can be issued after this command before the next time
+step, since this may invalidate the value another thread received when calling \ttt{peekMonitor}.
 
-Since all threads run concurrently, the ordering of \ttt{peek} and \ttt{poke} accesses is non-deterministic. The accesses are serialized in the simulation runtime. Multiple \ttt{poke} accesses to the same signal will cause a warning, but the last value will be used. Sometimes a thread has to monitor an input signal for a certain transition. To be certain that all \ttt{poke} commands have occurred before the monitor thread receives the signal value, the \ttt{peekMonitor} command is used. No more \ttt{poke} commands can be issued after this command before the next time step, since this may invalidate the value another thread received when calling \ttt{peekMonitor}.
+In the UVM, components communicate via TLM channels. TLM channels by themselves only facilitate method invocation by
+one component on another. Only when a TLM FIFO is used, is communication between to concurrently running threads
+facilitated. For the verification framework, a simplification is made such that only one channel object exists. This
+channel object allows for sending and receiving of messages between threads by giving the sender and receiver a
+handle to the channel object. The channel is not buffered, meaning that the sender and receiver will be synchronized
+on the exchange of a message. While waiting for the sender or receiver, depending on the operation, the thread will
+be put to sleep until the clock cycle where the message is sent or received. This could be the same clock cycle it
+went to sleep or a later one.
 
-In the UVM, components communicate via TLM channels. TLM channels by themselves only facilitate method invocation by one component on another. Only when a TLM FIFO is used, is communication between to concurrently running threads facilitated. For the verification framework, a simplification is made such that only one channel object exists. This channel object allows for sending and receiving of messages between threads by giving the sender and receiver a handle to the channel object. The channel is not buffered, meaning that the sender and receiver will be synchronized on the exchange of a message. While waiting for the sender or receiver, depending on the operation, the thread will be put to sleep until the clock cycle where the message is sent or received. This could be the same clock cycle it went to sleep or a later one. 
-
-The simulation starts in one root thread which can be forked into multiple threads. The simulation finishes when the root thread exits. It can use the \ttt{join} functionality to wait for other threads to exit before finishing the simulation. 
+The simulation starts in one root thread which can be forked into multiple threads. The simulation finishes when the
+root thread exits. It can use the \ttt{join} functionality to wait for other threads to exit before finishing the simulation.
 
 \begin{comment}
 - concurrency is a key feature for working with hardware designs which are inherently parallel
@@ -2031,32 +2081,70 @@ The simulation starts in one root thread which can be forked into multiple threa
 - simulation starts in one root thread which can be forked
 \end{comment}
 
-
-
 \subsection{Test Phases} %-----------------------------------------------------------------------------------------------------
 
-Test phases are a way to structure the execution of the testbench, essentially adding a set of synchronization points to the testbench such that different components agree when a certain functionality should be executed. The UVM defines an extensive set of phases to standardize when exactly which tasks should be handled. The purpose of the run phases like \textit{reset}, \textit{configure} and \textit{main} is clear: They add certain checkpoints in the simulation to synchronize components, and allow better inheritance based composition. A base test could for instance define what should be done in the \textit{reset} phase, while specific test cases only have to implement the test code in the \textit{main} phase.
+Test phases are a way to structure the execution of the testbench, essentially adding a set of synchronization points
+to the testbench such that different components agree when a certain functionality should be executed. The UVM
+defines an extensive set of phases to standardize when exactly which tasks should be handled. The purpose of the run
+phases like \textit{reset}, \textit{configure} and \textit{main} is clear: They add certain checkpoints in the
+simulation to synchronize components, and allow better inheritance based composition. A base test could for instance
+define what should be done in the \textit{reset} phase, while specific test cases only have to implement the test
+code in the \textit{main} phase.
 
-When it comes to the build phases, it is not clear why the splitting of the construction of the testbench has to be split into multiple phases. In \cite{uvm_phases}, it is argued that this is necessary to ensure that components exist before they are referenced. Since UVM components are classes and can be instantiated at any time in constrast to modules which are static, it is thought to be necessary to add these phases for coordination and avoiding errors. 
+When it comes to the build phases, it is not clear why the splitting of the construction of the testbench has to be
+split into multiple phases. In \cite{uvm_phases}, it is argued that this is necessary to ensure that components exist
+before they are referenced. Since UVM components are classes and can be instantiated at any time in constrast to
+modules which are static, it is thought to be necessary to add these phases for coordination and avoiding errors.
 
-In this framework, a simpler approach is chosen which builds on the fact, that in the component hieararchy, only should ever assume its child components to be fully constructed and internally connected. Scala encourages the use of the class constructor to fully initialize an object. The declaration of fields and the construction code are merged inside the class body. Referencing fields before they have been initialized results in an error. The constructor of a component should start by preparing the parameters for its child components and then instantiate them. After the child components constructors have returned, they can be assumed to be fully initialized. It is thus possible to connect channels and expose references to channels of child components as a field in the current component. All this code will run in zero simulation time and instantiating the top-level component will result in a fully constructed and connected testbench hierarchy. Due to Scala's way of handling constructor code and field definitions, it is impossible to reference uninitialized components using this approach. When inheritance is used, Scala automatically calls the super-class constructor before the one of the derived one, such that all fields of the super-class can be assumed to be initialized in the constructor of the derived class. 
+In this framework, a simpler approach is chosen which builds on the fact, that in the component hieararchy, only
+should ever assume its child components to be fully constructed and internally connected. Scala encourages the use of
+the class constructor to fully initialize an object. The declaration of fields and the construction code are merged
+inside the class body. Referencing fields before they have been initialized results in an error. The constructor of a
+component should start by preparing the parameters for its child components and then instantiate them. After the
+child components constructors have returned, they can be assumed to be fully initialized. It is thus possible to
+connect channels and expose references to channels of child components as a field in the current component. All this
+code will run in zero simulation time and instantiating the top-level component will result in a fully constructed
+and connected testbench hierarchy. Due to Scala's way of handling constructor code and field definitions, it is
+impossible to reference uninitialized components using this approach. When inheritance is used, Scala automatically
+calls the super-class constructor before the one of the derived one, such that all fields of the super-class can be
+assumed to be initialized in the constructor of the derived class.
 
-The reason for having a \textit{end of elaboration} phase according to \cite[Ch 4.6]{mehta2018asic} is to finalize the configuration of components. It is decided that all configuration of a component should happen in the constructor of its parent, thus removing the need of the phase. A \textit{start of simulation} phase could be useful for printing of configuration and test information according to \cite[4.6]{mehta2018asic}. Since this is not functionally necessary, it is left out of the framework.
+The reason for having a \textit{end of elaboration} phase according to \cite[Ch 4.6]{mehta2018asic} is to finalize
+the configuration of components. It is decided that all configuration of a component should happen in the constructor
+of its parent, thus removing the need of the phase. A \textit{start of simulation} phase could be useful for printing
+of configuration and test information according to \cite[4.6]{mehta2018asic}. Since this is not functionally
+necessary, it is left out of the framework.
 
-In the UVM, the sub-phases of the run phases each have their pre and post variant running immediately before and after the associated phase. According to \cite[Ch 4.6]{mehta2018asic}, not much use is anticipated for these phases and they are left out, too.
+In the UVM, the sub-phases of the run phases each have their pre and post variant running immediately before and
+after the associated phase. According to \cite[Ch 4.6]{mehta2018asic}, not much use is anticipated for these phases
+and they are left out, too.
 
-This leaves the cleanup phases \textit{extract}, \textit{check}, \textit{report} and \textit{final}. It is necessary to have at least one phase after the simulation has ended to give components a chance to analyze observed transactions and coverage statistics in order to report results. Viewing phases as synchronization constructs, the division into multiple phases is thus not strictly necesary. What it does facilitate is composability through inheritance. A component could use the \textit{extract} implementation of its super-class and only specify new behavior for the \textit{report} phase. However, this could also be achieved by the super-class declaring a \textit{extract} method which the derived class can use in its \textit{report} implementation. How the extracting and checking functionality is split into methods can be up to the user and does not have to be part of the phase system. As such, it is decided to only include a \textit{report} phase, which includes the extraction and checking functionality before printing the actual results.
+This leaves the cleanup phases \textit{extract}, \textit{check}, \textit{report} and \textit{final}. It is necessary
+to have at least one phase after the simulation has ended to give components a chance to analyze observed
+transactions and coverage statistics in order to report results. Viewing phases as synchronization constructs, the
+division into multiple phases is thus not strictly necesary. What it does facilitate is composability through
+inheritance. A component could use the \textit{extract} implementation of its super-class and only specify new
+behavior for the \textit{report} phase. However, this could also be achieved by the super-class declaring a
+\textit{extract} method which the derived class can use in its \textit{report} implementation. How the extracting and
+checking functionality is split into methods can be up to the user and does not have to be part of the phase system.
+As such, it is decided to only include a \textit{report} phase, which includes the extraction and checking
+functionality before printing the actual results.
 
-Scala has support for traits which describe a set of methods and fields which a class has to implement. One class can implement a series of traits. This makes it possible to make phases opt-in, by implementing the relevant trait in a component. This makes it clear which phases a component uses. This can be useful when extending an existing component, since it can be read from the class definition which phases are implemented.
+Scala has support for traits which describe a set of methods and fields which a class has to implement. One class can
+implement a series of traits. This makes it possible to make phases opt-in, by implementing the relevant trait in a
+component. This makes it clear which phases a component uses. This can be useful when extending an existing
+component, since it can be read from the class definition which phases are implemented.
 
 \begin{figure}
-\centering
-\includegraphics[width=\textwidth]{diagrams/own_phases.pdf}
-\caption{The simplified phasing system of the verification framework.}
-\label{fig:phases}
+  \centering
+  \includegraphics[width=\textwidth]{diagrams/own_phases.pdf}
+  \caption{The simplified phasing system of the verification framework.}
+  \label{fig:phases}
 \end{figure}
 
-The final phasing system is shown in Figure \ref{fig:phases}. The constructors are not an actual phase but are still shown for clarity before the start of the run phases. The phase system is kept very simple, but it should, at least for standard cases, provide the synchronization points necessary to structure the testbench execution.
+The final phasing system is shown in Figure \ref{fig:phases}. The constructors are not an actual phase but are still
+shown for clarity before the start of the run phases. The phase system is kept very simple, but it should, at least
+for standard cases, provide the synchronization points necessary to structure the testbench execution.
 
 \begin{comment}
 - core concept in UVM
@@ -2110,23 +2198,22 @@ components have finished their work
 - as \cite[Ch. 4.6]{mehta2018asic} notes, not much use is anticipated for the pre and post run time phases
 \end{comment}
 
-
 \subsection{Reusable Verification Components} %--------------------------------------------------------------------------------
 
 \cite{sutherland2015uvm} -> what is a practical subset for UVM
 
 - \cite{sutherland2015uvm} will be used as reference for which features are necessary for a practical verification framework
-- 
+-
 
-- things that are needed 
-  - a test primitive
-  - an environment container primitive
-  - an agent primitive 
-  - a sequencer primitive 
-  - a driver primitive
-  - an monitor primitive
-  - an analysis component primitive (subscriber)
-  - 
+- things that are needed
+- a test primitive
+- an environment container primitive
+- an agent primitive
+- a sequencer primitive
+- a driver primitive
+- an monitor primitive
+- an analysis component primitive (subscriber)
+-
 
 - a UVM testbench is close to a hdl test harness with static components
 
@@ -2143,7 +2230,6 @@ transactions on the driver port pulling from different incomin sequences aka a c
 
 UVM requires a recompilation for each testbench \cite{salemi2013uvm}, we do not need that since a jar can have
 multiple entry points.
-
 
 \todo{consider callbacks -> in scala easy to implement with higher order functions}
 
@@ -2164,19 +2250,27 @@ multiple entry points.
 
 \subsection{Stimulus Sequences} %----------------------------------------------------------------------------------------------
 
-Sequences are a necessary mechanism to structure the generation of stimulus such that it can be reused and composed. The UVM design of sequences is quite straight forward and easy to use. All the user has to do is implement the \ttt{body} method in which items can be generated. The communication with the receiver of the produced items is done through the \ttt{start\_item} and \ttt{finish\_item} methods. The \ttt{start\_item} call blocks until the sequencer grants the sequence the right to produce an item, while the \ttt{finish\_item} call actually sends the item and wait for the response from the receiver. 
+Sequences are a necessary mechanism to structure the generation of stimulus such that it can be reused and composed.
+The UVM design of sequences is quite straight forward and easy to use. All the user has to do is implement the
+\ttt{body} method in which items can be generated. The communication with the receiver of the produced items is done
+through the \ttt{start\_item} and \ttt{finish\_item} methods. The \ttt{start\_item} call blocks until the sequencer
+grants the sequence the right to produce an item, while the \ttt{finish\_item} call actually sends the item and wait
+for the response from the receiver.
 
-In the verification framework, the syntax should orient itself more towards generators. In F\# for instance, a new item in a sequence is produced calling \ttt{yield item}, while a sequence of items can be produced one after the other using \ttt{yield! seq}. For the framework, a call to \ttt{yieldItem(item)} shall produce the item, and return the response item. This means only a single function call is necessary to produce an item and receive the response. Other sequences can be added to the stream of the sequence using \ttt{yieldSeq(seq)} which will produce a sequence of response items. This means that sequences can be composed easily. 
+In the verification framework, the syntax should orient itself more towards generators. In F\# for instance, a new
+item in a sequence is produced calling \ttt{yield item}, while a sequence of items can be produced one after the
+other using \ttt{yield! seq}. For the framework, a call to \ttt{yieldItem(item)} shall produce the item, and return
+the response item. This means only a single function call is necessary to produce an item and receive the response.
+Other sequences can be added to the stream of the sequence using \ttt{yieldSeq(seq)} which will produce a sequence of
+response items. This means that sequences can be composed easily.
 
-In case a simple composition of sequences is needed such as a concatenation, standard sequence combinators should be provided. 
+In case a simple composition of sequences is needed such as a concatenation, standard sequence combinators should be provided.
 
 \todo{what kind of sequence combinators?}
-
 
 \todo{what about virtual sequences}
 - virtual sequences are about targetting different sequencers
 - could yieldItem(seq, item) be used to target a different sequencer?
-
 
 - sequences are a necessary mechanism to structure the generation of stimulus
 - their implementation in UVM is quite good
@@ -2185,19 +2279,23 @@ In case a simple composition of sequences is needed such as a concatenation, sta
 - a sequence should prepare an item, then yield it
 - the call to yield should return the response item
 
-
 \subsection{Register Abstraction} %--------------------------------------------------------------------------------------------
 
 \subsection{Logging} %---------------------------------------------------------------------------------------------------------
 
-For debugging puporses it is important to have a logging system. Here the UVM provides a powerful logging system which tags messages by the component that has issued it. This allows for filtering of messages by component. In addition the UVM provides verbosity levels to control how detailed the logging should be. 
+For debugging puporses it is important to have a logging system. Here the UVM provides a powerful logging system
+which tags messages by the component that has issued it. This allows for filtering of messages by component. In
+addition the UVM provides verbosity levels to control how detailed the logging should be.
 
-In the verification framework, a similar logging system should be available. The component base type should provide functions for printing info, warning and error messages. In addition to tagging these messages with the components hierarchical name, source file and line number information should be added to give a pointer to where the message was issued in the code. The functionality of fatal errors in UVM is not necessary, since the Scala exception system can be used instead.
+In the verification framework, a similar logging system should be available. The component base type should provide
+functions for printing info, warning and error messages. In addition to tagging these messages with the components
+hierarchical name, source file and line number information should be added to give a pointer to where the message was
+issued in the code. The functionality of fatal errors in UVM is not necessary, since the Scala exception system can
+be used instead.
 
 \subsection{Debugging} %-------------------------------------------------------------------------------------------------------
 
 \subsection{Level of Testing} %------------------------------------------------------------------------------------------------
-
 
 \subsection{Functional Coverage} %---------------------------------------------------------------------------------------------
 
@@ -2234,7 +2332,6 @@ a covergroup with its sampling event should be passed to verification runtime
 - randomize with constraints
 
 - for signal processing purposes it may be interesting to have a continuous random signal i.e. a random walk
-
 
 \section{Possible Approaches} %================================================================================================
 
@@ -2298,7 +2395,8 @@ a covergroup with its sampling event should be passed to verification runtime
 
 - annoying to write interface in scala and SystemVerilog -> simple tool could create scala code from SystemVerilog
 
-- it is really difficult working with something which is promised to bear fruit for really complex cases when time is limited and does not allow for creating cases which would show the full potential
+- it is really difficult working with something which is promised to bear fruit for really complex cases when time is
+limited and does not allow for creating cases which would show the full potential
 - I also don't have the use case and expertise to showcase full blown UVM
 - the design of such a framework should build on actual experience with large verification projects
 
