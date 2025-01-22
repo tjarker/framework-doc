@@ -1711,7 +1711,9 @@ instance of the DUT. The simulation interface should allow for multiple threads 
 concurrently. The tool responsible for simulating design should support general RTL designs.
 
 A modern testbench would not be complete without a way to generate constrained randomize and collect coverage
-information. As such, mechanisms for both features in the language of choice should be provided. \todo{but since this has been explored in python and scala already, not of concern for me, but a small consideration of how it may be integrated will be made}
+information. As such, mechanisms for both features in the language of choice should be provided. \todo{but since this
+  has been explored in python and scala already, not of concern for me, but a small consideration of how it may be
+integrated will be made}
 
 The previous requirements provide the foundation for constructing testbenches. To facilitate the development of
 reusable testbench infrastructure, the framework should provide a set of primitives similar to those found in the
@@ -1727,7 +1729,7 @@ in the background then. Maybe they can be described more shallow}
 \todo{what parts of UVM should be integrated?}
 - here \cite{sutherland2015uvm} can give an answer
 - it describes a practical subset of UVM which allows to construct UVM testbenches
-- it acknowledges that UVM has a lot of redundant features and features which are only useful in rare cases 
+- it acknowledges that UVM has a lot of redundant features and features which are only useful in rare cases
 - it recommends a subset of UVM as a quick way to exploit the benefits of UVM
 - this shall be the basis for the integration of UVM features into the new framework
 
@@ -2123,7 +2125,9 @@ of its parent, thus removing the need of the phase. A \textit{start of simulatio
 of configuration and test information according to \cite[4.6]{mehta2018asic}. Since this is not functionally
 necessary, it is left out of the framework.
 
-The run phase is called \textit{simulation} phase and the main phase is called the \textit{test} phase in the verification framework. In the UVM, the sub-phases of the run phases each have their pre and post variant running immediately before and
+The run phase is called \textit{simulation} phase and the main phase is called the \textit{test} phase in the
+verification framework. In the UVM, the sub-phases of the run phases each have their pre and post variant running
+immediately before and
 after the associated phase. According to \cite[Ch 4.6]{mehta2018asic}, not much use is anticipated for these phases
 and they are left out, too.
 
@@ -2210,8 +2214,10 @@ components have finished their work
 
 \subsection{Reusable Verification Primitives} %--------------------------------------------------------------------------------
 
-Providing a set of primitives and a standard manner of composing them is a key part of facilitating the reuse of verification components. The verification framework will follow the recommendations of \citeauthor{sutherland2015uvm} \cite{sutherland2015uvm} for a minimal UVM subset required for practical verification according to the UVM. The primitives which are mentioned by the authors match with those generally presented in the literature. These base primitives are:
-
+Providing a set of primitives and a standard manner of composing them is a key part of facilitating the reuse of
+verification components. The verification framework will follow the recommendations of \citeauthor{sutherland2015uvm}
+\cite{sutherland2015uvm} for a minimal UVM subset required for practical verification according to the UVM. The
+primitives which are mentioned by the authors match with those generally presented in the literature. These base primitives are:
 
 \begin{itemize}
   \item The sequence item: The transaction primitive
@@ -2222,23 +2228,40 @@ Providing a set of primitives and a standard manner of composing them is a key p
   \item The analysis component: Subscribes to transactions and performs analysis or checks
   \item The agent: Contains all components necessary for a single interface
   \item The environment: Contains agents and other components necessary for a (sub)system
-  \item The test: Contains the top environment and controls stimulus generation 
+  \item The test: Contains the top environment and controls stimulus generation
 \end{itemize}
 
-Each of these components has a distinct role in the static verification environment, as it has been outlined in Chapter \ref{ch:background}. As such, each of them is needed to build a complete testbench, and the framework should provide base classes for each of them which the user can extend.
+Each of these components has a distinct role in the static verification environment, as it has been outlined in
+Chapter \ref{ch:background}. As such, each of them is needed to build a complete testbench, and the framework should
+provide base classes for each of them which the user can extend.
 
-In UVM these base components are implemented in a class hiearchy with \textit{uvm void} being the base class. Derived from this is the \ttt{uvm\_object} which provides a series of features like printing, recording, copying, comparing as well as packing and unpacking, i.e. serialization, of objects. The \textit{uvm report object} is derived from this, adding logging funnctionality. The \textit{uvm component} base class is derived from the \textit{uvm report object} and adds phasing, hierarchy tracking and the factory interface. UVM sequence items and sequences are derived from the \textit{uvm object} class. 
+In UVM these base components are implemented in a class hiearchy with \textit{uvm void} being the base class. Derived
+from this is the \ttt{uvm\_object} which provides a series of features like printing, recording, copying, comparing
+as well as packing and unpacking, i.e. serialization, of objects. The \textit{uvm report object} is derived from
+this, adding logging funnctionality. The \textit{uvm component} base class is derived from the \textit{uvm report
+object} and adds phasing, hierarchy tracking and the factory interface. UVM sequence items and sequences are derived
+from the \textit{uvm object} class.
 
-As noted by \citeauthor{sutherland2015uvm} \cite{sutherland2015uvm}, not all of this class hiearchy is relevant to the end-user of UVM. In the framework, three base classes are provided: Components, Transactions and Sequences. Instead of relying on inheritance to share functionality among these as it is done in the UVM, traits shall be used to compose the required functionality of these primitives.
+As noted by \citeauthor{sutherland2015uvm} \cite{sutherland2015uvm}, not all of this class hiearchy is relevant to
+the end-user of UVM. In the framework, three base classes are provided: Components, Transactions and Sequences.
+Instead of relying on inheritance to share functionality among these as it is done in the UVM, traits shall be used
+to compose the required functionality of these primitives.
 
-A Component is the base type for all the static elements of the testbench. It is hierarchy-aware by holding references to its parent and children. Phasing is not a direct part of the Component base type. Instead, as it has been discussed previously, phases are added to a component by adding traits to it. For instance a component can execute code in the simulation phase by extending the \ttt{SimulationPhase} trait and implementing the \ttt{sim} method. Components add logging capabilities with hierarchical awareness which will be further discussed in Section \ref{sec:logging}. 
+A Component is the base type for all the static elements of the testbench. It is hierarchy-aware by holding
+references to its parent and children. Phasing is not a direct part of the Component base type. Instead, as it has
+been discussed previously, phases are added to a component by adding traits to it. For instance a component can
+execute code in the simulation phase by extending the \ttt{SimulationPhase} trait and implementing the \ttt{sim}
+method. Components add logging capabilities with hierarchical awareness which will be further discussed in Section
+\ref{sec:logging}.
 
-The Transaction base type is used to capture the stimulus items which are sent to the DUT. For transactions it is important to be able to check for data equality. This is done by implementing the \ttt{equivalent} method. Furthermore, it is important to copy transactions, which is facilitated by implementing the \ttt{copy} method. Serialization and recording of transactions is considered outside of the scope of the framework. The Sequence base type is used to generate transactions. It's design will be considered in more detail in Section \ref{sec:stimulus_sequences}.
-
-
+The Transaction base type is used to capture the stimulus items which are sent to the DUT. For transactions it is
+important to be able to check for data equality. This is done by implementing the \ttt{equivalent} method.
+Furthermore, it is important to copy transactions, which is facilitated by implementing the \ttt{copy} method.
+Serialization and recording of transactions is considered outside of the scope of the framework. The Sequence base
+type is used to generate transactions. It's design will be considered in more detail in Section \ref{sec:stimulus_sequences}.
 
 \begin{comment}
-  
+
 - in uvm all extend uvm\_object and then uvm\_component
 - uvm obj provides
   - factory interface
@@ -2248,8 +2271,7 @@ The Transaction base type is used to capture the stimulus items which are sent t
   - comparing -> case classes support it, but for general classes user has to define, Ordered[T] and Comparable[T] exist in scala
   - serdes -> outside of scope
 
-- 
-
+-
 
 \cite{sutherland2015uvm} -> what is a practical subset for UVM
 
@@ -2277,8 +2299,6 @@ case that should call the driver and let that code block until the transaction i
 - a sequence aka generator should be passed to a sequencer, which should run in its own thread and generate
 transactions on the driver port pulling from different incomin sequences aka a channel mux in gears
 \end{comment}
-
-
 
 \subsection{Stimulus Sequences} %----------------------------------------------------------------------------------------------
 \label{sec:stimulus_sequences}
@@ -2312,22 +2332,28 @@ In case a simple composition of sequences is needed such as a concatenation, sta
 - a sequence should prepare an item, then yield it
 - the call to yield should return the response item
 
-
-
-
 \subsection{Running a Test} %-----------------------------------------------------------------------------------------------
 
-In order to run a test case which the user has written, it has to be handed to a runtime which executes the different phases. This is handled by the \ttt{runTest} function. It takes takes an instance of the DUT's interface and a closure to create the test case. The closure receives the DUT instance as an argument. If case the testcase expects a BFM instead of the direct interface to the DUT, the user can construct it in the closure before returning the test instance. The \ttt{runTest} function retunrs once the test is finished. An example of how to run a test is shown in Listing \ref{lst:runTest}.
+In order to run a test case which the user has written, it has to be handed to a runtime which executes the different
+phases. This is handled by the \ttt{runTest} function. It takes takes an instance of the DUT's interface and a
+closure to create the test case. The closure receives the DUT instance as an argument. If case the testcase expects a
+BFM instead of the direct interface to the DUT, the user can construct it in the closure before returning the test
+instance. The \ttt{runTest} function retunrs once the test is finished. An example of how to run a test is shown in
+Listing \ref{lst:runTest}.
 
 \begin{listing}
 \begin{lstlisting}[language=scala, captionpos=b, caption=Example code for running a test case using the verification framework.,label=lst:runTest]
-runTest(new MyDUT) { dut => 
+runTest(new MyDUT) { dut =>
   new MyTest(dut)
 }
 \end{lstlisting}
 \end{listing}
 
-In addition to complex UVM-style testbenches, the framework should also support simpler tests. The Chiseltest framework provides a simple way to write unit-test-like directed tests in a concise manner. These purely rely on the peek, poke and expect functions or a BFM to interact with the DUT. This should also be possible in the verification framework. The \ttt{Simulation} function is provided for this purpose. It takes the DUT instance and a closure which contains the test code. An example is shown in Listing \ref{lst:unitTest}.
+In addition to complex UVM-style testbenches, the framework should also support simpler tests. The Chiseltest
+framework provides a simple way to write unit-test-like directed tests in a concise manner. These purely rely on the
+peek, poke and expect functions or a BFM to interact with the DUT. This should also be possible in the verification
+framework. The \ttt{Simulation} function is provided for this purpose. It takes the DUT instance and a closure which
+contains the test code. An example is shown in Listing \ref{lst:unitTest}.
 
 \begin{listing}
 \begin{lstlisting}[language=scala, captionpos=b, caption=Example code for running a test case using the verification framework.,label=lst:unitTest]
@@ -2341,10 +2367,6 @@ Simulation(new MyDUT) { dut =>
 \end{listing}
 
 \subsection{Testbench Configurability} %---------------------------------------------------------------------------------------
-
-
-
-
 
 UVM requires a recompilation for each testbench \cite{salemi2013uvm}, we do not need that since a jar can have
 multiple entry points.
@@ -2366,7 +2388,6 @@ multiple entry points.
 - if the factory is used, we could pass a small config db to the factory
 - each component should then specify its parameters such that the factory checks automatically if all paramters are defined
 
-
 \subsection{Logging} %---------------------------------------------------------------------------------------------------------
 \label{sec:logging}
 
@@ -2380,9 +2401,7 @@ hierarchical name, source file and line number information should be added to gi
 issued in the code. The functionality of fatal errors in UVM is not necessary, since the Scala exception system can
 be used instead.
 
-
 \subsection{Register Abstraction} %--------------------------------------------------------------------------------------------
-
 
 \subsection{Functional Coverage} %---------------------------------------------------------------------------------------------
 
@@ -2422,7 +2441,6 @@ a covergroup with its sampling event should be passed to verification runtime
 
 \subsection{Debugging} %-------------------------------------------------------------------------------------------------------
 \todo{interactive tests? the scala repl could be used}
-
 
 \section{Possible Approaches} %================================================================================================
 
