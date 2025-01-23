@@ -60,11 +60,6 @@
   - "the" UVM
   - configDB
 }
-
-\begin{lstlisting}
-@main def helloWorld : Unit =
-    println("Hello, world!")
-\end{lstlisting}
 - present topic
 - present problem statement
 - why is this relevant
@@ -87,7 +82,8 @@
 \chapter{Background and Related Work} %/////////////////////////////////////////////////////////////////////////////////////////
 \label{ch:background}
 
-\todo{meta text}
+
+In this chapter, the problem of verification itself will be discussed. Furthermore, current approaches to verification will be outlined and concrete state-of-the-art verification languages and frameworks will be introduced. The goal is to provide an overview which lays the foundation for understanding what a verification framework should provide and analyze which aspects of the state-of-the-art can be improved. Verification concerns itself with hardware, but is itself a software discipline. As such, a framework for verification must concern itself with software engineering aspects, too. \todo{More specifically, questions of how software is kept modular and maintainable, }. A selection of these so-called software design patterns will be discussed in the final part of the chapter 
 
 \begin{comment}
 - what is the purpose of verification
@@ -1813,6 +1809,8 @@ basically all errors are only caught at runtime. For potentially very large test
 simulations, this should be considered a drawback. Considering this alongside Scala's flexibility in implementing
 embedded languages with a natural syntax, it is decided to implement the verification framework in Scala.
 
+\todo{scala 3 vs 2}
+
 \begin{comment}
   DSL pros:
 - reuse of host language features
@@ -2070,6 +2068,9 @@ went to sleep or a later one.
 The simulation starts in one root thread which can be forked into multiple threads. The simulation finishes when the
 root thread exits. It can use the \ttt{join} functionality to wait for other threads to exit before finishing the simulation.
 
+
+\todo{we need to provide one to many channels}
+
 \begin{comment}
 - concurrency is a key feature for working with hardware designs which are inherently parallel
 - threads can be running or sleeping
@@ -2158,7 +2159,13 @@ The final phasing system is shown in Figure \ref{fig:phases}. The constructors a
 shown for clarity before the start of the run phases. The phase system is kept very simple, but it should, at least
 for standard cases, provide the synchronization points necessary to structure the testbench execution.
 
-\todo{what about objections?}
+One callenge a distributed testbench faces is the decision of when a phase has finished. In UVM, components can raise an objection, which that they are not yet ready to proceed to the next phase. They signal that they are done by dropping the objection. This way also a driver could for instance block the run phase from finishing until it has received its last response. In the verification framework a less powerful but simples approach is chosen. Components running code in the simulation phase have no way to object to the simulation finishing. Instead the reset, configure, test and shutdown phases finish once all participants have returned from the method associated with the phase. The simulation phase is thus meant for components which provide a static service in the testbench such as a driver or monitor. The reset, configure, test and shutdown phases are meant for components which \textit{control} the testbench in a fixed number of steps and exit once they are done. This way the simulation phase can be used to provide services to the testbench which are always available, while the other phases are used to control the testbench execution. 
+
+An issue that the controlling phases have, is that some actions which they trigger may take an unpredictable time to finish. In this case, a controlling phase such as the test phase should interrogate service providing components such as drivers to determine when all its actions have taken effect. This could for instance be done by waiting for sequence to finish producing stimulus, or by waiting for a monitor to observe a certain number of transactions on an interface. 
+
+\todo{when does this phase exit objection system NOT work?}
+
+
 
 \begin{comment}
 - core concept in UVM
@@ -2313,13 +2320,46 @@ for the response from the receiver.
 In the verification framework, the syntax should orient itself more towards generators. In F\# for instance, a new
 item in a sequence is produced calling \ttt{yield item}, while a sequence of items can be produced one after the
 other using \ttt{yield! seq}. For the framework, a call to \ttt{yieldTx(tx)} shall produce the item, and return
-the response item. This means only a single function call is necessary to produce an item and receive the response.
-Other sequences can be added to the stream of the sequence using \ttt{yieldSeq(seq)} which will produce a sequence of
-response items. This means that sequences can be composed easily.
+the response item of a possibly different type. This means only a single function call is necessary to produce an item and receive the response.
+Other sequences can be added to the stream of the sequence using \ttt{yieldSeq(seq)} which forward the items of that sequence and provide it with the received responses.
 
-In case a simple composition of sequences is needed such as a concatenation, standard sequence combinators should be provided.
+It is not always necessary to use a generator to produce stimulus. The advantage of the generator is that it can have a complex stateful behavior which is captured the code of its body. If simple sequences, like for instance a fixed-length sequence of random items, are needed, standard Scala collections should be used. For instance the \ttt{Seq.fill(n)(fun)} function can be used to generate a sequence of \ttt{n} items by calling the \ttt{fun} function \ttt{n} times. The \ttt{Seq.tabulate(n)(i => fun(i))} function can be used to generate a sequence of \ttt{n} items by providing the function \ttt{fun} with the index of the item. In order to allow for the composing of Scala collections and sequences, \ttt{yieldSeq} also should accept a Scala collection as an argument. Furthermore, a Scala collection can be converted to a sequence using the \ttt{.toSequence} method. An example of a sequence is shown in Listing \ref{lst:sequence}. Two items are produced using the \ttt{yieldTx} method, while two more items are produced using a scala \ttt{Seq} collection.
 
-\todo{what kind of sequence combinators?}
+
+Sequences can be composed by creating a new sequences which coordinates the execution of multiple sequences. In the case of a simple composition, standard operators should be provided to compose sequences. Some ideas for sequence combinators are:
+
+\begin{itemize}
+  \item \ttt{Sequence.concat(a,b,..)}: Concatenate sequences \ttt{a}, \ttt{b}, ...
+  \item \ttt{Sequence.interleave(a,b)}: Interleave two sequences \ttt{a} and \ttt{b}
+  \item \ttt{Sequence.mix(a,b)}: Randomly forward items from either sequence \ttt{a} or \ttt{b}
+  \item \ttt{Sequence.repeat(a,n)}: Repeat sequence \ttt{a} \ttt{n} times
+  \item \ttt{Sequence.map(a,f)}: Apply function \ttt{f} to each item of sequence \ttt{a}
+  \item \ttt{Sequence.filter(a,p)}: Filter items of sequence \ttt{a} using predicate \ttt{p}
+\end{itemize}
+
+Some of these operators like \ttt{map} and \ttt{filter} take inspiration from common functional programming higher-order functions.
+
+
+\begin{listing}
+\begin{lstlisting}[language=scala, captionpos=b, caption=Example of a sequence producing four items of type \ttt{Tx} with responses of type \ttt{Resp}.,label=lst:sequence]
+class MySeq extends Sequence[Tx, Resp] {
+  def body: Unit = {
+    val r0 = yieldTx(new Tx(0))
+    val r1 = yieldTx(new Tx(1))
+    val s = Seq.tabulate(2)(i => new Tx(i + 2))
+    val Seq(r2, r3) = yieldSeq(s)
+  }
+}
+\end{lstlisting}
+\end{listing}
+
+To actually use a sequence, it has to be handed of to a sequencer. In the framework, a simple sequencer shall be provided which plays one sequence after the other on a first-come-first-served basis. A sequence is played by calling the method \ttt{sequencer.play(seq)}. The call blocks until the sequencer is ready to start palying the sequence.
+
+Often, it is of interest for a test case to know when a sequence has finished, i.e. all items have been handed off to the driver and the responses have been received. This can be done by calling the \ttt{seq.waitUntilDone()} method which blocks until the sequence has finished.
+
+\begin{comment}
+  
+- scala sequences should be convertable to sequences
 
 \todo{what about virtual sequences}
 - virtual sequences are about targetting different sequencers
@@ -2331,6 +2371,8 @@ In case a simple composition of sequences is needed such as a concatenation, sta
 - it is not clear why sequence needs two methods: start and finish item
 - a sequence should prepare an item, then yield it
 - the call to yield should return the response item
+\end{comment}
+
 
 \subsection{Running a Test} %-----------------------------------------------------------------------------------------------
 
@@ -2442,37 +2484,129 @@ a covergroup with its sampling event should be passed to verification runtime
 \subsection{Debugging} %-------------------------------------------------------------------------------------------------------
 \todo{interactive tests? the scala repl could be used}
 
-\section{Possible Approaches} %================================================================================================
-
-1. SystemVerilog library written for Verilator
-2. dedicated HVL compiling via CIRCT dialects to SystemVerilog testbench
-3. DSL cosim with simulation backend
-
-\subsection{SystemVerilog Library} %-------------------------------------------------------------------------------------------
-
-\subsection{HVL using CIRCT} %-------------------------------------------------------------------------------------------------
-
-\subsection{DSL Co-Simulation} %-----------------------------------------------------------------------------------------------
-
-\section{Chosen Approach} %====================================================================================================
 
 \chapter{Implementation} %/////////////////////////////////////////////////////////////////////////////////////////////////////
 
 \section{Simulation Runtime} %=================================================================================================
 
-\subsection{Generating the Verilated Model} %----------------------------------------------------------------------------------
-
 \subsection{Interfacing the Verilated Model} %---------------------------------------------------------------------------------
 
-\subsection{Simulation Interface} %--------------------------------------------------------------------------------------------
+Verilator transpiles the SystemVerilog source code into a C++ class. A mechanism is needed by which the Scala test code can interact with an instance of this class. The JNA (java native access) library can be used to call native functions from the java virtual machine (JVM). In C++, a simulation context class is used to keep all required objects. The following set of functions is provided, which take the simulation context as an argument to interact with the simulation:
 
-\subsection{Simulation Threads} %----------------------------------------------------------------------------------------------
+
+\begin{itemize}
+  \item \ttt{createSimContext\_XX} creates a new simulation context and return a pointer to it
+  \item \ttt{destroySimContext\_XX} destroys a simulation context
+  \item \ttt{setInput\_XX} sets the value of the input signal mapped to the provided id
+  \item \ttt{setInputWide\_XX} sets the value of the input signal mapped to the provided id for inputs wider than 64 bits
+  \item \ttt{getOutput\_XX} gets the value of the output signal mapped to the provided id
+  \item \ttt{getOutputWide\_XX} gets the value of the output signal mapped to the provided id for outputs wider than 64 bits
+  \item \ttt{tick\_XX} evaluates the model and advances the simulation by one clock cycle
+\end{itemize}
+
+The functions are suffixed with the name of the top-level module (signified by \ttt{\_XX}) to make them unique, allowing for multiple models to be loaded into the same JVM instance. The simulation context and functions are compiled together with the Verilator model into a shared library which can be loaded by the JNA library at runtime. A Makefile is generated alongside the model specific simulation interface functions in the Scala code before a simulation is started. The usage of a Makefile results in the shared library to be recompiled only when the model changes.
+  
+
+\todo{mention somewhere that an attempt for register access was successfully made}
+
+\subsection{Concurrency} %----------------------------------------------------------------------------------------------
+
+
+
+- threads are an option but have a lot of overhead, each their own stack
+- in cocotb coroutines are used 
+- project loom adds green threads to the JVM \cite{loom}
+- a new library in scala 3 by epfl called gears tries to take advantage for async style programming \cite{gears}
+- uses scalas context parameters: functions use context dependent values 
+- async functions take async context as parameter def myfun(...)(using Async)
+- this allows for structured concurrency -> a newly spawned thread knows about its parent 
+- well suited for fork-join model
 
 \subsection{Simulation Controller} %-------------------------------------------------------------------------------------------
+
+- accesses to the simulation have to be serialized
+- either lock for simulation
+- but who has responsibility to drive the simulation after all threads sleep?
+- could be the last thread which sleeps
+- instead a model is chosen where a simulation controller runs and receives commands from the simulation threads through a channel
+- channel serializes commands
+- simulation threads issue request and wait to be waken up or receive an answer by waiting for a response on another channel
+- commands:
+  - register thread
+  - deregister thread
+  - poke
+  - peek
+  - step
+  - Mark
+  - SentToChannel
+  - WaitForChannel
+  - WaitForThread
+  - finish
+  - Abort
+
+- sim controller needs to know all simulation threads and keep track of their status
+- therefore register and deregister commands are necessary
+
+- sim controller keeps an event queue
+- the following events exist
+  - Drive
+  - PosEdge
+  - NegEdge
+  - release
+
+- pokes create a drive event at the falling edge of their clock domain
+- peeks are served immediately
+- clock events schedule the next edge when they are executed
+
+- step command schedules a release event for the appropriate time
+- once all threads sleep, the controller advances to the next time with an event, executes all events
+- if threads are released, the controller waits for thm to finish before advancing to the next time
+
+- since channel communication may put threads to sleep while waiting (i.e. sim is allowed to advance) the channel communication has to happen through the sim controller
+- join mechanism is the same
+
+- finish command for good exit
+- abort command for bad exit
+
+- question is now how to give threads access to sim controller
+- global means only a single sim instance
+- dynamic variable would be solution
+- but since Async uses context parameters -> Sim context parameter is used
+- as such function which use the simulation controller def myfun(...)(using Sim, Async) 
+- async is needed since interaction with sim may put thread to sleep
+
+- the actual functions to interact with the simulation are extensions to the port types
+- they use the Sim context to send the appropriate command to the simulation controller
+- example in Listing \ref{lst:simctx}
+- simcontext is provided in sim closure as context parameters
+
+\begin{listing}
+\begin{lstlisting}[language=scala, captionpos=b, caption=Example code for a function using the simulation context to interact with a DUT.,label=lst:simctx]
+def add(dut: Adder)(a: Int, b: Int)
+                   (using Sim, Async): Unit = {
+  dut.a.poke(a)
+  dut.b.poke(b)
+  dut.clk.step(1)
+  dut.c.expect(a + b)
+}
+
+Simulation(new Adder) { dut =>
+  add(dut)(1, 2)
+}
+\end{lstlisting}
+\end{listing}
 
 \section{Verification Environment} %===========================================================================================
 
 \subsection{Phases} %----------------------------------------------------------------------------------------------------------
+
+- like it was discussed earlier, phases are implemented as traits
+- a component can implement multiple phases by extending multiple traits
+- each trait comes with one function which is called in the phase
+- a function taking the root component as argument exists for every phase
+- it starts up forks for simulation phases and else just calls the function
+- whether a component implements a phase is easily determined by a pattern match on the trait
+- inside the runTest the phases are called in order on the root components
 
 \subsection{Component Hierarchy} %---------------------------------------------------------------------------------------------
 
@@ -2512,6 +2646,8 @@ limited and does not allow for creating cases which would show the full potentia
 %\section{Future Work} %========================================================================================================
 
 - verilator performance features (multi-threading, ...)
+
+- allow for setting top level verilog parameters
 
 - add support for attached models
 - a function receiving the dut and can do whatever it likes, reading outputs, setting inputs to for instance model a
