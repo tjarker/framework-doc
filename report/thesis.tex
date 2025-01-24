@@ -921,6 +921,8 @@ SystemVerilog features required for a full UVM testbench is still in an early ph
 
 \section{Software Design Patterns} %===========================================================================================
 
+\todo{maybe this whole section can be dropped. We can introduce the patterns we use in the analysis section}
+
 \todo{meta text}
 
 Software design patterns offer general solutions to reoccurring problems in software design. They provide
@@ -2160,6 +2162,8 @@ An issue that the controlling phases have, is that some actions which they trigg
 \todo{when does this phase exit objection system NOT work?}
 
 
+\todo{we can merge all phases into report because no communication between components is necessary. or more precisely we are not just accessing data which could be invalid. communication would be fine. but usually report would operate only on data in itself. therefore the decomposition into extract.... is orthogonal to phases which are for synchronization}
+
 
 \begin{comment}
 - core concept in UVM
@@ -2404,6 +2408,87 @@ Simulation(new MyDUT) { dut =>
 
 \subsection{Testbench Configurability} %---------------------------------------------------------------------------------------
 
+In the UVM, a factory for objects and component is used to keep the testbench flexible. The factory allows the overwriting of one type with a derived one. This allows for an easy exchange of one component implementation with another, because the instantiation of objects is delegated to the factory. The interface for using the factory is standardized. Objects can pass a string to the factory to set the UVM name of the object, while components can pass a name and a parent component reference. This leaves no option to pass parameters to the constructor of a component. Instead, the UVM provides the configuratio database, a key-value store, to share configuration parameters between components. The configuration database is hierarchy-aware, meaning that each component has its own view on the configuration database, and can thus receive a unqiue configuration. The configuration database also facilitates the sharing of configuration parameters between components, since a key-value pair available at one level in the hierarchy is also available at all child levels.
+
+The factory is a powerful tool to make code flexible by design. A component has to be programmed once, but can be configured in many ways by swapping out the implementation of its sub-components without chaging the code. But the usage of the factory also requires the use of the configuration database which circumvents any built in way of passing configuration parameters to classes, such as through the constructor. Accessing the configuration database requires manual error checking to ensure that the expected key-value pairs actually exist. 
+
+Another mechanism in the UVM to factilitate configurability is through callbacks. A callback encapsulates a set of functions. A component can depend on these functions. The actual implementation of the callback can be chosen dynamically, allowing for the behavior of the component itself to be changed. According to \citeauthor{sutherland2015uvm} \cite{sutherland2015uvm}, this mechanism should however be avoided, due its convoluted setup and performance overhead. \citeauthor{sutherland2015uvm} argues that inheritance meachnisms should be used instead.
+
+In Scala, functions are first class citizens and can be passed around as objects. This makes it easy to pass functions to components, which may use them for a specific task. The component only has to provide an interface to exchange the function implementation, either through a constructor argument or a method. 
+
+These mechanisms are not the only options to decouple a class implementation from its dependencies, i.e. other objects it relies upon. Dependency injection is a design pattern which prescribes that the dependencies of a class should be provided by its environment and not instantiated in the class itself. This can be done through the constructor or through setter methods for the dependencies. By using interfaces for the dependencies to capture the provided functionality, the class is maximally decoupled from the actual implementation of the dependencies. 
+
+\todo{should we mention DI frameworks like spring}
+
+Each of these three approaches have their advantages and disadvantages. While the factory facilitates the swapping of components simply by calling the factory instead of a constructor, it creates an indirection in the passing of parameters to components with components relying on string keys to locate their respective configuration parameters. This can be error-prone and no help can be provided by the compiler to ensure that all necessary parameters are provided. 
+
+Dependency injection on the other hand allow for the usage of constructors or configuration methods to pass parameters, which lets the compiler check their validity. On the other hand, it requires the code to be written in a way to anticipate the swapping of components. A component always has to consider whether the dependencies of its children should be hardcoded or instead kept flexible by exposing the dependencies through its own constructor. This would make higher level components, extremely complex if they would have to collect all the dependencies of their children either through their constructor or through a series of methods.
+
+Using callbacks could be achieved more easily in Scala than in SystemVerilog. But the component has to anticipate the functionality which should be exchangable just like in dependency injection and unlike in the factory approach. 
+
+For smaller verification libraries, dependency injection could be a more standard way to achieve configurability. For larger libraries, the factory approach seems to be more suitable due to the fact that the configurability does not pollute the code. Only the need for the configuration database to pass parameters makes the code more verbose. While the relying on string keys can be a source of errors, it can also be an advantage for communicating parameters between components which do not hold references to each other.
+
+Using dependency injection does not need any infrastructure from the framework, since it only works with language primitives. As such it is always an option to use dependency injection if one wants to avoid the factory and configuration database. The verification framework should provide a factory mechanism and a way to pass parameters akin to the configuration database which is tailored to the capabilities of the language.
+
+\todo{design api}
+
+
+\begin{comment}
+  
+- the UVM uses factory to be able to exchange component implementations
+- due to the standardized constructor interface which only has the name and parent for components, the config db is necessary to pass parameters to components
+- the hieararchy awareness of the config db allows for parameters to be set for specific components 
+- but it also makes it more concise to share parameters between components, they only have to be set once with the correct path
+
+- in this case program is assembled ONCE, and the code behavior changes by external configuration of factory
+- this a very powerful concept, but it is not the only way to achieve configurability
+
+- the use of the factory makes the passing of parameters circumvent the way the language facilitates it: through the constructor or functions
+- another so-called creational pattern is dependency injection \cite{ioc_di}
+- in dependency injection, the components are passed their dependencies through their constructor
+- that means if a component wants to facilitate the use of a different sub-component, the OBJECT is provided from its parent
+- either through a constructor or a setter method
+
+- using dependency injection, swappable components are passed alongside parameters to a component through the constructor
+
+
+- another way to facilitate configurability is through callbacks
+- a callback class defines a set of functions
+- the component checks for registered callbacks of the callback class and calls them
+- the test code can register a callback implementation dynamically to change the behavior of the component
+- according to \cite{sutherland2015uvm} this should be avoided
+  - bad performance
+  - convoluted to setup
+  - OOP should be used instead
+
+
+- in scala functions are first class citizens
+- that means functions can be easily passed to components
+- the components only need to provide an interface to exchange the function
+- either callback function is provided in constructor or through a setter
+
+- this is a form of dependency injection, just with the unit of dependency being a function instead of a component
+
+- pros factory
+  - easy to change out components 
+  - write the code flexible from the start
+
+- cons
+  - parameters are not directly passed in the constructor
+  - they have to be fetched through the config db which requires error checking all the time
+
+- pros dependency injection
+  - parameters are passed directly to the constructor
+  - the compiler can check if all parameters are provided
+
+- cons
+  - modularity has to be anticipated, the code has to be written in a way that components can be swapped out
+
+
+- dependency injection does not require any infrastructure from the framework
+- as such, it should be attempted to implement factory and config db in scala to see if they are easier to handle in the scala way
+
+
 UVM requires a recompilation for each testbench \cite{salemi2013uvm}, we do not need that since a jar can have
 multiple entry points.
 
@@ -2423,6 +2508,8 @@ multiple entry points.
 
 - if the factory is used, we could pass a small config db to the factory
 - each component should then specify its parameters such that the factory checks automatically if all paramters are defined
+\end{comment}
+
 
 \subsection{Logging} %---------------------------------------------------------------------------------------------------------
 \label{sec:logging}
