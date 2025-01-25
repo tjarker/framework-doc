@@ -2419,6 +2419,8 @@ Often, it is of interest for a test case to know when a sequence has finished, i
 the driver and the responses have been received. This can be done by calling the \ttt{seq.waitUntilDone()} method
 which blocks until the sequence has finished.
 
+
+
 \begin{comment}
 
 - scala sequences should be convertable to sequences
@@ -2533,6 +2535,44 @@ configuration database. The verification framework should provide a factory mech
 akin to the configuration database which is tailored to the capabilities of the language.
 
 \todo{design api}
+
+\begin{listing}
+\begin{lstlisting}[language=scala, captionpos=b, caption=???.,label=lst:factory]
+Comp.create[MyComponent](
+  "param1" -> 10,
+  Param.Msg -> "hello"
+) // additional parameters can be added to specific components
+
+val paramMap: Map[Any, Any] 
+Comp.create[MyComponent](paramMap)
+
+Comp.create[MyComponent]
+
+Comp.overrideType[MyComponent, MyDerivedComponent]
+
+Comp.set(Param.Msg, "hello")
+Comp.get(Param.Msg)
+
+Comp.set(child, Param.Msg, "updated message")
+
+
+Comp.builder[MyComponent]
+  .with("param1" -> 10)
+  .with(Param.Msg -> "hello")
+  .withOverride[MyComponent, MyDerivedComponent]
+  .build()
+\end{lstlisting}
+\end{listing}
+
+
+- a component has a context inside its body
+- components which are created can use this context to get their parent
+  - they can get the configuration of the parent
+  - the factory accepts a map of additional key-value pairs
+  - any factory overrides are also inherited to the children
+
+- the factory can create a specific contex before creating a component!
+  - that means unique parameters and overrides
 
 \begin{comment}
 
