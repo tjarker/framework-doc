@@ -2092,12 +2092,16 @@ step, since this may invalidate the value another thread received when calling \
 In the UVM, components communicate via TLM channels. TLM channels by themselves only facilitate method invocation by
 one component on another. Only when a TLM FIFO is used, is communication between to concurrently running threads
 facilitated. For the verification framework, a simplification is made such that only one channel primitive exists. This
-channel allows for sending and receiving of messages between threads. The channel is not buffered, meaning that the sender and receiver will be synchronized
+channel allows for sending and receiving of messages between threads. The channel is not buffered, meaning that the
+sender and receiver will be synchronized
 on the exchange of a message. While waiting for the sender or receiver, depending on the operation, the thread will
 be put to sleep until the clock cycle where the message is sent or received. This could be the same clock cycle it
 went to sleep or a later one.
 
-For the communication between components, it is however benificial to think about component ports and connecting them, as it is done in the UVM. Like this, it is not necessary to directly pass a reference to a channel object to the components which should be connected through the channel. Instead, both declare ports, one a receiver port and one a sender port. The parent component can then connect the two ports. 
+For the communication between components, it is however benificial to think about component ports and connecting
+them, as it is done in the UVM. Like this, it is not necessary to directly pass a reference to a channel object to
+the components which should be connected through the channel. Instead, both declare ports, one a receiver port and
+one a sender port. The parent component can then connect the two ports.
 
 The simulation starts in one root thread which can be forked into multiple threads. The simulation finishes when the
 root thread exits. It can use the \ttt{join} functionality to wait for other threads to exit before finishing the simulation.
@@ -2422,8 +2426,6 @@ Often, it is of interest for a test case to know when a sequence has finished, i
 the driver and the responses have been received. This can be done by calling the \ttt{seq.waitUntilDone()} method
 which blocks until the sequence has finished.
 
-
-
 \begin{comment}
 
 - scala sequences should be convertable to sequences
@@ -2537,35 +2539,44 @@ primitives. As such it is always an option to use dependency injection if one wa
 configuration database. The verification framework should provide a factory mechanism and a way to pass parameters
 akin to the configuration database which is tailored to the capabilities of the language.
 
+In Scala, complex type relations can be expressed in the type arguments of a generic function. As such \ttt{[T <:
+Component, R <: T]} can be used to express that \ttt{R} is a subtype of \ttt{T} which is a component. This can be
+used to make a factory safe, such that only subtypes can override a type. There are two ways a factory could be
+implemented in Scala which have implications on whether a type first has to be registered before it can be used with
+the factory or not. Since this affects the design of the API, the approach has to be decided as part of the design.
+If a type has to be registered with the factory, a closure could be provided which the factory uses to construct new
+instances. The closure is subject to Scala type constraints, making this method completely safe, i.e. a call to the
+factory to create a given class will always work. Another approach could use runtime reflection to create new
+instances of a class. In this dynamic approach, the constructor of the class \textit{must} have a standardized
+signature. If this is not the case, for instance for a component with an integer argument, the factory would fail.
+This approach is thus less safe, but does not require explicit registration of a type with the factory. Since the
+passing of parameters using a mechanism akin to the configuration database does not come with any compile time checks
+either, it is decided to use runtime reflection and thus no registration of types with the factory is necessary.
 
-In Scala, complex type relations can be expressed in the type arguments of a generic function. As such \ttt{[T <: Component, R <: T]} can be used to express that \ttt{R} is a subtype of \ttt{T} which is a component. This can be used to make a factory safe, such that only subtypes can override a type. There are two ways a factory could be implemented in Scala which have implications on whether a type first has to be registered before it can be used with the factory or not. Since this affects the design of the API, the approach has to be decided as part of the design. If a type has to be registered with the factory, a closure could be provided which the factory uses to construct new instances. The closure is subject to Scala type constraints, making this method completely safe, i.e. a call to the factory to create a given class will always work. Another approach could use runtime reflection to create new instances of a class. In this dynamic approach, the constructor of the class \textit{must} have a standardized signature. If this is not the case, for instance for a component with an integer argument, the factory would fail. This approach is thus less safe, but does not require explicit registration of a type with the factory. Since the passing of parameters using a mechanism akin to the configuration database does not come with any compile time checks either, it is decided to use runtime reflection and thus no registration of types with the factory is necessary.
-
-The creation of the different primitives in the framework such as components, transactions or sequences, have different implications. The creation of a component involves the management of hierarchical references to make the parent aware of its children and vice versa. 
-
+The creation of the different primitives in the framework such as components, transactions or sequences, have
+different implications. The creation of a component involves the management of hierarchical references to make the
+parent aware of its children and vice versa.
 
 - factory for components and a factory for sequences and transactions
 - factory has hierarchical overrides
-  - an overwrite at a certain level applies to all children (even if they define their own overwrites)
+- an overwrite at a certain level applies to all children (even if they define their own overwrites)
 - configuration parameters are set at a certain level in the hierarchy and apply to all children
-  - again a childs definition of a parameter is overwritten by the parents definition
+- again a childs definition of a parameter is overwritten by the parents definition
 - the prioritization allows for child components to declare defaults
 
 - params unique to one component can be passed as an argument to the factory
-- 
+-
 - a unique parameter configuration can be created using a builder pattern
-  - a builder can be created and new parameters can be added to it
-  - it can then be used to create components which will see those parameters
+- a builder can be created and new parameters can be added to it
+- it can then be used to create components which will see those parameters
 
 - a factory for each type (component, sequence, transaction) is necessary because they are configured differently
 - a component needs to setup its children
 
-
 - the config system is only to be used in the constructor phase
 - communication between components is facilitated by channels which are easily passed around through the config system
 
-
 \todo{should the factories for non-components be separate or merged?}
-
 
 \begin{listing}
 \begin{lstlisting}[language=scala, captionpos=b, caption=\todo{???.},label=lst:factory]
@@ -2586,7 +2597,6 @@ Config.get(Param.Msg)
 Config.overrideType[MyConfig, MyDerivedConfig]
 Config.get[MyConfig].myParam
 
-
 Comp.builder
   .withParams(
     "param1" -> 10,
@@ -2598,20 +2608,18 @@ Comp.builder
 \end{lstlisting}
 \end{listing}
 
-
 - config system:
-  - one is strictly hierarchical
-  - then there is a global one
-
+- one is strictly hierarchical
+- then there is a global one
 
 - a component has a context inside its body
 - components which are created can use this context to get their parent
-  - they can get the configuration of the parent
-  - the factory accepts a map of additional key-value pairs
-  - any factory overrides are also inherited to the children
+- they can get the configuration of the parent
+- the factory accepts a map of additional key-value pairs
+- any factory overrides are also inherited to the children
 
 - the factory can create a specific contex before creating a component!
-  - that means unique parameters and overrides
+- that means unique parameters and overrides
 
 \begin{comment}
 
@@ -2701,21 +2709,31 @@ be used instead.
 
 \section{Register Abstraction} %--------------------------------------------------------------------------------------------
 
-
-
-
-
 \subsection{Constrained-Random Stimuli Generation} %---------------------------------------------------------------------------
 \label{sec:crv}
 
-The SystemVerilog language demonstrates how powerful the integration of random variables with constraints along side a constraint solver into the language itself can be. A simple class definition with fields marked with the \ttt{rand} keyword together with a set of constraints allows one to create a random stimulus stream. This mechanism should be a part of the verification framework. The ChiselVerify project showcases how a small domain-specific language for a constraint system can be created in Scala. It is outside the scope of this project to include full support for constrained-random stimulus generation. However, some general thoughts on how it could be integrated with the rest of the verification framework shall be given.
+The SystemVerilog language demonstrates how powerful the integration of random variables with constraints along side
+a constraint solver into the language itself can be. A simple class definition with fields marked with the \ttt{rand}
+keyword together with a set of constraints allows one to create a random stimulus stream. This mechanism should be a
+part of the verification framework. The ChiselVerify project showcases how a small domain-specific language for a
+constraint system can be created in Scala. It is outside the scope of this project to include full support for
+constrained-random stimulus generation. However, some general thoughts on how it could be integrated with the rest of
+the verification framework shall be given.
 
-In ChiselVerify, only integer types bounded by a range are supported as random types. Instead, a \ttt{Rand[T]} type should be introduced where \ttt{T} could be any scala type, also a random type itself allowing for nesting of randomizable objects such as in SystemVerilog. It would have to be investigated whether existing constraint solvers can handle all primitve Scala types such as floating points directly, otherwise they could be broken done further into integer types for the sign, mantissa and exponent when the porblem description is handed to the solver. 
+In ChiselVerify, only integer types bounded by a range are supported as random types. Instead, a \ttt{Rand[T]} type
+should be introduced where \ttt{T} could be any scala type, also a random type itself allowing for nesting of
+randomizable objects such as in SystemVerilog. It would have to be investigated whether existing constraint solvers
+can handle all primitve Scala types such as floating points directly, otherwise they could be broken done further
+into integer types for the sign, mantissa and exponent when the porblem description is handed to the solver.
 
-In addition to primitive Scala types, bit-vector types where the number of bits limit the value range should also be supported like in ChiselVerify. Inspiration for how to generate general Scala types could be taken from property-based testing frameworks such as ScalaCheck \cite{scalacheck}, which automatically generate random test cases for a given function. For the verification of singal processing circuits, it may be of interest to add continuous random variables, which are only allowed a certain rate of change between two randomizations. 
+In addition to primitive Scala types, bit-vector types where the number of bits limit the value range should also be
+supported like in ChiselVerify. Inspiration for how to generate general Scala types could be taken from
+property-based testing frameworks such as ScalaCheck \cite{scalacheck}, which automatically generate random test
+cases for a given function. For the verification of singal processing circuits, it may be of interest to add
+continuous random variables, which are only allowed a certain rate of change between two randomizations.
 
-In the verification framework, random variables should be used in transactions. A simple sketch for a syntax is shown in Listing \ref{lst:crv_syntax}. 
-
+In the verification framework, random variables should be used in transactions. A simple sketch for a syntax is shown
+in Listing \ref{lst:crv_syntax}.
 
 \begin{listing}
 \begin{lstlisting}[language=scala, captionpos=b, caption=Outline of the syntax for random variables and constraints.,label=lst:crv_syntax]
@@ -2735,8 +2753,7 @@ class MyTx extends Transaction {
 \end{listing}
 
 \begin{comment}
-  However, it only supports integer types with associated ranges. 
-
+  However, it only supports integer types with associated ranges.
 
 - variable types
 - support not only for hardware types but scala types
@@ -2749,21 +2766,33 @@ class MyTx extends Transaction {
 
 - for signal processing purposes it may be interesting to have a continuous random signal i.e. a random walk
 
-
 \end{comment}
 
 \subsection{Functional Coverage} %---------------------------------------------------------------------------------------------
 
-Functional coverage is a tool which must be provided by a modern verification framework. Without it, no realistic picture of how well a developed test suite covers the features outlined in the specificaiton can be obtained. SystemVerilog has its own language subset for functional coverage collection revolving around coverage groups. The ChiselVerify project provides mechansims to express functional coverage but only on the inputs and ouputs of the DUT. While it is outside of the scope of this project to provide a full functional coverage system, it shall be briefly discussed how a functional coverage system could be integrated into the verification framework.
+Functional coverage is a tool which must be provided by a modern verification framework. Without it, no realistic
+picture of how well a developed test suite covers the features outlined in the specificaiton can be obtained.
+SystemVerilog has its own language subset for functional coverage collection revolving around coverage groups. The
+ChiselVerify project provides mechansims to express functional coverage but only on the inputs and ouputs of the DUT.
+While it is outside of the scope of this project to provide a full functional coverage system, it shall be briefly
+discussed how a functional coverage system could be integrated into the verification framework.
 
-Functional coverage has to be measured on random variables and is therefore closely connected with the constrained-random stimulus generation. Like in SystemVerilog and ChiselVerify, coverage collection should build on the concepts of coverage groups, coverage points and coverage bins. A coverage point is specific to a random variable and defines a different sets, the bins, which the random variable can take a value of. Coverage groups collect a set of related coverage points. While the coverage groups should be classes such that they can be composed, coverage points and bins should use a functional syntax as it is done in ChiselVerify. An outline of the syntax is given in Listing \ref{lst:cover_syntax}. The \ttt{coverpoint} method should take a context parameter in order to register itself with the coverage group. The same applies for the \ttt{bin} method. This allows for a concise declarative syntax as in SystemVerilog. The cross-coverage feature should orient itself at the ChiselVerify implementation.
+Functional coverage has to be measured on random variables and is therefore closely connected with the
+constrained-random stimulus generation. Like in SystemVerilog and ChiselVerify, coverage collection should build on
+the concepts of coverage groups, coverage points and coverage bins. A coverage point is specific to a random variable
+and defines a different sets, the bins, which the random variable can take a value of. Coverage groups collect a set
+of related coverage points. While the coverage groups should be classes such that they can be composed, coverage
+points and bins should use a functional syntax as it is done in ChiselVerify. An outline of the syntax is given in
+Listing \ref{lst:cover_syntax}. The \ttt{coverpoint} method should take a context parameter in order to register
+itself with the coverage group. The same applies for the \ttt{bin} method. This allows for a concise declarative
+syntax as in SystemVerilog. The cross-coverage feature should orient itself at the ChiselVerify implementation.
 
-On important factor for coverage collection is when coverage should be sampled. Here it would be beneficial to register sampling events with the simulation runtime. This would allow for the simulation runtime to detect the sampling event instead of the user code having to manually trigger the sampling. 
-
+On important factor for coverage collection is when coverage should be sampled. Here it would be beneficial to
+register sampling events with the simulation runtime. This would allow for the simulation runtime to detect the
+sampling event instead of the user code having to manually trigger the sampling.
 
 \begin{comment}
-  Functional coverage information should be collectable for any scala type. 
-
+  Functional coverage information should be collectable for any scala type.
 
 - functional coverage
 
@@ -2773,8 +2802,6 @@ functional coverage should be able to collect coverage for scala values! transac
 
 a covergroup with its sampling event should be passed to verification runtime
 \end{comment}
-
-
 
 \begin{listing}
 \begin{lstlisting}[language=scala, captionpos=b, caption=Outline of the syntax for the collection of functional coverage.,label=lst:cover_syntax]
@@ -2791,15 +2818,24 @@ class MyGroup extends CoverGroup {
 \end{lstlisting}
 \end{listing}
 
-
-
 \subsection{Debugging} %-------------------------------------------------------------------------------------------------------
 
+While tests should be self-checking, it may be necessary to debug a failing test. In this case, waveforms are an
+important tool which allow for the tracing back of the error to its source. Verilator supports the dumping of the
+state of a model to VCD files. Since the recording of waveforms comes with an overhead, it should be optional to
+enable it. As such, the file name for the waveform is accepted as an optional argument to the \ttt{Simulate} and
+\ttt{runTest} functions.
 
-While tests should be self-checking, it may be necessary to debug a failing test. In this case, waveforms are an important tool which allow for the tracing back of the error to its source. Verilator supports the dumping of the state of a model to VCD files. Since the recording of waveforms comes with an overhead, it should be optional to enable it. As such, the file name for the waveform is accepted as an optional argument to the \ttt{Simulate} and \ttt{runTest} functions.
-
-Debugging purely using waveforms can be cumbersome. A better approach can sometimes be to debug the simulation interactively Debugging UVM tests has the advantage of a shared design and verification code base in one language and one simulator executing everything. This allows for the insertion of breakpoints anywhere and stepping through code in a debugger which is integrated into the simulator. Testing frameworks like Chiseltest and Cocotb do not allow for this level of interactive debugging. While it is outside of the scope of the project, it could be of interest to explore options of how interactive debugging might be achieved in co-simulation frameworks. One approach could involve the Scala REPL, a shell where Scala code can be executed interactively. A new simulation entry point, like shown in Listing \ref{lst:debug_syntax}, could be provided to directly return a reference to the DUT. This reference could then be used to interact with the DUT in the Scala REPL. The waveform could be dumped each clock cycle such that the user may inspect signals while the simulation evolves. 
-
+Debugging purely using waveforms can be cumbersome. A better approach can sometimes be to debug the simulation
+interactively Debugging UVM tests has the advantage of a shared design and verification code base in one language and
+one simulator executing everything. This allows for the insertion of breakpoints anywhere and stepping through code
+in a debugger which is integrated into the simulator. Testing frameworks like Chiseltest and Cocotb do not allow for
+this level of interactive debugging. While it is outside of the scope of the project, it could be of interest to
+explore options of how interactive debugging might be achieved in co-simulation frameworks. One approach could
+involve the Scala REPL, a shell where Scala code can be executed interactively. A new simulation entry point, like
+shown in Listing \ref{lst:debug_syntax}, could be provided to directly return a reference to the DUT. This reference
+could then be used to interact with the DUT in the Scala REPL. The waveform could be dumped each clock cycle such
+that the user may inspect signals while the simulation evolves.
 
 \begin{listing}
 \begin{lstlisting}[language=scala, captionpos=b, caption=Outline of the syntax for the collection of functional coverage.,label=lst:debug_syntax]
@@ -2809,9 +2845,6 @@ Debugging purely using waveforms can be cumbersome. A better approach can someti
 > println(bfm.receive())
 \end{lstlisting}
 \end{listing}
-
-
-
 
 \chapter{Implementation} %/////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -2841,18 +2874,33 @@ compiled together with the Verilator model into a shared library which can be lo
 Makefile is generated alongside the model specific simulation interface functions in the Scala code before a
 simulation is started. The usage of a Makefile results in the shared library to be recompiled only when the model changes.
 
-
 \todo{mention somewhere that an attempt for register access was successfully made}
 
 \subsection{Concurrency} %----------------------------------------------------------------------------------------------
 
+Scala progams are executed on the java virtual machine (JVM). Multiple threads can be created in the JVM which are
+mapped to operating system threads. These threads are relatively expensive to allocate since they require their own
+stack. In Cocotb, python coroutines are used, which offer a form of cooperative multitasking with very inexpensive
+threads \cite{pycoroutines}. The JVM does not support coroutines. However, an effort exists to add green threads to
+the JVM, i.e. threads which are managed by the language runtime instead of the operating system. Project Loom
+\cite{loom} adds so-called virtual threads which are controlled by the JVM and dynamically mapped to a fixed pool of
+operating system threads. These virtual threads are cheap to create and many can exist at the same time. This works
+well for a simulation environment which may spawn many threads with a short life time which handle a small amount of
+work. The virtual threads provided by project loom are included in Java 21 and later verions.
 
-Scala progams are executed on the java virtual machine (JVM). Multiple threads can be created in the JVM which are mapped to operating system threads. These threads are relatively expensive to allocate since they require their own stack. In Cocotb, python coroutines are used, which offer a form of cooperative multitasking with very inexpensive threads \cite{pycoroutines}. The JVM does not support coroutines. However, an effort exists to add green threads to the JVM, i.e. threads which are managed by the language runtime instead of the operating system. Project Loom \cite{loom} adds so-called virtual threads which are controlled by the JVM and dynamically mapped to a fixed pool of operating system threads. These virtual threads are cheap to create and many can exist at the same time. This works well for a simulation environment which may spawn many threads with a short life time which handle a small amount of work. The virtual threads provided by project loom are included in Java 21 and later verions.
-
-A new library for Scala 3 called Gears \cite{gears} has been developed by researchers at EPFL, which tries to take advantage of virtual threads to facilitate asynchronous programming, i.e. programming where computations are encapuslated into so-called \ttt{Future[T]} objects. A computation inside a future will run concurrently, but can be \textit{awaited} by another thread of execution, causing it to block until the computation is finished. This allows for a more structured concurrency model than the traditional purely thread-based model. It is well suited for the fork-join model which was decided to be used in the verification framework, since a fork is essentially a future. In addition to a basic future type, the Gears framework also provides channel primitives which suspend the executing virtual thread when waiting for a receiver or sender. This provides a good basis for implementing the channels which should be used for communication between components in a testbench. It is therefore decided to use the primitives provided by the Gears library to build the fork-join model in the verification framework.
+A new library for Scala 3 called Gears \cite{gears} has been developed by researchers at EPFL, which tries to take
+advantage of virtual threads to facilitate asynchronous programming, i.e. programming where computations are
+encapuslated into so-called \ttt{Future[T]} objects. A computation inside a future will run concurrently, but can be
+\textit{awaited} by another thread of execution, causing it to block until the computation is finished. This allows
+for a more structured concurrency model than the traditional purely thread-based model. It is well suited for the
+fork-join model which was decided to be used in the verification framework, since a fork is essentially a future. In
+addition to a basic future type, the Gears framework also provides channel primitives which suspend the executing
+virtual thread when waiting for a receiver or sender. This provides a good basis for implementing the channels which
+should be used for communication between components in a testbench. It is therefore decided to use the primitives
+provided by the Gears library to build the fork-join model in the verification framework.
 
 \begin{comment}
-In the verification framework, the future type is wrapped by a \ttt{Fork[T]} type 
+In the verification framework, the future type is wrapped by a \ttt{Fork[T]} type
 
 - threads are an option but have a lot of overhead, each their own stack
 - in cocotb coroutines are used
@@ -2865,14 +2913,29 @@ In the verification framework, the future type is wrapped by a \ttt{Fork[T]} typ
 
 \end{comment}
 
-
 \subsection{Simulation Controller} %-------------------------------------------------------------------------------------------
 
-In a multi-threaded simulation environment, interactions with the simulation have to be serialized. This could either be achieved by requiring a thread to aquire a lock before performing its operation on the simulation or it could be achieved through a message passing system, where a simulation controller receives commands from the simulation threads through a channel. The latter approach was chosen, since it provides a clear separation of concerns: Simulation threads only issue commands to the simulation controller and wait for a response. The simulation controller handles incoming commands until all simulation threads are asleep, at which point it advances the simulation, driving clock and input signals at the appropriate time. It is also the simulation controller which is responsible for waking up threads in the clock cycle they requested through their \ttt{step} command.
+In a multi-threaded simulation environment, interactions with the simulation have to be serialized. This could either
+be achieved by requiring a thread to aquire a lock before performing its operation on the simulation or it could be
+achieved through a message passing system, where a simulation controller receives commands from the simulation
+threads through a channel. The latter approach was chosen, since it provides a clear separation of concerns:
+Simulation threads only issue commands to the simulation controller and wait for a response. The simulation
+controller handles incoming commands until all simulation threads are asleep, at which point it advances the
+simulation, driving clock and input signals at the appropriate time. It is also the simulation controller which is
+responsible for waking up threads in the clock cycle they requested through their \ttt{step} command.
 
-Commands are sent through one channnel to the controller, which serializes them. Responses, should they be required, are sent through a channel unqiue to the requesting simulation thread. This channel is provided to the simulation controller when the thread registers itself with the controller. The registration is also necessary for the controller to keep track of the status of all simulation threads. This allows it to know when all simmulation threads have performed their work for the current clock cycle.
+Commands are sent through one channnel to the controller, which serializes them. Responses, should they be required,
+are sent through a channel unqiue to the requesting simulation thread. This channel is provided to the simulation
+controller when the thread registers itself with the controller. The registration is also necessary for the
+controller to keep track of the status of all simulation threads. This allows it to know when all simmulation threads
+have performed their work for the current clock cycle.
 
-The channels which a simulation thread uses to issue commands and receive responses are the ones provided by the Gears library. This channel primitive can however not be used directly to facilitate communication between components. A thread which waits for a value on the channel does not inform the simulation controller that it is sleeping and that the simulation may therefore advance. For this reason a wrapper around the channel is provided which coordinates the blocking of the thread with the simulation controller. This custom type of channel shall from now on be plainly referred to as a channel while the channel from the gears library shall be referred to as a gears channel.
+The channels which a simulation thread uses to issue commands and receive responses are the ones provided by the
+Gears library. This channel primitive can however not be used directly to facilitate communication between
+components. A thread which waits for a value on the channel does not inform the simulation controller that it is
+sleeping and that the simulation may therefore advance. For this reason a wrapper around the channel is provided
+which coordinates the blocking of the thread with the simulation controller. This custom type of channel shall from
+now on be plainly referred to as a channel while the channel from the gears library shall be referred to as a gears channel.
 
 A simulation thread can issue the following commands to the simulation controller:
 
@@ -2889,19 +2952,36 @@ A simulation thread can issue the following commands to the simulation controlle
   \item \ttt{Abort}: Abort the simulation with an exception
 \end{itemize}
 
-The \ttt{peek} command uses the response gears channel to receive a value. The \ttt{Step}, \ttt{SendToChannel}, \ttt{WaitForChannel} and \ttt{WaitForThread} commands use the response gears channel to block until the simulation controller unblocks them by sending a dummy message. 
+The \ttt{peek} command uses the response gears channel to receive a value. The \ttt{Step}, \ttt{SendToChannel},
+\ttt{WaitForChannel} and \ttt{WaitForThread} commands use the response gears channel to block until the simulation
+controller unblocks them by sending a dummy message.
 
-While the simulation threads are running, the simulation controller is collecting a series of actions which it keeps in an event queue. \ttt{Poke} commands create \ttt{Drive} events which are scheduled for the falling edge of the clock domain of the signal which is being poked. A \ttt{Step} command schedules a \ttt{Release} event for the requesting thread at the appropriate time in the future. Clocks are generated by \ttt{PosEdge} and \ttt{NegEdge} events, which schedule each other with half-period offsets.
+While the simulation threads are running, the simulation controller is collecting a series of actions which it keeps
+in an event queue. \ttt{Poke} commands create \ttt{Drive} events which are scheduled for the falling edge of the
+clock domain of the signal which is being poked. A \ttt{Step} command schedules a \ttt{Release} event for the
+requesting thread at the appropriate time in the future. Clocks are generated by \ttt{PosEdge} and \ttt{NegEdge}
+events, which schedule each other with half-period offsets.
 
-Once all simulation threads are marked as sleeping, either through stepping or blocking, the simulation controller advances to the next time slot with events and executes them. The priority order between multiple events in the same time slot is such that all interactions with the simulation (i.e. \ttt{Drive}, \ttt{PosEdge} and \ttt{NegEdge}) happen before threads are released.
+Once all simulation threads are marked as sleeping, either through stepping or blocking, the simulation controller
+advances to the next time slot with events and executes them. The priority order between multiple events in the same
+time slot is such that all interactions with the simulation (i.e. \ttt{Drive}, \ttt{PosEdge} and \ttt{NegEdge})
+happen before threads are released.
 
 \todo{explain context parameters somewhere}
 
-All simulation threads require a reference to the simulation controller. This could be achieved by using a singleton object, but this would only allow for a single simulation to run at a time. A so-called dynamic variable, which allows assigning a singleton with a value for a certain scope could be used instead. Each simulation could thus have its own view on the singleton. A third option involves context parameters in Scala. Since the Gears framework already relies on context parameters to provide access to the asynchronous context, the same mechanism is used to provide access to the simulation controller. As such functions which interact with the simulation controller need to have the following signature: \ttt{def fun(args...)(using Sim, Async)}. The \ttt{using} keyword is used to denote context parameters. Since interactions with the simulation controller require the use of the Gears library, the \ttt{Async} context parameter is also required. The functions to interact with the DUT such as \ttt{dut.port.poke(value)} use the \ttt{Sim} and \ttt{Async} context parameters to send the appropriate command to the simulation controller.
-
+All simulation threads require a reference to the simulation controller. This could be achieved by using a singleton
+object, but this would only allow for a single simulation to run at a time. A so-called dynamic variable, which
+allows assigning a singleton with a value for a certain scope could be used instead. Each simulation could thus have
+its own view on the singleton. A third option involves context parameters in Scala. Since the Gears framework already
+relies on context parameters to provide access to the asynchronous context, the same mechanism is used to provide
+access to the simulation controller. As such functions which interact with the simulation controller need to have the
+following signature: \ttt{def fun(args...)(using Sim, Async)}. The \ttt{using} keyword is used to denote context
+parameters. Since interactions with the simulation controller require the use of the Gears library, the \ttt{Async}
+context parameter is also required. The functions to interact with the DUT such as \ttt{dut.port.poke(value)} use the
+\ttt{Sim} and \ttt{Async} context parameters to send the appropriate command to the simulation controller.
 
 \begin{comment}
-  
+
 - accesses to the simulation have to be serialized
 - either lock for simulation
 - but who has responsibility to drive the simulation after all threads sleep?
@@ -2961,7 +3041,6 @@ communication has to happen through the sim controller
 - simcontext is provided in sim closure as context parameters
 \end{comment}
 
-
 \begin{listing}
 \begin{lstlisting}[language=scala, captionpos=b, caption=Example code for a function using the simulation context to interact with a DUT.,label=lst:simctx]
 def add(dut: Adder)(a: Int, b: Int)
@@ -2982,7 +3061,9 @@ Simulation(new Adder) { dut =>
 
 \subsection{Phases} %----------------------------------------------------------------------------------------------------------
 
-The phasing system of the verification framework is an opt-in system. The component base type itself does not run in any phases. Instead, traits for different phases can be mixed into the definition of a custom component. These traits with their respective methods are:
+The phasing system of the verification framework is an opt-in system. The component base type itself does not run in
+any phases. Instead, traits for different phases can be mixed into the definition of a custom component. These traits
+with their respective methods are:
 
 \begin{itemize}
   \item \ttt{SimulationPhase}: \\ \ttt{def sim()(using Sim, Async.Spawn): Unit}
@@ -2993,8 +3074,11 @@ The phasing system of the verification framework is an opt-in system. The compon
   \item \ttt{ReportPhase}: \\ \ttt{def report(): Unit}
 \end{itemize}
 
-As it can be seen, all phases except the report phase receive the simulation and async context parameters. The async context parameter comes in a special form \ttt{Async.Spawn} which provides the capabilty to create new forks. The report phase does not require the context parameters since it does not interact with the simulation. The phases are invoked by the \ttt{runTest} function. Whether a component implements a certain phase is determined by a pattern match on the trait. 
-
+As it can be seen, all phases except the report phase receive the simulation and async context parameters. The async
+context parameter comes in a special form \ttt{Async.Spawn} which provides the capabilty to create new forks. The
+report phase does not require the context parameters since it does not interact with the simulation. The phases are
+invoked by the \ttt{runTest} function. Whether a component implements a certain phase is determined by a pattern
+match on the trait.
 
 \begin{comment}
 - like it was discussed earlier, phases are implemented as traits
@@ -3009,29 +3093,52 @@ As it can be seen, all phases except the report phase receive the simulation and
 
 \subsection{Components} %-----------------------------------------------------------------------------------
 
-The implementation of a standard library of components only involves extending the base Component type and adding the necessary phases alongside some component specific functionality. Standard components such as drivers or monitors are abstract classes, which means that they do not have to provide an implementation for their phasing methods.
+The implementation of a standard library of components only involves extending the base Component type and adding the
+necessary phases alongside some component specific functionality. Standard components such as drivers or monitors are
+abstract classes, which means that they do not have to provide an implementation for their phasing methods.
 
-The driver is a component implementing the simulation phase with two type parameters \ttt{A} and \ttt{B} which are both transactions. \ttt{A} is the transaction which is sent to the driver, while \ttt{B} is its response for the sequence. It has a special port \ttt{DriverPort[A,B]} which has a \ttt{ReceiverPort[A]} and a \ttt{SenderPort[B]}. It furthermore provides methods to abstract the port iteractions: Calling \ttt{next()} returns the next item to drive, while calling \ttt{respond(b)} sends the response to the sequence. It keeps track of the number of received transactions, which can be queried through \ttt{numOfDrivenTxs}.
+The driver is a component implementing the simulation phase with two type parameters \ttt{A} and \ttt{B} which are
+both transactions. \ttt{A} is the transaction which is sent to the driver, while \ttt{B} is its response for the
+sequence. It has a special port \ttt{DriverPort[A,B]} which has a \ttt{ReceiverPort[A]} and a \ttt{SenderPort[B]}. It
+furthermore provides methods to abstract the port iteractions: Calling \ttt{next()} returns the next item to drive,
+while calling \ttt{respond(b)} sends the response to the sequence. It keeps track of the number of received
+transactions, which can be queried through \ttt{numOfDrivenTxs}.
 
-The default sequencer implementation also runs in the simulation phase. It also has a special port, matching that of the driver with opposite direction: \ttt{SequencerPort[A,B]}. This port can be connected to a driver port. The sequencer has a channel via which it receives sequences. It has a \ttt{def play(s: Sequence[T])} method which abstracts the channel interaction for the test case writer. It provides a simulation phase implementation where it loops, waiting for a new sequence and forwarding all its transactions to the driver.
+The default sequencer implementation also runs in the simulation phase. It also has a special port, matching that of
+the driver with opposite direction: \ttt{SequencerPort[A,B]}. This port can be connected to a driver port. The
+sequencer has a channel via which it receives sequences. It has a \ttt{def play(s: Sequence[T])} method which
+abstracts the channel interaction for the test case writer. It provides a simulation phase implementation where it
+loops, waiting for a new sequence and forwarding all its transactions to the driver.
 
-The monitor is a component implementing the simulation phase with one type parameter \ttt{T}. It allows for connecting analysis components through the \ttt{def addListener(l: ReceiverPort[T])} method. It provides the \ttt{publish(t)} method to abstract the sending of transactions to all listeners. The monitor automatically keeps track of the number of observed transactions, which can be queried through \ttt{numOfObservedTxs}.
+The monitor is a component implementing the simulation phase with one type parameter \ttt{T}. It allows for
+connecting analysis components through the \ttt{def addListener(l: ReceiverPort[T])} method. It provides the
+\ttt{publish(t)} method to abstract the sending of transactions to all listeners. The monitor automatically keeps
+track of the number of observed transactions, which can be queried through \ttt{numOfObservedTxs}.
 
-An analysis component implements the simulation phase and has a receiver port. This port should be connected to a monitor. New items can be awaited using the \ttt{next()} method. A special variant of the analysis component is the scoreboard which provides not further functionality.
+An analysis component implements the simulation phase and has a receiver port. This port should be connected to a
+monitor. New items can be awaited using the \ttt{next()} method. A special variant of the analysis component is the
+scoreboard which provides not further functionality.
 
 \subsection{Stimulus and Sequences} %-------------------------------------------------------------------------------------------
 
-Stimulus is represented by the \ttt{Transaction} type. For now, this type is completely empty, providing no fields or methods. Future extensions could add features such as transactions ID's and the constrained-randomization features discussed in Section \ref{sec:crv}.
+Stimulus is represented by the \ttt{Transaction} type. For now, this type is completely empty, providing no fields or
+methods. Future extensions could add features such as transactions ID's and the constrained-randomization features
+discussed in Section \ref{sec:crv}.
 
-Sequences are implemented using channels which are hidden from the user. The user implements the sequence in the \ttt{body} method using the \ttt{yieldTx(t)} and \ttt{yieldSeq(seq)} methods. These methods actually send transactions through one channel and await a response on another. Creating an instance of the sequence spawns a separate fork for it, in which the body is run. The channels in the sequence are used by the sequencer to get transactions and forward them to the driver, as well as send back the response from the driver. One can wait for a sequence to finish by calling \ttt{waitUntilDone} which awaits the fork executing the body.
+Sequences are implemented using channels which are hidden from the user. The user implements the sequence in the
+\ttt{body} method using the \ttt{yieldTx(t)} and \ttt{yieldSeq(seq)} methods. These methods actually send
+transactions through one channel and await a response on another. Creating an instance of the sequence spawns a
+separate fork for it, in which the body is run. The channels in the sequence are used by the sequencer to get
+transactions and forward them to the driver, as well as send back the response from the driver. One can wait for a
+sequence to finish by calling \ttt{waitUntilDone} which awaits the fork executing the body.
 
 \subsection{Test Cases} %------------------------------------------------------------------------------------------------------
 
-The test case is the root component of a testbench. It should receive a reference to the DUT or a BFM through its constructor. The \ttt{Test} base class is a component which includes the \ttt{TestPhase} without providing an implementation.
+The test case is the root component of a testbench. It should receive a reference to the DUT or a BFM through its
+constructor. The \ttt{Test} base class is a component which includes the \ttt{TestPhase} without providing an implementation.
 
-\subsection{Factories and Configuration} %-----------------------------------------------------------------------------------------
-
-
+\subsection{Factories and Configuration}
+%-----------------------------------------------------------------------------------------
 
 \subsection{Register Abstraction} %--------------------------------------------------------------------------------------------
 
@@ -3043,15 +3150,13 @@ The test case is the root component of a testbench. It should receive a referenc
 
 \subsection{Use-Case 2: APB Verification IP} %---------------------------------------------------------------------------------
 
-\todo{compare lines of code roughly, is there a difference in design components? what was not replicated, what was replicated differently?}
+\todo{compare lines of code roughly, is there a difference in design components? what was not replicated, what was
+replicated differently?}
 
 \chapter{Discussion} %/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 use cases:
-- less verbose -> we define behavior in one place and it is not spread over multiple 
-
-
+- less verbose -> we define behavior in one place and it is not spread over multiple
 
 - scala 3 was chosen to use newest features and make future proof but that prevents integration with chisel
 
@@ -3062,10 +3167,8 @@ limited and does not allow for creating cases which would show the full potentia
 - I also don't have the use case and expertise to showcase full blown UVM
 - the design of such a framework should build on actual experience with large verification projects
 
-
 - performance => we should implement more in C++ and cross the native jvm boundary less often
 - we can hand references to closures to native code and it can invoke callbacks -> this is how cocotb does it
-
 
 - sequences can not send next item before receiving response
 - for pipeline interfaces this is not good
@@ -3088,4 +3191,3 @@ UART/SPI/Memory
 \printbibliography
 
 \end{document}
-
