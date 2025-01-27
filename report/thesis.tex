@@ -2091,12 +2091,13 @@ step, since this may invalidate the value another thread received when calling \
 
 In the UVM, components communicate via TLM channels. TLM channels by themselves only facilitate method invocation by
 one component on another. Only when a TLM FIFO is used, is communication between to concurrently running threads
-facilitated. For the verification framework, a simplification is made such that only one channel object exists. This
-channel object allows for sending and receiving of messages between threads by giving the sender and receiver a
-handle to the channel object. The channel is not buffered, meaning that the sender and receiver will be synchronized
+facilitated. For the verification framework, a simplification is made such that only one channel primitive exists. This
+channel allows for sending and receiving of messages between threads. The channel is not buffered, meaning that the sender and receiver will be synchronized
 on the exchange of a message. While waiting for the sender or receiver, depending on the operation, the thread will
 be put to sleep until the clock cycle where the message is sent or received. This could be the same clock cycle it
 went to sleep or a later one.
+
+For the communication between components, it is however benificial to think about component ports and connecting them, as it is done in the UVM. Like this, it is not necessary to directly pass a reference to a channel object to the components which should be connected through the channel. Instead, both declare ports, one a receiver port and one a sender port. The parent component can then connect the two ports. 
 
 The simulation starts in one root thread which can be forked into multiple threads. The simulation finishes when the
 root thread exits. It can use the \ttt{join} functionality to wait for other threads to exit before finishing the simulation.
@@ -2700,7 +2701,12 @@ be used instead.
 
 \section{Register Abstraction} %--------------------------------------------------------------------------------------------
 
+
+
+
+
 \subsection{Constrained-Random Stimuli Generation} %---------------------------------------------------------------------------
+\label{sec:crv}
 
 The SystemVerilog language demonstrates how powerful the integration of random variables with constraints along side a constraint solver into the language itself can be. A simple class definition with fields marked with the \ttt{rand} keyword together with a set of constraints allows one to create a random stimulus stream. This mechanism should be a part of the verification framework. The ChiselVerify project showcases how a small domain-specific language for a constraint system can be created in Scala. It is outside the scope of this project to include full support for constrained-random stimulus generation. However, some general thoughts on how it could be integrated with the rest of the verification framework shall be given.
 
@@ -3003,19 +3009,28 @@ As it can be seen, all phases except the report phase receive the simulation and
 
 \subsection{Components} %-----------------------------------------------------------------------------------
 
-The implementation of a standard library of components only involves extending the base Component type and adding the necessary phases alongside some component specific functionality. 
+The implementation of a standard library of components only involves extending the base Component type and adding the necessary phases alongside some component specific functionality. Standard components such as drivers or monitors are abstract classes, which means that they do not have to provide an implementation for their phasing methods.
 
-The communication between components is facilitated by channels. However, in the context of components, it is benificial to think about component ports and connecting them. Like this, it is not necessary to directly pass a reference to a channel object to the components which should be connected through a channel. Instead, both declare ports, one a \ttt{ReceiverPort} and one a \ttt{SenderPort}. The parent component can then connect the two ports by calling the \ttt{connect} method. 
+The driver is a component implementing the simulation phase with two type parameters \ttt{A} and \ttt{B} which are both transactions. \ttt{A} is the transaction which is sent to the driver, while \ttt{B} is its response for the sequence. It has a special port \ttt{DriverPort[A,B]} which has a \ttt{ReceiverPort[A]} and a \ttt{SenderPort[B]}. It furthermore provides methods to abstract the port iteractions: Calling \ttt{next()} returns the next item to drive, while calling \ttt{respond(b)} sends the response to the sequence. It keeps track of the number of received transactions, which can be queried through \ttt{numOfDrivenTxs}.
 
-\todo{briefly describe impl: ports, helper methods, phases}
+The default sequencer implementation also runs in the simulation phase. It also has a special port, matching that of the driver with opposite direction: \ttt{SequencerPort[A,B]}. This port can be connected to a driver port. The sequencer has a channel via which it receives sequences. It has a \ttt{def play(s: Sequence[T])} method which abstracts the channel interaction for the test case writer. It provides a simulation phase implementation where it loops, waiting for a new sequence and forwarding all its transactions to the driver.
+
+The monitor is a component implementing the simulation phase with one type parameter \ttt{T}. It allows for connecting analysis components through the \ttt{def addListener(l: ReceiverPort[T])} method. It provides the \ttt{publish(t)} method to abstract the sending of transactions to all listeners. The monitor automatically keeps track of the number of observed transactions, which can be queried through \ttt{numOfObservedTxs}.
+
+An analysis component implements the simulation phase and has a receiver port. This port should be connected to a monitor. New items can be awaited using the \ttt{next()} method. A special variant of the analysis component is the scoreboard which provides not further functionality.
 
 \subsection{Stimulus and Sequences} %-------------------------------------------------------------------------------------------
 
+Stimulus is represented by the \ttt{Transaction} type. For now, this type is completely empty, providing no fields or methods. Future extensions could add features such as transactions ID's and the constrained-randomization features discussed in Section \ref{sec:crv}.
 
+Sequences are implemented using channels which are hidden from the user. The user implements the sequence in the \ttt{body} method using the \ttt{yieldTx(t)} and \ttt{yieldSeq(seq)} methods. These methods actually send transactions through one channel and await a response on another. Creating an instance of the sequence spawns a separate fork for it, in which the body is run. The channels in the sequence are used by the sequencer to get transactions and forward them to the driver, as well as send back the response from the driver. One can wait for a sequence to finish by calling \ttt{waitUntilDone} which awaits the fork executing the body.
 
 \subsection{Test Cases} %------------------------------------------------------------------------------------------------------
 
+The test case is the root component of a testbench. It should receive a reference to the DUT or a BFM through its constructor. The \ttt{Test} base class is a component which includes the \ttt{TestPhase} without providing an implementation.
+
 \subsection{Factories and Configuration} %-----------------------------------------------------------------------------------------
+
 
 
 \subsection{Register Abstraction} %--------------------------------------------------------------------------------------------
@@ -3026,13 +3041,17 @@ The communication between components is facilitated by channels. However, in the
 
 \subsection{Use-Case 1: Simple ALU} %------------------------------------------------------------------------------------------
 
-\subsection{Use-Case 2: Memory-Mapped UART} %----------------------------------------------------------------------------------
+\subsection{Use-Case 2: APB Verification IP} %---------------------------------------------------------------------------------
 
-\subsection{Use-Case 3: APB Verification IP} %---------------------------------------------------------------------------------
-
-\section{Performance} %--------------------------------------------------------------------------------------------------------
+\todo{compare lines of code roughly, is there a difference in design components? what was not replicated, what was replicated differently?}
 
 \chapter{Discussion} %/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+use cases:
+- less verbose -> we define behavior in one place and it is not spread over multiple 
+
+
 
 - scala 3 was chosen to use newest features and make future proof but that prevents integration with chisel
 
@@ -3042,6 +3061,14 @@ The communication between components is facilitated by channels. However, in the
 limited and does not allow for creating cases which would show the full potential
 - I also don't have the use case and expertise to showcase full blown UVM
 - the design of such a framework should build on actual experience with large verification projects
+
+
+- performance => we should implement more in C++ and cross the native jvm boundary less often
+- we can hand references to closures to native code and it can invoke callbacks -> this is how cocotb does it
+
+
+- sequences can not send next item before receiving response
+- for pipeline interfaces this is not good
 
 %\section{Future Work} %========================================================================================================
 
@@ -3062,38 +3089,3 @@ UART/SPI/Memory
 
 \end{document}
 
-\section{Hardware Description Languages}
-
-\section{Hardware Verification Languages}
-
-\section{Concurrency Models}
-- talk about how HDL concurrency models differ from other
-- talk about other concurrency models
-- is UVM actor based?
-
-\subsection{Superlog}
-
-\citeauthor{flake2020a} \cite[Sec. 6, pp. 44-49]{flake2020a}
-- engineers at Co-Design Automation Inc. saw potential in conciseness and closeness to HW in Verilog
-- C was chosen as a source of inspiration for language extensions due to wide spread use in EDA and embedded systems
-communitites
-- this turned into superlog
-- additions included:
-- variable size data types (queues, sparse arrays, associative arrays)
-- bundled data types with different directions
-- enumerations
-- references
-- C dpi
-- interfaces as collection of wires, but also exposing of methods of modules without hierarchical references
-
--
-
-\section{UVM}
-
-\section{Transaction-Level Modeling}
-
-\section{Software Testing Methods}
-- unit testing
-- integration testing
-- system testing
-- black vs. grey vs. white box testing
