@@ -1,0 +1,32 @@
+\usepackage{comment}
+\usepackage{hyperref}
+
+\usepackage{listings}
+
+
+\floatstyle{plain}
+\newfloat{listing}{tbp}{lop}[chapter] % Change [chapter] to [section] or remove it as needed.
+\floatname{listing}{Listing}
+
+\lstset{
+  language=Scala,         % Language of the code
+  basicstyle=\ttfamily\small,  % Font style and size
+  keywordstyle=\color{blue},   % Keyword color
+  commentstyle=\color{green},  % Comment color
+  stringstyle=\color{red},     % String color
+  numbers=left,                % Line numbers on the left
+  numberstyle=\tiny\color{gray}, % Line number style
+  frame=single,                % Frame around the code
+  breaklines=true,              % Line breaking
+  showstringspaces=false
+}
+
+
+\addbibresource{books.bib}
+\addbibresource{papers.bib}
+\addbibresource{pages.bib}
+
+
+\newcommand{\todo}[1]{\textcolor{red}{TODO: #1}}
+
+\newcommand{\ttt}{\texttt}
