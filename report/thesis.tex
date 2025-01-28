@@ -25,6 +25,7 @@
   numberstyle=\tiny\color{gray}, % Line number style
   frame=single,                % Frame around the code
   breaklines=true,              % Line breaking
+  showstringspaces=false
 }
 
 \usepackage[backend=biber,style=ieee]{biblatex}
@@ -3142,45 +3143,15 @@ constructor. The \ttt{Test} base class is a component which includes the \ttt{Te
 
 \subsection{Register Abstraction} %--------------------------------------------------------------------------------------------
 
-\chapter{Results} %////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-\section{Use-Cases} %----------------------------------------------------------------------------------------------------------
+\chapter{Evaluation} %////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 \section{Use Case 1: Greatest Common Divisor} %--------------------------------------------------------------------------------
 
 The first use case is a simple greatest common divisor (GCD) circuit, which is taken from the lab work of the DTU course \textit{02203 Design of Digital Systems}. This use case should demonstrate the writing of simple directed test cases and the use of BFM's in the verification framework. It is also used as a small showcase for the reading of internal registers. The design is interfaced via a 4-phase handshake protocol with a request and acknowledge signal. The two operands are sent one after the other, and the circuit acknowledges the second operand with the result of the calculation. The implementation of the circuit is done in SystemVerilog.
 
-The GCD design is wrapped into a BFM in the test code. The BFM provides methods to reset the design, to drive one handshake and to perform the two handshakes required to calculate the GCD of two numbers while checking that the result is correct. Furthermore, it provides a method which prints the value of the state and operand registers. The test code is shown in Listing \ref{lst:gcd_test}. A simulation with a resolution of \SI{1}{ns} is created which dumps waveforms to \ttt{gcd.vcd}. The BFM is used to drive the transactions and check the result automatically. A fork is created which prints the state of the DUT in every clock cycle. A waveform showing the handshake for the first transaction is shown in Figure \ref{fig:gcd_timing}. The complete code for the use case can be found on Github in \href{https://github.com/tjarker/framework/blob/main/src/main/scala/GcdSim.scala}{GcdSim.scala}.
+The GCD design is wrapped into a BFM in the test code. The BFM provides methods to reset the design, to drive one handshake and to perform the two handshakes required to calculate the GCD of two numbers while checking that the result is correct. Furthermore, it provides a method which prints the value of the state and operand registers. The test code is shown in Listing \ref{lst:gcd_test} in the appendix. A simulation with a resolution of \SI{1}{ns} is created which dumps waveforms to \ttt{gcd.vcd}. The BFM is used to drive the transactions and check the result automatically. A fork is created which prints the state of the DUT in every clock cycle. A waveform showing the handshake for the first transaction is shown in Figure \ref{fig:gcd_timing}.
 
-
-
-\begin{listing}
-\begin{lstlisting}[language=scala, captionpos=b, caption=Test code for the GCD circuit.,label=lst:gcd_test]
-`@main def GcdSim(): Unit =
-  Simulation(new GCD, 1.ns, Some("gcd.vcd")) { gcd =>
-    val bfm = GcdBfm(gcd)
-
-    fork {
-      while (true) {
-        bfm.printState()
-        bfm.step()
-      }
-    }
-
-    val tests = Seq(
-      BigInt("6789AC", 16) -> BigInt("56789A", 16),
-      BigInt(12) -> BigInt(3)
-    )
-    bfm.reset()
-    tests.foreach { test =>
-      val res = bfm.calc(test)
-      println(s"Result: ${res}")
-    }
-  }'
-\end{lstlisting}
-\end{listing}
-
-\begin{figure}[t]
+\begin{figure}
 \centering
 \includegraphics[width=\textwidth]{diagrams/gcd_timing.pdf}
 \caption{Wavefrom showing the handshake for the calculation of the greatest common divisor of 12 and 3.}
@@ -3191,27 +3162,9 @@ The GCD design is wrapped into a BFM in the test code. The BFM provides methods 
 
 The second use case should demonstrate how a design with multiple clocks is handled. For this purpose a primitive clock domain crossing circuit is used. The circuit uses a 4-phase handshake with the request and acknowledge signals crossing the clock domains through two synchronization flip-flops each. The receiving clock domain is allowed to sample the data provided by the sending clock domain in the time window between request being asserted and acknowledge being asserted. The design is implemented in SystemVerilog. 
 
-In the test code, two threads are spawned, one for each clock domain. The sender side resets its synchronization flip-flops and performs a handshake to transfer the value \ttt{0xDEADBEEF}. Both actions are performed through a BFM. The receiver thread also resets its flip-flops and then takes part in a handshake, checking whether the sampled value is the one that is expected. The test code is shown in Listing \ref{lst:cdc_test}, while a waveform for the test is presented in Figure \ref{fig:cdc_timing}. The complete code for the use case can be found on Github in \href{https://github.com/tjarker/framework/blob/main/src/main/scala/CdcSim.scala}{CdcSim.scala}.
+In the test code, two threads are spawned, one for each clock domain. The sender side resets its synchronization flip-flops and performs a handshake to transfer the value \ttt{0xDEADBEEF}. Both actions are performed through a BFM. The receiver thread also resets its flip-flops and then takes part in a handshake, checking whether the sampled value is the one that is expected. The test code is shown in Listing \ref{lst:cdc_test} in the appendix, while a waveform for the test is presented in Figure \ref{fig:cdc_timing}.
 
-\begin{listing}
-\begin{lstlisting}[language=scala, captionpos=b, caption=Test code for the clock domain crossing design.,label=lst:cdc_test]
-  @main def CdcSim(): Unit =
-  Simulation(CDC(), 1.ns, Some("cdc.vcd")) { cdc =>
-    val magicNum = BigInt("deadbeef", 16)
-    fork {
-      val sender = HandshakeSender(cdc.clk_l, cdc.rst_l, cdc.req_l, cdc.ack_l, cdc.data_l)
-      sender.reset()
-      sender.send(magicNum)
-    }.fork {
-      val receiver = HandshakeReceiver(cdc.clk_r, cdc.rst_r, cdc.req_r, cdc.ack_r, cdc.data_r)
-      receiver.reset()
-      receiver.expect(magicNum)
-    }.join()
-  }
-\end{lstlisting}
-\end{listing}
-
-\begin{figure}[t]
+\begin{figure}
   \centering
   \includegraphics[width=\textwidth]{diagrams/cdc_timing.pdf}
   \caption{Wavefrom showing the handshakes for the clock domain crossing of the value \ttt{0xDEADBEEF}.}
@@ -3220,8 +3173,37 @@ In the test code, two threads are spawned, one for each clock domain. The sender
 
 \subsection{Use Case 3: Simple ALU} %------------------------------------------------------------------------------------------
 
-The third use case is used to compare the verification framework with PyUVM by replicating an example from the PyUVM project which tests a small ALU design \cite{pyuvm_tinyalu}. The ALU design supports single cycle AND, XOR and addition operations, as well as a multi-cycle multiplication. The SystemVerilog implementation from the PyUVM repository is used. 
+The third use case is used to compare the verification framework with PyUVM by replicating an example from the PyUVM project which tests a small ALU design \cite{pyuvm_tinyalu}. The ALU design supports single cycle AND, XOR and addition operations, as well as multi-cycle multiplication. The SystemVerilog implementation from the PyUVM repository is used. 
 
+The testbench in PyUVM follows the standard UVM structure. A driver and monitor interact with the DUT, while a scoreboard and coverage collector analyze the transactions observed by the monitor. The scoreboard checks the results of the ALU with a simple predictor. The coverage collector simply checks whether all operations have been performed. A small library of sequences is provided. A random sequence produces one transcation per operation with random operands. A max sequence produces a transaction for each operation with \ttt{0xFF} as the operands. Finally, a fibonacci sequence sends a transactions to calculate the fibonacci sequence up to the 10th number. These sequences are combined in two merged sequences: one playing them in series, the other one paying them in parallel. 
+
+The PyUVM test code does not use 
+
+\begin{table}
+\centering
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textbf{Component}       & \textbf{Methods} & \textbf{Statements} \\ \hline
+Driver          & 4/1             & 15/7 \\ \hline
+Monitor         & 3/1             & 8/5    \\ \hline
+Scoreboard       & 3/2            & 28/14    \\ \hline
+Coverage      & 3/2             & 14/9      \\ \hline
+Environment        & 2/0             & 10/7    \\ \hline
+RandomSeq   & 1/1 & 5/4 \\ \hline
+MaxSeq   & 1/1 & 4/2 \\ \hline
+FibonacciSeq   & 1/1 & 10/7 \\ \hline
+\end{tabular}
+\caption{Comparison of the method and statement count between the PyUVM testbench and the verification framework testbench for the TinyALU design. The first number in each cell is the count for the PyUVM testbench, the second number is the count for the verification framework testbench.}
+\label{tab:comparison}
+\end{table}
+
+% testbench.py 229 (wc 702)
+% tinyalu_utils.py 105 (wc 322)
+% total 334 1024
+
+% TinyAlu.scala 276 (wc 877)
+
+\todo{parallel seq is not working for now}
 
 \subsection{Use Case 4: APB Verification IP} %---------------------------------------------------------------------------------
 
@@ -3264,5 +3246,222 @@ UART/SPI/Memory
 \chapter{Conclusion} %/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 \printbibliography
+
+
+\chapter{Appendix} %///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+\section{GCD Test Code} %------------------------------------------------------------------------------------------------------
+
+\begin{lstlisting}[language=scala, captionpos=b, caption=Test code for the GCD circuit.,label=lst:gcd_test]
+import framework.*
+import framework.given
+import types.*
+import Time.*
+
+class GCD extends ModuleInterface("src/hdl/sv/GCD.sv") {
+
+  val clock = ClockPort(10.ns)
+  val reset = ResetPort()
+  val req = Input(Bool())
+  val ack = Output(Bool())
+  val loadVal = Input(UInt(32.W))
+  val result = Output(UInt(32.W))
+
+  domain(clock, reset)(
+    req,
+    ack,
+    loadVal,
+    result
+  )
+
+  val a = Reg(32.W, "a")
+  val b = Reg(32.W, "b")
+  val state = Reg(3.W, "state")
+
+}
+
+class GcdBfm(gcd: GCD) {
+
+  val states = Seq("wait_a", "ack_a", "wait_b", "compare", "update_a", "update_b", "ack_result")
+
+  def printState()(using Sim, Async): Unit = {
+    val s = summon[Sim]
+    println(s"@${gcd.time}${"=" * 80}")
+    println(s"State: ${states(s.peekReg(gcd.state).toInt)}")
+    println(s"A = ${s.peekReg(gcd.a)} B = ${s.peekReg(gcd.b)}")
+  }
+
+  def transact(value: BigInt, expected: Option[BigInt])(using
+      Sim,
+      Async
+  ): BigInt = {
+
+    gcd.loadVal.poke(value)
+    gcd.req.poke(true)
+
+    gcd.clock.stepUntil(gcd.ack.peek)
+
+    val res = gcd.result.peek
+    expected.foreach { e =>
+      gcd.result.expect(e)
+    }
+
+    gcd.req.poke(false)
+
+    gcd.clock.stepUntil(!gcd.ack.peek)
+
+    res
+  }
+
+  def calc(nums: (BigInt, BigInt))(using Sim, Async): BigInt = {
+    transact(nums._1, None)
+    transact(nums._2, Some(model(nums)))
+  }
+
+  def model(nums: (BigInt, BigInt)): BigInt = {
+    nums._1.gcd(nums._2)
+  }
+
+  def reset()(using Sim, Async): Unit = {
+    gcd.reset.assert()
+    gcd.req.poke(false)
+    gcd.loadVal.poke(0)
+    gcd.clock.step()
+    gcd.reset.deassert()
+    gcd.clock.step()
+  }
+
+  def step(n: Int = 1)(using Sim, Async): Unit = {
+    gcd.clock.step(n)
+
+  }
+}
+
+@main def GcdSim(): Unit =
+  Simulation(new GCD, 1.ns, Some("gcd.vcd")) { gcd =>
+    val bfm = GcdBfm(gcd)
+
+    fork {
+      while (true) {
+        bfm.printState()
+        bfm.step()
+      }
+    }
+
+    val tests = Seq(
+      BigInt(12) -> BigInt(3),
+      BigInt("6789AC", 16) -> BigInt("56789A", 16) 
+    )
+    bfm.reset()
+    tests.foreach { test =>
+      val res = bfm.calc(test)
+      println(s"Result: ${res}")
+    }
+  }
+
+\end{lstlisting}
+
+
+\section{Clock Domain Crossing Test Code} %-----------------------------------------------------------------------------------
+
+\begin{lstlisting}[language=scala, captionpos=b, caption=Test code for the clock domain crossing circuit.,label=lst:cdc_test]
+import framework.*
+import framework.given
+import types.*
+import Time.*
+
+class CDC extends ModuleInterface("src/hdl/sv/CDC.sv") {
+
+  val clk_l = ClockPort(6.ns)
+  val clk_r = ClockPort(10.ns)
+
+  val rst_l = ResetPort()
+  val rst_r = ResetPort()
+
+  val req_l = Input(Bool())
+  val req_r = Output(Bool())
+
+  val ack_l = Output(Bool())
+  val ack_r = Input(Bool())
+
+  val data_l = Input(UInt(32.W))
+  val data_r = Output(UInt(32.W))
+
+  domain(clk_l, rst_l)(
+    req_l,
+    data_l,
+    ack_l
+  )
+
+  domain(clk_r, rst_r)(
+    req_r,
+    data_r,
+    ack_r
+  )
+
+}
+
+class HandshakeSender(
+    clock: ClockPort,
+    reset: ResetPort,
+    req: Input[Bool],
+    ack: Output[Bool],
+    data: Input[UInt]
+) {
+
+  def reset()(using Sim, Async): Unit = {
+    reset.assert()
+    clock.step()
+    reset.deassert()
+  }
+
+  def send(value: BigInt)(using Sim, Async): Unit = {
+    req.poke(true)
+    data.poke(value)
+    clock.stepUntil(ack.peek)
+    req.poke(false)
+    data.poke(0)
+    clock.stepUntil(!ack.peek)
+  }
+}
+
+class HandshakeReceiver(
+    clock: ClockPort,
+    reset: ResetPort,
+    req: Output[Bool],
+    ack: Input[Bool],
+    data: Output[UInt]
+) {
+
+  def reset()(using Sim, Async): Unit = {
+    reset.assert()
+    clock.step()
+    reset.deassert()
+  }
+
+  def expect(value: BigInt)(using Sim, Async): Unit = {
+    clock.stepUntil(req.peek)
+    data.expect(value)
+    ack.poke(true)
+    clock.stepUntil(!req.peek)
+    ack.poke(false)
+  }
+}
+
+@main def CdcSim(): Unit =
+  Simulation(CDC(), 1.ns, Some("cdc.vcd")) { cdc =>
+    val magicNum = BigInt("deadbeef", 16)
+    fork {
+      val sender =
+        HandshakeSender(cdc.clk_l, cdc.rst_l, cdc.req_l, cdc.ack_l, cdc.data_l)
+      sender.reset()
+      sender.send(magicNum)
+    }.fork {
+      val receiver = HandshakeReceiver(cdc.clk_r, cdc.rst_r, cdc.req_r, cdc.ack_r, cdc.data_r)
+      receiver.reset()
+      receiver.expect(magicNum)
+    }.join()
+  }
+\end{lstlisting}  
 
 \end{document}
