@@ -3150,7 +3150,7 @@ constructor. The \ttt{Test} base class is a component which includes the \ttt{Te
 
 The first use case is a simple greatest common divisor (GCD) circuit, which is taken from the lab work of the DTU course \textit{02203 Design of Digital Systems}. This use case should demonstrate the writing of simple directed test cases and the use of BFM's in the verification framework. It is also used as a small showcase for the reading of internal registers. The design is interfaced via a 4-phase handshake protocol with a request and acknowledge signal. The two operands are sent one after the other, and the circuit acknowledges the second operand with the result of the calculation. The implementation of the circuit is done in SystemVerilog.
 
-The GCD design is wrapped into a BFM in the test code. The BFM provides methods to reset the design, to drive one handshake and to perform the two handshakes required to calculate the GCD of two numbers while checking that the result is correct. Furthermore, it provides a method which prints the value of the state and operand registers. The test code is shown in Listing \ref{lst:gcd_test}. A simulation with a resolution of \SI{1}{ns} is created which dumps waveforms to \ttt{gcd.vcd}. The BFM is used to drive the transactions and check the result automatically. A fork is created which prints the state of the DUT in every clock cycle. A waveform showing the handshake for the first transaction is shown in Figure \ref{fig:gcd_timing}.
+The GCD design is wrapped into a BFM in the test code. The BFM provides methods to reset the design, to drive one handshake and to perform the two handshakes required to calculate the GCD of two numbers while checking that the result is correct. Furthermore, it provides a method which prints the value of the state and operand registers. The test code is shown in Listing \ref{lst:gcd_test}. A simulation with a resolution of \SI{1}{ns} is created which dumps waveforms to \ttt{gcd.vcd}. The BFM is used to drive the transactions and check the result automatically. A fork is created which prints the state of the DUT in every clock cycle. A waveform showing the handshake for the first transaction is shown in Figure \ref{fig:gcd_timing}. The complete code for the use case can be found on Github in \href{https://github.com/tjarker/framework/blob/main/src/main/scala/GcdSim.scala}{GcdSim.scala}.
 
 
 
@@ -3191,7 +3191,7 @@ The GCD design is wrapped into a BFM in the test code. The BFM provides methods 
 
 The second use case should demonstrate how a design with multiple clocks is handled. For this purpose a primitive clock domain crossing circuit is used. The circuit uses a 4-phase handshake with the request and acknowledge signals crossing the clock domains through two synchronization flip-flops each. The receiving clock domain is allowed to sample the data provided by the sending clock domain in the time window between request being asserted and acknowledge being asserted. The design is implemented in SystemVerilog. 
 
-In the test code, two threads are spawned, one for each clock domain. The sender side resets its synchronization flip-flops and performs a handshake to transfer the value \ttt{0xDEADBEEF}. Both actions are performed through a BFM. The receiver thread also resets its flip-flops and then takes part in a handshake, checking whether the sampled value is the one that is expected. The test code is shown in Listing \ref{lst:cdc_test}, while a waveform for the test is presented in Figure \ref{fig:cdc_timing}.
+In the test code, two threads are spawned, one for each clock domain. The sender side resets its synchronization flip-flops and performs a handshake to transfer the value \ttt{0xDEADBEEF}. Both actions are performed through a BFM. The receiver thread also resets its flip-flops and then takes part in a handshake, checking whether the sampled value is the one that is expected. The test code is shown in Listing \ref{lst:cdc_test}, while a waveform for the test is presented in Figure \ref{fig:cdc_timing}. The complete code for the use case can be found on Github in \href{https://github.com/tjarker/framework/blob/main/src/main/scala/CdcSim.scala}{CdcSim.scala}.
 
 \begin{listing}
 \begin{lstlisting}[language=scala, captionpos=b, caption=Test code for the clock domain crossing design.,label=lst:cdc_test]
@@ -3218,10 +3218,12 @@ In the test code, two threads are spawned, one for each clock domain. The sender
   \label{fig:cdc_timing}
   \end{figure}
 
+\subsection{Use Case 3: Simple ALU} %------------------------------------------------------------------------------------------
 
-\subsection{Use-Case 1: Simple ALU} %------------------------------------------------------------------------------------------
+The third use case is used to compare the verification framework with PyUVM by replicating an example from the PyUVM project which tests a small ALU design \cite{pyuvm_tinyalu}. The ALU design supports single cycle AND, XOR and addition operations, as well as a multi-cycle multiplication. The SystemVerilog implementation from the PyUVM repository is used. 
 
-\subsection{Use-Case 2: APB Verification IP} %---------------------------------------------------------------------------------
+
+\subsection{Use Case 4: APB Verification IP} %---------------------------------------------------------------------------------
 
 \todo{compare lines of code roughly, is there a difference in design components? what was not replicated, what was
 replicated differently?}
