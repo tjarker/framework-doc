@@ -3136,14 +3136,27 @@ sequence to finish by calling \ttt{waitUntilDone} which awaits the fork executin
 \subsection{Test Cases} %------------------------------------------------------------------------------------------------------
 
 The test case is the root component of a testbench. It should receive a reference to the DUT or a BFM through its
-constructor. The \ttt{Test} base class is a component which includes the \ttt{TestPhase} without providing an implementation.
+constructor. The \ttt{Test} base class is a component which includes the \ttt{TestPhase} without providing an implementation. Further phases can be freely added by extending the respective traits. In the current implementation, each test case class has to be paired with a \ttt{runTest} function to actually run the test. Since a Scala program can have multiple entry points, each test can be associated with its own entry point by annotating the function calling the test with the \ttt{@main} annotation.
 
-\subsection{Factories and Configuration}
-%-----------------------------------------------------------------------------------------
+\subsection{Factories and Configuration} %-------------------------------------------------------------------------------------
 
 \subsection{Register Abstraction} %--------------------------------------------------------------------------------------------
 
+
+
+
+
+
+
+
+
+
+
+
+
 \chapter{Evaluation} %////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+The proposed verification framework is evaluated by applying its implementation to four different use cases. The use case demonstrate different levels of complexities and features of the verification framework. The first use case demonstrates the basic functionality of the verification framework by testing a design in a directed manner using a BFM. It also shows how internal registers may be read. The second use case demonstrates how the verification framework handles multiple clock domains and how a concurrent testbench can be written. The third use case replicates a UVM-style testbench which the PyUVM authors use as an example, allowing for a comparison of the implementation in Scala and Python. The fourth use case replicates verification blocks for an APB interface which are implemented in PyUVM and serve as verification infrastructure for the Didactic SoC mutli-project chip developed as part of the Edu4Chip project \cite{edu4chip}.
 
 \section{Use Case 1: Greatest Common Divisor} %--------------------------------------------------------------------------------
 
@@ -3175,9 +3188,13 @@ In the test code, two threads are spawned, one for each clock domain. The sender
 
 The third use case is used to compare the verification framework with PyUVM by replicating an example from the PyUVM project which tests a small ALU design \cite{pyuvm_tinyalu}. The ALU design supports single cycle AND, XOR and addition operations, as well as multi-cycle multiplication. The SystemVerilog implementation from the PyUVM repository is used. 
 
-The testbench in PyUVM follows the standard UVM structure. A driver and monitor interact with the DUT, while a scoreboard and coverage collector analyze the transactions observed by the monitor. The scoreboard checks the results of the ALU with a simple predictor. The coverage collector simply checks whether all operations have been performed. A small library of sequences is provided. A random sequence produces one transcation per operation with random operands. A max sequence produces a transaction for each operation with \ttt{0xFF} as the operands. Finally, a fibonacci sequence sends a transactions to calculate the fibonacci sequence up to the 10th number. These sequences are combined in two merged sequences: one playing them in series, the other one paying them in parallel. 
+The testbench in PyUVM follows the standard UVM structure, except for not using the agent component. The driver and monitor are placed directly in the environment and interact with the DUT, while a scoreboard and coverage collector analyze the transactions observed by the monitor. The scoreboard checks the results of the ALU with a simple predictor. The coverage collector simply checks whether all operations have been performed. 
 
-The PyUVM test code does not use 
+A small library of sequences is provided. A random sequence produces one transcation per operation with random operands. A max sequence produces a transaction for each operation with \ttt{0xFF} as the operands. Finally, a fibonacci sequence sends a transactions to calculate the fibonacci sequence up to the 10th number. These sequences are combined in two merged sequences: one playing them in series, the other one paying them in parallel. 
+
+This testbench setup is replicated in the verification framework to match the PyUVM testbench's capabilities as closely as possible. This allows for a comparison of the two testbenches in terms of their complexity. Measuring complexity at the source code level is a diffifult task and can only provide a rough direction of how effective one framework is over the other. On the one hand, each component can be investigated individually. Table \ref{tab:comparison} shows how many methods a component has to implement to achieve its functionality and how many statements the code inside the component contains. The first number for each component is the count for the PyUVM framework while the second is the count for the designed verification framework. Statements are counted roughly as assignments, function calls or control-flow statements. The proposed verification framework requires generally fewer statements and an equal or lower number of methods to achieve its functionality. 
+
+Another way to compare the complexity of the two testbenches is to simply count the number of lines of code, excluding empty lines of course. The PyUVM testbench is split into two files, one containing a BFM and the other the testbench itself. Combined they contain 334 lines of code. The scala testbench on the other hand contains 276 lines of code. Lines of code only gives a rough estimate, since complex expressions could be merged into a single line leading to a lower line count but the same complexity. Ideally, a more sophisticated metric would consider the tokens in the code. An approximation can be made by counting the amount of whitespace separated tokens in the code. The PyUVM testbench contains 1024 of these tokens, while the scala testbench contains 877 tokens. 
 
 \begin{table}
 \centering
@@ -3210,6 +3227,8 @@ FibonacciSeq   & 1/1 & 10/7 \\ \hline
 \todo{compare lines of code roughly, is there a difference in design components? what was not replicated, what was
 replicated differently?}
 
+\cite{didactic}
+
 \chapter{Discussion} %/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 use cases:
@@ -3229,6 +3248,11 @@ limited and does not allow for creating cases which would show the full potentia
 
 - sequences can not send next item before receiving response
 - for pipeline interfaces this is not good
+
+
+- the framework simplefies some things, how can we be sure that this does not create an issue for more complex cases?
+- we are aiming to provide a framework which is easy to use for common case 
+- is it then still universal?
 
 %\section{Future Work} %========================================================================================================
 
