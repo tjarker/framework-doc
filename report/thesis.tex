@@ -3146,6 +3146,79 @@ constructor. The \ttt{Test} base class is a component which includes the \ttt{Te
 
 \section{Use-Cases} %----------------------------------------------------------------------------------------------------------
 
+\section{Use Case 1: Greatest Common Divisor} %--------------------------------------------------------------------------------
+
+The first use case is a simple greatest common divisor (GCD) circuit, which is taken from the lab work of the DTU course \textit{02203 Design of Digital Systems}. This use case should demonstrate the writing of simple directed test cases and the use of BFM's in the verification framework. It is also used as a small showcase for the reading of internal registers. The design is interfaced via a 4-phase handshake protocol with a request and acknowledge signal. The two operands are sent one after the other, and the circuit acknowledges the second operand with the result of the calculation. The implementation of the circuit is done in SystemVerilog.
+
+The GCD design is wrapped into a BFM in the test code. The BFM provides methods to reset the design, to drive one handshake and to perform the two handshakes required to calculate the GCD of two numbers while checking that the result is correct. Furthermore, it provides a method which prints the value of the state and operand registers. The test code is shown in Listing \ref{lst:gcd_test}. A simulation with a resolution of \SI{1}{ns} is created which dumps waveforms to \ttt{gcd.vcd}. The BFM is used to drive the transactions and check the result automatically. A fork is created which prints the state of the DUT in every clock cycle. A waveform showing the handshake for the first transaction is shown in Figure \ref{fig:gcd_timing}.
+
+
+
+\begin{listing}
+\begin{lstlisting}[language=scala, captionpos=b, caption=Test code for the GCD circuit.,label=lst:gcd_test]
+`@main def GcdSim(): Unit =
+  Simulation(new GCD, 1.ns, Some("gcd.vcd")) { gcd =>
+    val bfm = GcdBfm(gcd)
+
+    fork {
+      while (true) {
+        bfm.printState()
+        bfm.step()
+      }
+    }
+
+    val tests = Seq(
+      BigInt("6789AC", 16) -> BigInt("56789A", 16),
+      BigInt(12) -> BigInt(3)
+    )
+    bfm.reset()
+    tests.foreach { test =>
+      val res = bfm.calc(test)
+      println(s"Result: ${res}")
+    }
+  }'
+\end{lstlisting}
+\end{listing}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{diagrams/gcd_timing.pdf}
+\caption{Wavefrom showing the handshake for the calculation of the greatest common divisor of 12 and 3.}
+\label{fig:gcd_timing}
+\end{figure}
+
+\subsection{Use Case 2: Clock Domain Crossing} %-------------------------------------------------------------------------------
+
+The second use case should demonstrate how a design with multiple clocks is handled. For this purpose a primitive clock domain crossing circuit is used. The circuit uses a 4-phase handshake with the request and acknowledge signals crossing the clock domains through two synchronization flip-flops each. The receiving clock domain is allowed to sample the data provided by the sending clock domain in the time window between request being asserted and acknowledge being asserted. The design is implemented in SystemVerilog. 
+
+In the test code, two threads are spawned, one for each clock domain. The sender side resets its synchronization flip-flops and performs a handshake to transfer the value \ttt{0xDEADBEEF}. Both actions are performed through a BFM. The receiver thread also resets its flip-flops and then takes part in a handshake, checking whether the sampled value is the one that is expected. The test code is shown in Listing \ref{lst:cdc_test}, while a waveform for the test is presented in Figure \ref{fig:cdc_timing}.
+
+\begin{listing}
+\begin{lstlisting}[language=scala, captionpos=b, caption=Test code for the clock domain crossing design.,label=lst:cdc_test]
+  @main def CdcSim(): Unit =
+  Simulation(CDC(), 1.ns, Some("cdc.vcd")) { cdc =>
+    val magicNum = BigInt("deadbeef", 16)
+    fork {
+      val sender = HandshakeSender(cdc.clk_l, cdc.rst_l, cdc.req_l, cdc.ack_l, cdc.data_l)
+      sender.reset()
+      sender.send(magicNum)
+    }.fork {
+      val receiver = HandshakeReceiver(cdc.clk_r, cdc.rst_r, cdc.req_r, cdc.ack_r, cdc.data_r)
+      receiver.reset()
+      receiver.expect(magicNum)
+    }.join()
+  }
+\end{lstlisting}
+\end{listing}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{diagrams/cdc_timing.pdf}
+  \caption{Wavefrom showing the handshakes for the clock domain crossing of the value \ttt{0xDEADBEEF}.}
+  \label{fig:cdc_timing}
+  \end{figure}
+
+
 \subsection{Use-Case 1: Simple ALU} %------------------------------------------------------------------------------------------
 
 \subsection{Use-Case 2: APB Verification IP} %---------------------------------------------------------------------------------
