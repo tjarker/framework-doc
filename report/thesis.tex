@@ -1,12 +1,23 @@
 \chapter{Introduction} %///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Computer chips are around us everywhere in our daily lives. They are in our phones, our cars, our computers and even in our washing machine. The complexity of these integrated circuits (IC) has increased dramatically since their inception in the 1960s. While the first ICs consisted of hand-placed transistors, modern hardware designs are captured in hardware description languages and synthesized by tools to generate the actual layout of the chip. The scaling mechanisms of Moore's law have given designers an ever increasing number of transistors to work with, which has led to an increase in functionality of the designs. With the advent of Systems-on-Chip, a single chip is now composed of a multitude of complex subsystems each with their own complex functionality. 
+Computer chips are around us everywhere in our daily lives. They are in our phones, our cars, our computers and even in our washing machine. The complexity of these integrated circuits (IC) has increased dramatically since their inception in the 1960s. While the first ICs consisted of hand-placed transistors, modern hardware designs are captured in hardware description languages and synthesized by tools to generate the actual layout of the chip. The scaling mechanisms of Moore's law have given designers an ever increasing number of transistors to work with, which has led to an increase in features in the designs. With the advent of Systems-on-Chip, a single chip is now composed of a multitude of complex subsystems each with their own complex functionality. 
 
-Producing these chips is costly, with each production run costing millions of dollars. It is therefore imperative to guarantee that a design will be a first time success. This means that the design has to be demonstrated to be correct before it is sent off for fabrication. In addition to checking for physical correctness in the layout, the design most importantly also has to demonstrate functional correctness. This is a challenging task. The so-called verification of the design can take up to 40-50\% of the total design cost \cite{mehta2018asic}, 70\% of the design effort \cite{bergeron2012writing} and can manifest up to 80\% of the project code base \cite{bergeron2012writing}.
+Producing these chips is costly, with each production run costing millions of dollars. It is therefore imperative to guarantee that a design will work once a production run is started. This means that the design has to be demonstrated to be correct before it is sent off for fabrication. In addition to checking for physical correctness in the layout, the design most importantly also needs to demonstrate functional correctness. This is a challenging task. The so-called verification of the design can take up to 40-50\% of the total design cost \cite{mehta2018asic}, 70\% of the design effort \cite{bergeron2012writing} and can manifest up to 80\% of the project code base \cite{bergeron2012writing}.
 
+Considering these numbers, it becomes apparent that verification is a bottleneck in the product development process. Even worse, verification itself does not add any value to a product, but it is still necessary to ensure that a can be sold successfully. In order to limit the impact of verification on the overall design cost and time, methods to make the task more efficient and increase productivity are needed. This means that the effort required to demonstrate that a feature works correctly should be minimized. 
 
+Part of the verification task is to identify and decide exactly how each feature can be demonstrated or proven to work correctly. This either requires the formulation of properties which can be checked or the development of scenarios which exercise a certain feature. The other part of the verification task is to implement these test case scenarios in so-called testbenches where the design is simulated and interacted with in a controlled environment. The first part requires working with the specification of the design and is hard to automate and make more efficient. The second part however, can be made more efficient in two ways. On the one hand, productivity can be boosted through the use of a language which is efficient in expressing the intent of the verification engineer through its language constructs and features. On the other hand, the amount of code which has to be written can be reduced by creating flexible components which can be reused and shared across test cases and even projects.
 
+SystemVerilog is the state-of-the-art language for verification. It provides direct support in the language for many of the features which modern verification techniques rely on. The Universal Verification Method (UVM) is an IEEE standard for how verification infrastructure should be designed in SystemVerilog to facilitate reuse and composability. SystemVerilog as a language and UVM as the guiding methodology have found widespread adoption with numbers from 2020 reporting over 70\% of IC projects using the UVM for verification \cite{foster2020wilson}. Together, SystemVerilog and the UVM provide a toolset to increase the productivity of the verification task.
 
+However, verification is a software discipline at its core. While SystemVerilog's features such as object-oriented programming are intended to match the capabilities of modern general-purpose programming languages, efforts exist to bring verification to more popular and powerful languages to increase productivity and ease adoption. One such effort is Cocotb, which allows for the use of Python to write testbenches and exploits Python's ease of use and powerful ecosystem. Other efforts surround the Chisel hardware construction language, where the ChiselVerify project worked on providing verification features found in SystemVerilog to a Scala verification environment. These efforts however, focus on providing the primitive tools for verification as they are found in SystemVerilog. They do not answer the question of how exactly one should use the more powerful languages to write complex and reusable testbenches. While a UVM implementation exists in Python, PyUVM, it is mostly a direct port of the UVM to Python and does not reevaluate the design choices of the UVM in the context of Python, except for some minor API adjustments.
+
+This thesis aims to investigate how testbenches should be designed in a modern high-level language environment such that they are composable, flexible and reusable. The goal is to provide a framework which provides the primitives to construct testbenches in a standardized manner which takes advantage of the features of the host language. State-of-the-art verification techniques and languages will be investigated to understand the general concepts and needs of a verification framework. To gain further insight into verification practices and the adoption of the UVM in the industry, a small survey will be conducted through interviews with three companies which are active in the field of IC design and verification. The insight collected through the background research and the interviews will be used to design a verification framework. An implementation attempt will be made in a language of choice to demonstrate the feasibility of the framework.
+
+\todo{how is the thesis structured?}
+
+\begin{comment}
+  
 - complexity of design has increased significantly ever since the ..
 - while in the first chips transistors were hand-placed, modern design use hardware description langs to describe the behavior and structure of a design and a synthesis tool to generate the actual layout
 - the scaling mechanisms of moores law gave designers more and more transistors to work with, which added more and more functionality to the designs
@@ -70,16 +81,7 @@ Producing these chips is costly, with each production run costing millions of do
 - the thesis is structured in the following way
 
 
-- \cite{UVM12}
 
-\todo{add direct references to uvm ref manual}
-
-\todo{
-  - "the" UVM
-  - configDB
-  - Fig. or Figure
-  - DUV or DUT
-}
 - present topic
 - present problem statement
 - why is this relevant
@@ -98,6 +100,23 @@ Producing these chips is costly, with each production run costing millions of do
 - testbenches manifest up to 80\% of code base \cite[Ch. 1]{bergeron2012writing}
 
 - verification is important to make ASIC design a first time success \cite[Ch. 3]{bergeron2012writing}
+
+
+\end{comment}
+
+
+
+
+
+
+\todo{add direct references to uvm ref manual \cite{UVM12}}
+
+\todo{\\
+  - "the" UVM\\
+  - configDB\\
+  - Fig. or Figure\\
+  - DUV or DUT
+}
 
 \chapter{Background and Related Work} %/////////////////////////////////////////////////////////////////////////////////////////
 \label{ch:background}
@@ -262,7 +281,7 @@ satisfies all constraints using a constraint satisfaction problem solver. In add
 constraints, distribution constraints are highly relevant,
 in order to ensure that the random stimulus is representative of the actual behavior of the DUV \cite[Sec. 7.5]{flake2020a}.
 
-The verification approach of using random stimulus alongside constraints is called constrained-random verification
+The verification approach of using random stimulus alongside constraints is called \todo{constrained-random verification}
 (CRV). It promises an increase in productivity, which is given by a single CRV testbench being able to exercise
 potentially many of the test cases outlined in the verification plan. This allows for an approach where verification
 is started off using CRV, and only then more specific tests are developed to target functionality which is difficult
