@@ -8,28 +8,71 @@
   - DUT or DUT
 }
 
-
 \chapter{Introduction} %///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Computer chips are around us everywhere in our daily lives. They are in our phones, our cars, our computers and even in our washing machine. The complexity of these integrated circuits (IC) has increased dramatically since their inception in the 1960s. While the first ICs consisted of hand-placed transistors, modern hardware designs are captured in hardware description languages and synthesized by tools to generate the actual layout of the chip. The scaling mechanisms of Moore's law have given designers an ever increasing number of transistors to work with, which has led to an increase in features in the designs. With the advent of Systems-on-Chip, a single chip is now composed of a multitude of complex subsystems each with their own complex functionality. 
+Computer chips are around us everywhere in our daily lives. They are in our phones, our cars, our computers and even
+in our washing machine. The complexity of these integrated circuits (IC) has increased dramatically since their
+inception in the 1960s. While the first ICs consisted of hand-placed transistors, modern hardware designs are
+captured in hardware description languages and synthesized by tools to generate the actual layout of the chip. The
+scaling mechanisms of Moore's law have given designers an ever increasing number of transistors to work with, which
+has led to an increase in features in the designs. With the advent of Systems-on-Chip, a single chip is now composed
+of a multitude of complex subsystems each with their own complex functionality.
 
-Producing these chips is costly, with each production run costing millions of dollars. It is therefore imperative to guarantee that a design will work once a production run is started. This means that the design has to be demonstrated to be correct before it is sent off for fabrication. In addition to checking for physical correctness in the layout, the design most importantly also needs to demonstrate functional correctness. This is a challenging task. The so-called verification of the design can take up to 40-50\% of the total design cost \cite{mehta2018asic}, 70\% of the design effort \cite{bergeron2012writing} and can manifest up to 80\% of the project code base \cite{bergeron2012writing}.
+Producing these chips is costly, with each production run costing millions of dollars. It is therefore imperative to
+guarantee that a design will work once a production run is started. This means that the design has to be demonstrated
+to be correct before it is sent off for fabrication. In addition to checking for physical correctness in the layout,
+the design most importantly also needs to demonstrate functional correctness. This is a challenging task. The
+so-called verification of the design can take up to 40-50\% of the total design cost \cite{mehta2018asic}, 70\% of
+the design effort \cite{bergeron2012writing} and can manifest up to 80\% of the project code base \cite{bergeron2012writing}.
 
-Considering these numbers, it becomes apparent that verification is a bottleneck in the product development process. Even worse, verification itself does not add any value to a product, but it is still necessary to ensure that a can be sold successfully. In order to limit the impact of verification on the overall design cost and time, methods to make the task more efficient and increase productivity are needed. This means that the effort required to demonstrate that a feature works correctly should be minimized. 
+Considering these numbers, it becomes apparent that verification is a bottleneck in the product development process.
+Even worse, verification itself does not add any value to a product, but it is still necessary to ensure that a can
+be sold successfully. In order to limit the impact of verification on the overall design cost and time, methods to
+make the task more efficient and increase productivity are needed. This means that the effort required to demonstrate
+that a feature works correctly should be minimized.
 
-Part of the verification task is to identify and decide exactly how each feature can be demonstrated or proven to work correctly. This either requires the formulation of properties which can be checked or the development of scenarios which exercise a certain feature. The other part of the verification task is to implement these test case scenarios in so-called testbenches where the design is simulated and interacted with in a controlled environment. The first part requires working with the specification of the design and is hard to automate and make more efficient. The second part however, can be made more efficient in two ways. On the one hand, productivity can be boosted through the use of a language which is efficient in expressing the intent of the verification engineer through its language constructs and features. On the other hand, the amount of code which has to be written can be reduced by creating flexible components which can be reused and shared across test cases and even projects.
+Part of the verification task is to identify and decide exactly how each feature can be demonstrated or proven to
+work correctly. This either requires the formulation of properties which can be checked or the development of
+scenarios which exercise a certain feature. The other part of the verification task is to implement these test case
+scenarios in so-called testbenches where the design is simulated and interacted with in a controlled environment. The
+first part requires working with the specification of the design and is hard to automate and make more efficient. The
+second part however, can be made more efficient in two ways. On the one hand, productivity can be boosted through the
+use of a language which is efficient in expressing the intent of the verification engineer through its language
+constructs and features. On the other hand, the amount of code which has to be written can be reduced by creating
+flexible components which can be reused and shared across test cases and even projects.
 
-SystemVerilog is the state-of-the-art language for verification. It provides direct support in the language for many of the features which modern verification techniques rely on. The Universal Verification Method (UVM) is an IEEE standard for how verification infrastructure should be designed in SystemVerilog to facilitate reuse and composability. SystemVerilog as a language and UVM as the guiding methodology have found widespread adoption with numbers from 2020 reporting over 70\% of IC projects using the UVM for verification \cite{foster2020wilson}. Together, SystemVerilog and the UVM provide a toolset to increase the productivity of the verification task.
+SystemVerilog is the state-of-the-art language for verification. It provides direct support in the language for many
+of the features which modern verification techniques rely on. The Universal Verification Method (UVM) is an IEEE
+standard for how verification infrastructure should be designed in SystemVerilog to facilitate reuse and
+composability. SystemVerilog as a language and UVM as the guiding methodology have found widespread adoption with
+numbers from 2020 reporting over 70\% of IC projects using the UVM for verification \cite{foster2020wilson}.
+Together, SystemVerilog and the UVM provide a toolset to increase the productivity of the verification task.
 
-However, verification is a software discipline at its core. While SystemVerilog's features such as object-oriented programming are intended to match the capabilities of modern general-purpose programming languages, efforts exist to bring verification to more popular and powerful languages to increase productivity and ease adoption. One such effort is Cocotb, which allows for the use of Python to write testbenches and exploits Python's ease of use and powerful ecosystem. Other efforts surround the Chisel hardware construction language, where the ChiselVerify project worked on providing verification features found in SystemVerilog to a Scala verification environment. These efforts however, focus on providing the primitive tools for verification as they are found in SystemVerilog. They do not answer the question of how exactly one should use the more powerful languages to write complex and reusable testbenches. While a UVM implementation exists in Python, PyUVM, it is mostly a direct port of the UVM to Python and does not reevaluate the design choices of the UVM in the context of Python, except for some minor API adjustments.
+However, verification is a software discipline at its core. While SystemVerilog's features such as object-oriented
+programming are intended to match the capabilities of modern general-purpose programming languages, efforts exist to
+bring verification to more popular and powerful languages to increase productivity and ease adoption. One such effort
+is Cocotb, which allows for the use of Python to write testbenches and exploits Python's ease of use and powerful
+ecosystem. Other efforts surround the Chisel hardware construction language, where the ChiselVerify project worked on
+providing verification features found in SystemVerilog to a Scala verification environment. These efforts however,
+focus on providing the primitive tools for verification as they are found in SystemVerilog. They do not answer the
+question of how exactly one should use the more powerful languages to write complex and reusable testbenches. While a
+UVM implementation exists in Python, PyUVM, it is mostly a direct port of the UVM to Python and does not reevaluate
+the design choices of the UVM in the context of Python, except for some minor API adjustments.
 
-This thesis aims to investigate how testbenches should be designed in a modern high-level language environment such that they are composable, flexible and reusable. The goal is to provide a framework which provides the primitives to construct testbenches in a standardized manner which takes advantage of the features of the host language. State-of-the-art verification techniques and languages will be investigated to understand the general concepts and needs of a verification framework. To gain further insight into verification practices and the adoption of the UVM in the industry, interviews will be conducted with three companies which are active in the field of IC design and verification. The insight collected through the background research and the interviews will be used to design a verification framework. An implementation attempt will be made in a language of choice to demonstrate the feasibility of the framework.
+This thesis aims to investigate how testbenches should be designed in a modern high-level language environment such
+that they are composable, flexible and reusable. The goal is to provide a framework which provides the primitives to
+construct testbenches in a standardized manner which takes advantage of the features of the host language.
+State-of-the-art verification techniques and languages will be investigated to understand the general concepts and
+needs of a verification framework. To gain further insight into verification practices and the adoption of the UVM in
+the industry, interviews will be conducted with three companies which are active in the field of IC design and
+verification. The insight collected through the background research and the interviews will be used to design a
+verification framework. An implementation attempt will be made in a language of choice to demonstrate the feasibility
+of the framework.
 
 \todo{how is the thesis structured?}
 
-
 \begin{comment}
-  
+
 - complexity of design has increased significantly ever since the ..
 - while in the first chips transistors were hand-placed, modern design use hardware description langs to describe the behavior and structure of a design and a synthesis tool to generate the actual layout
 - the scaling mechanisms of moores law gave designers more and more transistors to work with, which added more and more functionality to the designs
@@ -39,7 +82,6 @@ This thesis aims to investigate how testbenches should be designed in a modern h
 - but most importantly the design has to demonstrate functional correctness
 - this is a challenging task, which surpasses the design task itself
 - numbers such as 40-50\% of the design cost \cite{mehta2018asic}, 70\% of the design effort and manifest 80\% of codebase \cite[Ch. 1]{bergeron2012writing} show this clearly
-
 
 - considering these numbers it becomes apparent that verification is a bottleneck in the product development process
 - even worse verification does not add value to a product but inversly no verification can lead to a product not being able to be sold
@@ -59,16 +101,15 @@ This thesis aims to investigate how testbenches should be designed in a modern h
 - on top of SystemVerilog a IEEE standard for how the testing infrastructure should be designed with a focus on composability and reusability has been developed, the universal verification methodology (UVM)
 - these two have become a widely adopted industry standard with 2020 numbers showing over 70\% of IC/ASIC projects using UVM as a methodology \cite{foster2020wilson}
 
-
 - while UVM is an open standard, it has been influenced from a number of predecessors methdologies developed by the EDA vendors to guide users in the adoption of SV for verification
 - non-industry projects focus on basic verification functionality over methodologies
-- notably Cocotb provides a python verification framework 
+- notably Cocotb provides a python verification framework
 - and ChiselTest and ChiselVerify provides scala verification eco system for Chisel designs
 - one notable exception is PyUVM but that one is mostly a reimplementation of UVM in python
 
 - UVM was designed for SV
 - some parts are language agnostic such as general concepts
-- others are limited by the language capabilities 
+- others are limited by the language capabilities
 - others again are made possible by the language capabilities
 
 - recent work has focussed on bringing verification to more modern languages using open-source tools
@@ -92,8 +133,6 @@ This thesis aims to investigate how testbenches should be designed in a modern h
 
 - the thesis is structured in the following way
 
-
-
 - present topic
 - present problem statement
 - why is this relevant
@@ -113,13 +152,7 @@ This thesis aims to investigate how testbenches should be designed in a modern h
 
 - verification is important to make ASIC design a first time success \cite[Ch. 3]{bergeron2012writing}
 
-
 \end{comment}
-
-
-
-
-
 
 \chapter{Background and Related Work} %/////////////////////////////////////////////////////////////////////////////////////////
 \label{ch:background}
@@ -127,9 +160,7 @@ This thesis aims to investigate how testbenches should be designed in a modern h
 In this chapter, the problem of verification itself will be discussed. Furthermore, current approaches to
 verification will be outlined and concrete state-of-the-art verification languages and frameworks will be introduced.
 The goal is to provide an overview which lays the foundation for understanding what a verification framework should
-provide and for analyzing which aspects of the state-of-the-art can be improved. 
-
-
+provide and for analyzing which aspects of the state-of-the-art can be improved.
 
 \begin{comment}
 
@@ -347,7 +378,9 @@ The idea behind functional coverage is to monitor state, transitions, changes to
 combination of these (so-called cross-coverage). For each functionality, different cases of interest have to be
 defined and declared as so-called bins. Signals or variables can have different bins for specific values or ranges
 which may be augmented with predicates. At a given sampling event these bins record whether they have been hit, i.e.
-whether the condition they represent has been observed. Cross-coverage creates the Cartesian product of the bins associated with two variables and records when combinations of bins have hits at the same time. The goal is to have all bins hit at least once, indicating
+whether the condition they represent has been observed. Cross-coverage creates the Cartesian product of the bins
+associated with two variables and records when combinations of bins have hits at the same time. The goal is to have
+all bins hit at least once, indicating
 that all aspects of the design have been exercised \cite[Sec. 7.6]{flake2020a}.
 
 \begin{comment}
@@ -395,7 +428,8 @@ achieved by working with the ports of the DUT directly, a higher level of abstra
 concept of transactions comes in. A transaction is an operation on an interface, as abstract as the transmission of a
 TCP package but also low level like an AXI bus write operation \cite[Ch. 1]{bergeron2005verification}.
 
-Given the abstraction level of transactions, components are needed to bridge the gap between different levels of abstractions. These components are called transactors. Since the gap between the highest level of
+Given the abstraction level of transactions, components are needed to bridge the gap between different levels of
+abstractions. These components are called transactors. Since the gap between the highest level of
 abstraction and actual pin interactions can be quite large, such as in the case of TCP packages, intermediate levels
 of abstraction should be introduced, with transactors bridging the gap between them. This means that transactors can
 be layered and composed to meet the needs of a specific test case \cite[Ch. 4]{bergeron2012writing}.
@@ -436,7 +470,10 @@ composed to meet the needs of a specific test case and thus can increase the tes
 
 \section{Verification Languages and frameworks} %===============================================================================
 
-Having considered the general problem and concept of verification, the focus will now shift to actual frameworks and languages which are used to perform verification with. First, a look will be taken at the SystemVerilog language and its predecessors to better understand its design choices. Then, the Universal Verification Methodology (UVM) will be discussed in detail. Finally, open-source alternatives to SystemVerilog and UVM for verification will be introduced.
+Having considered the general problem and concept of verification, the focus will now shift to actual frameworks and
+languages which are used to perform verification with. First, a look will be taken at the SystemVerilog language and
+its predecessors to better understand its design choices. Then, the Universal Verification Methodology (UVM) will be
+discussed in detail. Finally, open-source alternatives to SystemVerilog and UVM for verification will be introduced.
 
 \subsection{SystemVerilog's Predecessors} %------------------------------------------------------------------------------------
 
@@ -899,7 +936,10 @@ others takes care of the registration of the component with the UVM factory.
 
 \subsection{Open-Source Alternatives} %----------------------------------------------------------------------------------------
 
-While the UVM standard itself is open and an open-source reference implementation exists in SystemVerilog, no open-source simulator has implemented the SystemVerilog standard to a degree sufficient to compile the UVM reference implementation \cite{Sasselli2023}. In this section, developments in the open-source verification community which aim to bring modern verification features to new languages and environments are discussed.
+While the UVM standard itself is open and an open-source reference implementation exists in SystemVerilog, no
+open-source simulator has implemented the SystemVerilog standard to a degree sufficient to compile the UVM reference
+implementation \cite{Sasselli2023}. In this section, developments in the open-source verification community which aim
+to bring modern verification features to new languages and environments are discussed.
 
 \subsubsection{Cocotb} %-------------------------------------------------------------------------------------------------------
 
@@ -975,14 +1015,17 @@ UVM phases, sequences and the register abstraction layer.
 \subsubsection{UVM support in Verilator} %-------------------------------------------------------------------------------------
 
 In addition to bringing modern verification features to new languages and environments to increase the accessibility,
-work is also in progress to bring SystemVerilog UVM support to Verilator \cite{uvm_verilator}. Verilator is a popular open-source
+work is also in progress to bring SystemVerilog UVM support to Verilator \cite{uvm_verilator}. Verilator is a popular
+open-source
 Verilog simulator which transpiles Verilog code to executable C++ models of the hardware design. The effort lead by
 the Tools Workgroup in CHIPS Alliance aims to make Verilator fully capable of running UVM testbenches. In its current
 state Verilator only supports a subset of SystemVerilog features. One crucial element is the addition of dynamic
-scheduling in Verilator which is necessary for dynamically triggered events used in the UVM. The effort of enabling all SystemVerilog features required for a full UVM testbench is still in an early phase.
+scheduling in Verilator which is necessary for dynamically triggered events used in the UVM. The effort of enabling
+all SystemVerilog features required for a full UVM testbench is still in an early phase.
 
-Verilator does however allow for the integration with SystemC, a C++ library for system modelling. An official UVM SystemC library exists, which can be used in combination with Verilator to create UVM testbenches in an open-source environment \cite{Sasselli2023}.
-
+Verilator does however allow for the integration with SystemC, a C++ library for system modelling. An official UVM
+SystemC library exists, which can be used in combination with Verilator to create UVM testbenches in an open-source
+environment \cite{Sasselli2023}.
 
 \begin{comment}
 
@@ -1028,8 +1071,6 @@ maintains a list of observers and has the responsibility to notify them when its
 collectors are notified of transactions on the DUT interfaces through the monitor. In this case it is not directly a
 change of state which the observers are notified about, but the occurrence of an event.
 
-
-
 - factory pattern
 - inversion of control and dependency injection \cite{ioc_di}
 - service locator pattern
@@ -1043,8 +1084,6 @@ change of state which the observers are notified about, but the occurrence of an
 \end{comment}
 
 
-
-  
 \chapter{Problem Formulation and Method} %////////////////////////////////////////////////////////////////////////////////////
 
 The UVM provides abstractions to compartmentalize a testbench in a standardized way. Instead of each engineer or
@@ -1090,8 +1129,6 @@ and alternative design choices will be reflected upon to synthesize a set of req
 framework embedded in a modern general-purpose language. Finally, an implementation attempt will be made following
 the established requirements to evaluate the feasibility of the proposed framework and its ease of use compared to the UVM.
 
-
-
 \begin{comment}
 
 - a lot of the literature talks about HOW the UVM does things, but not necessarily WHY
@@ -1119,7 +1156,8 @@ method:
 \end{comment}
 
 % talk about company interviews
-\chapter{Industry Interviews} %////////////////////////////////////////////////////////////////////////////////////////////////////
+\chapter{Industry Interviews}
+%////////////////////////////////////////////////////////////////////////////////////////////////////
 
 \todo{meta text}
 
@@ -1703,9 +1741,10 @@ interactive test case code
 
 \chapter{Analysis and Design} %////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
-In this chapter, a design for a verification framework embedded in a modern programming language will be developed. The solutions that existing tools and frameworks offer will be analyzed to uncover general concepts and separate them from the specific implementations. These concepts will be used to develop requirements for the new framework and a solution which is tailored to the host language will be proposed.
+In this chapter, a design for a verification framework embedded in a modern programming language will be developed.
+The solutions that existing tools and frameworks offer will be analyzed to uncover general concepts and separate them
+from the specific implementations. These concepts will be used to develop requirements for the new framework and a
+solution which is tailored to the host language will be proposed.
 
 \begin{comment}
 - here, the requirements should be made and possible approaches outlined
@@ -1767,7 +1806,8 @@ UVM. This includes some form of verification base components responsible for dif
 phasing system to structure the testbench execution and a way to organize stimulus into sequences. All these features
 should be easily composable into testbenches and test cases.
 
-\todo{in UVM sim interface and lib are separated, here we have the chance to co design them -> therefore own simulation interface from scratch}
+\todo{in UVM sim interface and lib are separated, here we have the chance to co design them -> therefore own
+simulation interface from scratch}
 
 \todo{should functional coverage and crv be considered outside of the scope from the start? But why talk about them
 in the background then. Maybe they can be described more shallow}
@@ -1920,7 +1960,7 @@ Like the choice of host language, this has implications on the design of the fra
 or only 2-state logic is supported.
 The decision is influenced by the choice of supported HDL's, ease of interfacing with the simulation and
 finally of course performance. Since the project itself aims to be open-source, a proprietary simulator
-is not an option. 
+is not an option.
 
 The two most popular open-source simulators are Icarus Verilog and Verilator. Icarus Verilog
 compiles a Verilog design into its own intermediate representation which can be executed by a separate simulation
@@ -1947,13 +1987,17 @@ One feature not supported by Verilator is the use of 4-state logic. Verilator on
 static analysis of the source code instead to identify initialization issues and warn the user about them. Icarus
 Verilog supports 4-state logic as defined in the Verilog standard.
 
-An new alternative to Verilator is ESSENT, a high-performance Verilog simulator, which is capable of doubling the performance of Verilator \cite{beamer2021essent}. It does however use FIRRTL, an intermediate representation for RTL designs, as input. The Slang SystemVerilog compiler \cite{slang} is capable of translating SystemVerilog designs to FIRRTL, but does not support all features of SystemVerilog yet. The additional translation step from SystemVerilog to FIRRTL is a disadvantage compared to the other simulator options. This fact alongside the maturity of both Icarus Verilog and Verilator, makes ESSENT not the prefered choice for the simulation backend.
+An new alternative to Verilator is ESSENT, a high-performance Verilog simulator, which is capable of doubling the
+performance of Verilator \cite{beamer2021essent}. It does however use FIRRTL, an intermediate representation for RTL
+designs, as input. The Slang SystemVerilog compiler \cite{slang} is capable of translating SystemVerilog designs to
+FIRRTL, but does not support all features of SystemVerilog yet. The additional translation step from SystemVerilog to
+FIRRTL is a disadvantage compared to the other simulator options. This fact alongside the maturity of both Icarus
+Verilog and Verilator, makes ESSENT not the prefered choice for the simulation backend.
 
 In terms of language support and capabilities, both simlators are close to each other. The lacking support of 4-state
 logic in Verilator is deemed acceptable, since initialization errors are still caught. Considering the ease of
 integrating verilated models with other software components in addition to the
 superior performance, Verilator is identified as the better option for a simulation backend of the verification framework.
-
 
 %\section{Requirements} %=======================================================================================================
 
@@ -1971,7 +2015,8 @@ can allow for delays which for instance advance time by a certain amount of nano
 tedious, since most of the time, one is interested in events such as clock edges which would have to be checked for
 manually. A more powerful abstraction is to let the user wait for events like rising edges of signals as a
 synchronization point. The intent of the test code becomes more clear this way. However, the timing of when inputs
-should be driven and outputs should be sampled relative to the clock edges still has to be managed explicitly by the user. This mechanism is what SystemVerilog and Cocotb provide.
+should be driven and outputs should be sampled relative to the clock edges still has to be managed explicitly by the
+user. This mechanism is what SystemVerilog and Cocotb provide.
 
 In a sequential digital design, the system behavior is defined by the clock. Each clock cycle, new inputs can be
 applied and lead to a state change once the active edge of the clock occurs. A new abstraction can thus be created,
@@ -1981,7 +2026,7 @@ user does not have to worry about aligning the simulation time to the clock edge
 HVL and the Chiseltest \cite{chiseltest} framework both use this approach. In Vera, the user controls time using the
 \ttt{@N} syntax, where \ttt{N} is the number of clock cycles to advance time by. In Chiseltest, the
 \ttt{clock.step(N)} method is used to advance time by \ttt{N} clock cycles. For purely sequential designs, this
-interface allows for concise and readable test code. 
+interface allows for concise and readable test code.
 
 It does however delegate the responsibility of driving the inputs and sampling the outputs at the correct time to the simulation
 runtime. The question is, when are the correct times to sample and
@@ -1989,7 +2034,7 @@ drive? Chiseltest has a simple solution: The time resolution of a simulation is 
 is fixed to a \SI{2}{ps} period. This means that the simulation is always advanced from falling edge to falling edge
 of the clock. In Vera on the other hand, the user can specify skews relative to clock edges for when inputs should be
 driven and outputs should be sampled on a per signal basis. This allows for more accurate timing modeling, which may
-for instance be necessary in gate-level simulations with delay models of the gates. 
+for instance be necessary in gate-level simulations with delay models of the gates.
 
 % The question is however, when is the test
 % code actually run within a clock cycle? It should be run after all outputs have been sampled to have the newest
@@ -2009,16 +2054,27 @@ Neither Vera nor Chiseltest support testing a design with multiple clock domains
 Chiseltest, the \ttt{Module} case type contains a single clock which is driven by Chiseltest. Due to the lack of
 fine-grained control of time in either language, clock ports can't be driven with arbitrary frequencies by user code either.
 
-For the verification framework, it is chosen to use a \ttt{step} interface to control time like in ChiselTest. It is however extended to support multiple clock domains. It is decided to drive all signals at the falling edge of the clock domain that they are associated with. The option of adding skews like in Vera, could be added in the future. In order to support multiple clocks, the explicit definition of periods has to be possible.
+For the verification framework, it is chosen to use a \ttt{step} interface to control time like in ChiselTest. It is
+however extended to support multiple clock domains. It is decided to drive all signals at the falling edge of the
+clock domain that they are associated with. The option of adding skews like in Vera, could be added in the future. In
+order to support multiple clocks, the explicit definition of periods has to be possible.
 
-This information will be captured in an interface definition which captures the inputs and outputs of the DUT in Scala. While Cocotb can take advantage of dynamic typing to automatically add fields to the DUT object at runtime, Scala requires us to declare a class for the DUT statically. This interface defintion should be declared as a class. It has to point to the underlying source files and contains fields for each input and output of the DUT. The adopted syntax for declaring an interface is shown in Listing \ref{lst:interface}. Clock ports and reset ports are inputs to the design. Inputs and outputs are associated with a data type. The data types are inspired by Chisel \cite{chiselpaper}. Finally, the inputs and outputs are associated with a clock and optionally a reset through the \ttt{domain} function.
+This information will be captured in an interface definition which captures the inputs and outputs of the DUT in
+Scala. While Cocotb can take advantage of dynamic typing to automatically add fields to the DUT object at runtime,
+Scala requires us to declare a class for the DUT statically. This interface defintion should be declared as a class.
+It has to point to the underlying source files and contains fields for each input and output of the DUT. The adopted
+syntax for declaring an interface is shown in Listing \ref{lst:interface}. Clock ports and reset ports are inputs to
+the design. Inputs and outputs are associated with a data type. The data types are inspired by Chisel
+\cite{chiselpaper}. Finally, the inputs and outputs are associated with a clock and optionally a reset through the
+\ttt{domain} function.
 
+The API for interacting with the DUT is inspired by ChiselTest. Inputs provide \ttt{peek} and \ttt{poke} methods,
+while outputs only provide a \ttt{peek} method. Clock ports have a \ttt{step(n)} method to advance the simulation by
+\ttt{n} clock cycles.
 
-The API for interacting with the DUT is inspired by ChiselTest. Inputs provide \ttt{peek} and \ttt{poke} methods, while outputs only provide a \ttt{peek} method. Clock ports have a \ttt{step(n)} method to advance the simulation by \ttt{n} clock cycles. 
-
-
-
-\todo{talk about implicit clock -> sometimes its annoying to always pass clock to be able to manipulate time -> a context should provide a default clock \ttt{stepClockDomain(n)}, and the use can create new contexts using \ttt{withClockDomain(clk)}}
+\todo{talk about implicit clock -> sometimes its annoying to always pass clock to be able to manipulate time -> a
+  context should provide a default clock \ttt{stepClockDomain(n)}, and the use can create new contexts using
+\ttt{withClockDomain(clk)}}
 
 \todo{talk about regions -> monitor}
 
@@ -2596,29 +2652,20 @@ The creation of the different primitives in the framework such as components, tr
 different implications. The creation of a component involves the management of hierarchical references to make the
 parent aware of its children and vice versa.
 
-
-
 %%%%%%%%%%%% new ideas
-- the static part of the testbench is a tree of components with potentially many configuration parameters and swappable components
+- the static part of the testbench is a tree of components with potentially many configuration parameters and
+swappable components
 - therefore a factory really has an impact because all swappable components do not have to be communicated to the top level
 - the config allows for easy parameter sharing and overriding throughout the hierarchy
 
 - for sequences and transactions, this is not really the case
 - they are created by the test case -> the test case knows what it wants to do
-  - but the test case may set up standard impl to drive seq -> then override with custom impl
-  - but if playing the sequence is easy?...
-
-
+- but the test case may set up standard impl to drive seq -> then override with custom impl
+- but if playing the sequence is easy?...
 
 - sharing config is nice to have
 - a sequence instantiates transactions or other sequences
 - if a sequences needs to have swappable transaction types -> pass simple closure factory to the sequence
-
-
-
-
-
-
 
 - factory for components and a factory for sequences and transactions
 - factory has hierarchical overrides
@@ -3198,78 +3245,126 @@ sequence to finish by calling \ttt{waitUntilDone} which awaits the fork executin
 \subsection{Test Cases} %------------------------------------------------------------------------------------------------------
 
 The test case is the root component of a testbench. It should receive a reference to the DUT or a BFM through its
-constructor. The \ttt{Test} base class is a component which includes the \ttt{TestPhase} without providing an implementation. Further phases can be freely added by extending the respective traits. In the current implementation, each test case class has to be paired with a \ttt{runTest} function to actually run the test. Since a Scala program can have multiple entry points, each test can be associated with its own entry point by annotating the function calling the test with the \ttt{@main} annotation.
+constructor. The \ttt{Test} base class is a component which includes the \ttt{TestPhase} without providing an
+implementation. Further phases can be freely added by extending the respective traits. In the current implementation,
+each test case class has to be paired with a \ttt{runTest} function to actually run the test. Since a Scala program
+can have multiple entry points, each test can be associated with its own entry point by annotating the function
+calling the test with the \ttt{@main} annotation.
 
 \subsection{Factories and Configuration} %-------------------------------------------------------------------------------------
 
 \subsection{Register Abstraction} %--------------------------------------------------------------------------------------------
 
+\chapter{Evaluation}
+%////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
-
-
-
-
-
-\chapter{Evaluation} %////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-The proposed verification framework is evaluated by applying its implementation to four different use cases. The use case demonstrate different levels of complexities and features of the verification framework. The first use case demonstrates the basic functionality of the verification framework by testing a design in a directed manner using a BFM. It also shows how internal registers may be read. The second use case demonstrates how the verification framework handles multiple clock domains and how a concurrent testbench can be written. The third use case replicates a UVM-style testbench which the PyUVM authors use as an example, allowing for a comparison of the implementation in Scala and Python. The fourth use case replicates verification blocks for an APB interface which are implemented in PyUVM and serve as verification infrastructure for the Didactic SoC mutli-project chip developed as part of the Edu4Chip project \cite{edu4chip}.
+The proposed verification framework is evaluated by applying its implementation to four different use cases. The use
+case demonstrate different levels of complexities and features of the verification framework. The first use case
+demonstrates the basic functionality of the verification framework by testing a design in a directed manner using a
+BFM. It also shows how internal registers may be read. The second use case demonstrates how the verification
+framework handles multiple clock domains and how a concurrent testbench can be written. The third use case replicates
+a UVM-style testbench which the PyUVM authors use as an example, allowing for a comparison of the implementation in
+Scala and Python. The fourth use case replicates verification blocks for an APB interface which are implemented in
+PyUVM and serve as verification infrastructure for the Didactic SoC mutli-project chip developed as part of the
+Edu4Chip project \cite{edu4chip}.
 
 \section{Use Case 1: Greatest Common Divisor} %--------------------------------------------------------------------------------
 
-The first use case is a simple greatest common divisor (GCD) circuit, which is taken from the lab work of the DTU course \textit{02203 Design of Digital Systems}. This use case should demonstrate the writing of simple directed test cases and the use of BFM's in the verification framework. It is also used as a small showcase for the reading of internal registers. The design is interfaced via a 4-phase handshake protocol with a request and acknowledge signal. The two operands are sent one after the other, and the circuit acknowledges the second operand with the result of the calculation. The implementation of the circuit is done in SystemVerilog.
+The first use case is a simple greatest common divisor (GCD) circuit, which is taken from the lab work of the DTU
+course \textit{02203 Design of Digital Systems}. This use case should demonstrate the writing of simple directed test
+cases and the use of BFM's in the verification framework. It is also used as a small showcase for the reading of
+internal registers. The design is interfaced via a 4-phase handshake protocol with a request and acknowledge signal.
+The two operands are sent one after the other, and the circuit acknowledges the second operand with the result of the
+calculation. The implementation of the circuit is done in SystemVerilog.
 
-The GCD design is wrapped into a BFM in the test code. The BFM provides methods to reset the design, to drive one handshake and to perform the two handshakes required to calculate the GCD of two numbers while checking that the result is correct. Furthermore, it provides a method which prints the value of the state and operand registers. The test code is shown in Listing \ref{lst:gcd_test} in the appendix. A simulation with a resolution of \SI{1}{ns} is created which dumps waveforms to \ttt{gcd.vcd}. The BFM is used to drive the transactions and check the result automatically. A fork is created which prints the state of the DUT in every clock cycle. A waveform showing the handshake for the first transaction is shown in Figure \ref{fig:gcd_timing}.
+The GCD design is wrapped into a BFM in the test code. The BFM provides methods to reset the design, to drive one
+handshake and to perform the two handshakes required to calculate the GCD of two numbers while checking that the
+result is correct. Furthermore, it provides a method which prints the value of the state and operand registers. The
+test code is shown in Listing \ref{lst:gcd_test} in the appendix. A simulation with a resolution of \SI{1}{ns} is
+created which dumps waveforms to \ttt{gcd.vcd}. The BFM is used to drive the transactions and check the result
+automatically. A fork is created which prints the state of the DUT in every clock cycle. A waveform showing the
+handshake for the first transaction is shown in Figure \ref{fig:gcd_timing}.
 
 \begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{diagrams/gcd_timing.pdf}
-\caption{Wavefrom showing the handshake for the calculation of the greatest common divisor of 12 and 3.}
-\label{fig:gcd_timing}
+  \centering
+  \includegraphics[width=\textwidth]{diagrams/gcd_timing.pdf}
+  \caption{Wavefrom showing the handshake for the calculation of the greatest common divisor of 12 and 3.}
+  \label{fig:gcd_timing}
 \end{figure}
 
 \section{Use Case 2: Clock Domain Crossing} %-------------------------------------------------------------------------------
 
-The second use case should demonstrate how a design with multiple clocks is handled. For this purpose a primitive clock domain crossing circuit is used. The circuit uses a 4-phase handshake with the request and acknowledge signals crossing the clock domains through two synchronization flip-flops from a \SI{6}{ns} clock to a \SI{10}{ns} clock. The receiving clock domain is allowed to sample the data provided by the sending clock domain in the time window between request being asserted and acknowledge being asserted. The design is implemented in SystemVerilog. 
+The second use case should demonstrate how a design with multiple clocks is handled. For this purpose a primitive
+clock domain crossing circuit is used. The circuit uses a 4-phase handshake with the request and acknowledge signals
+crossing the clock domains through two synchronization flip-flops from a \SI{6}{ns} clock to a \SI{10}{ns} clock. The
+receiving clock domain is allowed to sample the data provided by the sending clock domain in the time window between
+request being asserted and acknowledge being asserted. The design is implemented in SystemVerilog.
 
-In the test code, two threads are spawned, one for each clock domain. The sender side resets its synchronization flip-flops and performs a handshake to transfer the value \ttt{0xDEADBEEF}. Both actions are performed through a BFM. The receiver thread also resets its flip-flops and then takes part in a handshake, checking whether the sampled value is the one that is expected. The test code is shown in Listing \ref{lst:cdc_test} in the appendix, while a waveform for the test is presented in Figure \ref{fig:cdc_timing}.
+In the test code, two threads are spawned, one for each clock domain. The sender side resets its synchronization
+flip-flops and performs a handshake to transfer the value \ttt{0xDEADBEEF}. Both actions are performed through a BFM.
+The receiver thread also resets its flip-flops and then takes part in a handshake, checking whether the sampled value
+is the one that is expected. The test code is shown in Listing \ref{lst:cdc_test} in the appendix, while a waveform
+for the test is presented in Figure \ref{fig:cdc_timing}.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\textwidth]{diagrams/cdc_timing.pdf}
   \caption{Wavefrom showing the handshakes for the clock domain crossing of the value \ttt{0xDEADBEEF}.}
   \label{fig:cdc_timing}
-  \end{figure}
+\end{figure}
 
 \section{Use Case 3: Simple ALU} %------------------------------------------------------------------------------------------
 
-The third use case is used to compare the verification framework with PyUVM by replicating an example from the PyUVM project which tests a small ALU design \cite{pyuvm_tinyalu}. The ALU design supports single cycle AND, XOR and addition operations, as well as multi-cycle multiplication. The SystemVerilog implementation from the PyUVM repository is used. 
+The third use case is used to compare the verification framework with PyUVM by replicating an example from the PyUVM
+project which tests a small ALU design \cite{pyuvm_tinyalu}. The ALU design supports single cycle AND, XOR and
+addition operations, as well as multi-cycle multiplication. The SystemVerilog implementation from the PyUVM repository is used.
 
-The testbench in PyUVM follows the standard UVM structure, except for not using the agent component. The driver and monitor are placed directly in the environment and interact with the DUT, while a scoreboard and coverage collector analyze the transactions observed by the monitor. The scoreboard checks the results of the ALU with a simple predictor. The coverage collector simply checks whether all operations have been performed. 
+The testbench in PyUVM follows the standard UVM structure, except for not using the agent component. The driver and
+monitor are placed directly in the environment and interact with the DUT, while a scoreboard and coverage collector
+analyze the transactions observed by the monitor. The scoreboard checks the results of the ALU with a simple
+predictor. The coverage collector simply checks whether all operations have been performed.
 
-A small library of sequences is provided. A random sequence produces one transcation per operation with random operands. A max sequence produces a transaction for each operation with \ttt{0xFF} as the operands. Finally, a fibonacci sequence sends a transactions to calculate the fibonacci sequence up to the 10th number. These sequences are combined in two merged sequences: one playing them in series, the other one paying them in parallel. 
+A small library of sequences is provided. A random sequence produces one transcation per operation with random
+operands. A max sequence produces a transaction for each operation with \ttt{0xFF} as the operands. Finally, a
+fibonacci sequence sends a transactions to calculate the fibonacci sequence up to the 10th number. These sequences
+are combined in two merged sequences: one playing them in series, the other one paying them in parallel.
 
-This testbench setup is replicated in the verification framework to match the PyUVM testbench's capabilities as closely as possible. This allows for a comparison of the two testbenches in terms of their complexity. Measuring complexity at the source code level is a diffifult task and can only provide a rough direction of how effective one framework is over the other. On the one hand, each component can be investigated individually. Table \ref{tab:comparison} shows how many methods a component has to implement to achieve its functionality and how many statements the code inside the component contains. The first number for each component is the count for the PyUVM framework while the second is the count for the designed verification framework. Statements are counted roughly as assignments, function calls or control-flow statements. The proposed verification framework requires generally fewer statements and an equal or lower number of methods to achieve its functionality. 
+This testbench setup is replicated in the verification framework to match the PyUVM testbench's capabilities as
+closely as possible. This allows for a comparison of the two testbenches in terms of their complexity. Measuring
+complexity at the source code level is a diffifult task and can only provide a rough direction of how effective one
+framework is over the other. On the one hand, each component can be investigated individually. Table
+\ref{tab:comparison} shows how many methods a component has to implement to achieve its functionality and how many
+statements the code inside the component contains. The first number for each component is the count for the PyUVM
+framework while the second is the count for the designed verification framework. Statements are counted roughly as
+assignments, function calls or control-flow statements. The proposed verification framework requires generally fewer
+statements and an equal or lower number of methods to achieve its functionality.
 
-Another way to compare the complexity of the two testbenches is to simply count the number of lines of code, excluding empty lines of course. The PyUVM testbench is split into two files, one containing a BFM and the other the testbench itself. Combined they contain 334 lines of code. The scala testbench on the other hand contains 276 lines of code. Lines of code only gives a rough estimate, since complex expressions could be merged into a single line leading to a lower line count but the same complexity. Ideally, a more sophisticated metric would consider the tokens in the code. An approximation can be made by counting the amount of whitespace separated tokens in the code. The PyUVM testbench contains 1024 of these tokens, while the scala testbench contains 877 tokens. 
+Another way to compare the complexity of the two testbenches is to simply count the number of lines of code,
+excluding empty lines of course. The PyUVM testbench is split into two files, one containing a BFM and the other the
+testbench itself. Combined they contain 334 lines of code. The scala testbench on the other hand contains 276 lines
+of code. Lines of code only gives a rough estimate, since complex expressions could be merged into a single line
+leading to a lower line count but the same complexity. Ideally, a more sophisticated metric would consider the tokens
+in the code. An approximation can be made by counting the amount of whitespace separated tokens in the code. The
+PyUVM testbench contains 1024 of these tokens, while the scala testbench contains 877 tokens.
 
 \begin{table}
-\centering
-\begin{tabular}{|l|c|c|c|c|}
-\hline
-\textbf{Component}       & \textbf{Methods} & \textbf{Statements} \\ \hline
-Driver          & 4/1             & 15/7 \\ \hline
-Monitor         & 3/1             & 8/5    \\ \hline
-Scoreboard       & 3/2            & 28/14    \\ \hline
-Coverage      & 3/2             & 14/9      \\ \hline
-Environment        & 2/0             & 10/7    \\ \hline
-RandomSeq   & 1/1 & 5/4 \\ \hline
-MaxSeq   & 1/1 & 4/2 \\ \hline
-FibonacciSeq   & 1/1 & 10/7 \\ \hline
-\end{tabular}
-\caption{Comparison of the method and statement count between the PyUVM testbench and the verification framework testbench for the TinyALU design. The first number in each cell is the count for the PyUVM testbench, the second number is the count for the verification framework testbench.}
-\label{tab:comparison}
+  \centering
+  \begin{tabular}{|l|c|c|c|c|}
+    \hline
+    \textbf{Component}       & \textbf{Methods} & \textbf{Statements} \\ \hline
+    Driver          & 4/1             & 15/7 \\ \hline
+    Monitor         & 3/1             & 8/5    \\ \hline
+    Scoreboard       & 3/2            & 28/14    \\ \hline
+    Coverage      & 3/2             & 14/9      \\ \hline
+    Environment        & 2/0             & 10/7    \\ \hline
+    RandomSeq   & 1/1 & 5/4 \\ \hline
+    MaxSeq   & 1/1 & 4/2 \\ \hline
+    FibonacciSeq   & 1/1 & 10/7 \\ \hline
+  \end{tabular}
+  \caption{Comparison of the method and statement count between the PyUVM testbench and the verification framework
+    testbench for the TinyALU design. The first number in each cell is the count for the PyUVM testbench, the second
+  number is the count for the verification framework testbench.}
+  \label{tab:comparison}
 \end{table}
 
 % testbench.py 229 (wc 702)
@@ -3289,33 +3384,30 @@ replicated differently?}
 
 \chapter{Discussion} %/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 1. summary of findings
-  - recap results from design and implementation
-  - relate results back to original research questions
+- recap results from design and implementation
+- relate results back to original research questions
 
 2. comparison to existing work
-  - how does the framework compare to existing verification frameworks and methods 
-  - does it improve efficiency, usability, scalability?
+- how does the framework compare to existing verification frameworks and methods
+- does it improve efficiency, usability, scalability?
 
 3. strengths and contributions
-  - what aspects work particularly well and are novel?
-  - how does the framework improve certain aspects?
+- what aspects work particularly well and are novel?
+- how does the framework improve certain aspects?
 
 4. limitations and challenges
-  - what are the main difficulties and limitations of the framework?
-  - are there cases where it does not work as expected?
+- what are the main difficulties and limitations of the framework?
+- are there cases where it does not work as expected?
 
 5. future work
-  - what are the next steps for the framework?
-  - how can it be improved and extended?
+- what are the next steps for the framework?
+- how can it be improved and extended?
 
 - general topics
-  - what works well?
-  - what is not possible which is possible in UVM
-  - what could in general be improved
-
-
+- what works well?
+- what is not possible which is possible in UVM
+- what could in general be improved
 
 use cases:
 - less verbose -> we define behavior in one place and it is not spread over multiple
@@ -3338,9 +3430,8 @@ limited and does not allow for creating cases which would show the full potentia
 - sequences can not send next item before receiving response
 - for pipeline interfaces this is not good
 
-
 - the framework simplefies some things, how can we be sure that this does not create an issue for more complex cases?
-- we are aiming to provide a framework which is easy to use for common case 
+- we are aiming to provide a framework which is easy to use for common case
 - is it then still universal?
 
 %\section{Future Work} %========================================================================================================
@@ -3355,5 +3446,3 @@ UART/SPI/Memory
 - simulation loop could call the function in each evaluation step
 
 - integration with scalatest
-
-
