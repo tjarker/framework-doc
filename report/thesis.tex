@@ -1767,6 +1767,8 @@ UVM. This includes some form of verification base components responsible for dif
 phasing system to structure the testbench execution and a way to organize stimulus into sequences. All these features
 should be easily composable into testbenches and test cases.
 
+\todo{in UVM sim interface and lib are separated, here we have the chance to co design them -> therefore own simulation interface from scratch}
+
 \todo{should functional coverage and crv be considered outside of the scope from the start? But why talk about them
 in the background then. Maybe they can be described more shallow}
 
@@ -1979,29 +1981,27 @@ user does not have to worry about aligning the simulation time to the clock edge
 HVL and the Chiseltest \cite{chiseltest} framework both use this approach. In Vera, the user controls time using the
 \ttt{@N} syntax, where \ttt{N} is the number of clock cycles to advance time by. In Chiseltest, the
 \ttt{clock.step(N)} method is used to advance time by \ttt{N} clock cycles. For purely sequential designs, this
-interface allows for concise and readable test code.
+interface allows for concise and readable test code. 
 
-While this abstraction is powerful, it poses two challenges: how to control the actual signal timing and how to
-handle multi-clock designs.
-
-%signal timing
-The responsibility of driving the inputs and sampling the outputs at the correct time is delegated to the simulation
-runtime when the clock cycle based abstraction is used. The question is, when are the correct times to sample and
+It does however delegate the responsibility of driving the inputs and sampling the outputs at the correct time to the simulation
+runtime. The question is, when are the correct times to sample and
 drive? Chiseltest has a simple solution: The time resolution of a simulation is fixed to \SI{1}{ps} while the clock
 is fixed to a \SI{2}{ps} period. This means that the simulation is always advanced from falling edge to falling edge
 of the clock. In Vera on the other hand, the user can specify skews relative to clock edges for when inputs should be
 driven and outputs should be sampled on a per signal basis. This allows for more accurate timing modeling, which may
-for instance be necessary in gate-level simulations with delay models of the gates. The question is, when is the test
-code actually run within a clock cycle? It should be run after all outputs have been sampled to have the newest
-version of their state, but also before the new inputs are driven. With inputs which have to be driven early and
-outputs which have to be sampled late, this is not possible. It is not clear which semantics Vera chooses for this
-case. Instead of sampling all outputs at once, the runtime could sample them only when accessed, advancing time only
-when necessary. This could still create situations where an input missed its drive slot in the current clock cycle.
-Considering these issues, it can be seen that the introduction of the clock cycle abstraction for advancing time has
-its own challenges. The solution Chiseltest provides, limits the modeling capabilities in terms of driving and
-sampling of inputs and outputs. This is acceptable for designs at the RTL where usually no component delay is
-modeled. Vera on the other hand, tries to model the interface timing accuratly, but this opens questions about the
-ordering driving and sample events and dependencies between them.
+for instance be necessary in gate-level simulations with delay models of the gates. 
+
+% The question is however, when is the test
+% code actually run within a clock cycle? It should be run after all outputs have been sampled to have the newest
+% version of their state, but also before the new inputs are driven. With inputs which have to be driven early and
+% outputs which have to be sampled late, this is not possible. It is not clear which semantics Vera chooses for this
+% case. Instead of sampling all outputs at once, the runtime could sample them only when accessed, advancing time only
+% when necessary. This could still create situations where an input missed its drive slot in the current clock cycle.
+% Considering these issues, it can be seen that the introduction of the clock cycle abstraction for advancing time has
+% its own challenges. The solution Chiseltest provides, limits the modeling capabilities in terms of driving and
+% sampling of inputs and outputs. This is acceptable for designs at the RTL where usually no component delay is
+% modeled. Vera on the other hand, tries to model the interface timing accuratly, but this opens questions about the
+% ordering driving and sample events and dependencies between them.
 
 %multi-clock designs
 Neither Vera nor Chiseltest support testing a design with multiple clock domains \cite[Sec.
@@ -2009,17 +2009,20 @@ Neither Vera nor Chiseltest support testing a design with multiple clock domains
 Chiseltest, the \ttt{Module} case type contains a single clock which is driven by Chiseltest. Due to the lack of
 fine-grained control of time in either language, clock ports can't be driven with arbitrary frequencies by user code either.
 
-% design
-Having established the design considerations and existing solutions cocerning the interface with the simulation, a
-interface for a new framework will be proposed. Since the source code for the DUT will be located in SystemVerilog
-files, a mechanism will be necessary to replicate the interface to the DUT in Scala. This will be done through a
-interface declaration as it can be found in Vera. An example is shown in Listing \ref{lst:interface}. There are four
-basic port types: clock ports, reset ports as well as inputs and outputs which are associated with a data type. The
-data types are inspired by Chisel \cite{chiselpaper}.
+For the verification framework, it is chosen to use a \ttt{step} interface to control time like in ChiselTest. It is however extended to support multiple clock domains. It is decided to drive all signals at the falling edge of the clock domain that they are associated with. The option of adding skews like in Vera, could be added in the future. In order to support multiple clocks, the explicit definition of periods has to be possible.
 
-\todo{finish}
+This information will be captured in an interface definition which captures the inputs and outputs of the DUT in Scala. While Cocotb can take advantage of dynamic typing to automatically add fields to the DUT object at runtime, Scala requires us to declare a class for the DUT statically. This interface defintion should be declared as a class. It has to point to the underlying source files and contains fields for each input and output of the DUT. The adopted syntax for declaring an interface is shown in Listing \ref{lst:interface}. Clock ports and reset ports are inputs to the design. Inputs and outputs are associated with a data type. The data types are inspired by Chisel \cite{chiselpaper}. Finally, the inputs and outputs are associated with a clock and optionally a reset through the \ttt{domain} function.
+
+
+The API for interacting with the DUT is inspired by ChiselTest. Inputs provide \ttt{peek} and \ttt{poke} methods, while outputs only provide a \ttt{peek} method. Clock ports have a \ttt{step(n)} method to advance the simulation by \ttt{n} clock cycles. 
+
+
 
 \todo{talk about implicit clock -> sometimes its annoying to always pass clock to be able to manipulate time -> a context should provide a default clock \ttt{stepClockDomain(n)}, and the use can create new contexts using \ttt{withClockDomain(clk)}}
+
+\todo{talk about regions -> monitor}
+
+\todo{talk about register access}
 
 %listing
 \begin{listing}
@@ -2592,6 +2595,30 @@ either, it is decided to use runtime reflection and thus no registration of type
 The creation of the different primitives in the framework such as components, transactions or sequences, have
 different implications. The creation of a component involves the management of hierarchical references to make the
 parent aware of its children and vice versa.
+
+
+
+%%%%%%%%%%%% new ideas
+- the static part of the testbench is a tree of components with potentially many configuration parameters and swappable components
+- therefore a factory really has an impact because all swappable components do not have to be communicated to the top level
+- the config allows for easy parameter sharing and overriding throughout the hierarchy
+
+- for sequences and transactions, this is not really the case
+- they are created by the test case -> the test case knows what it wants to do
+  - but the test case may set up standard impl to drive seq -> then override with custom impl
+  - but if playing the sequence is easy?...
+
+
+
+- sharing config is nice to have
+- a sequence instantiates transactions or other sequences
+- if a sequences needs to have swappable transaction types -> pass simple closure factory to the sequence
+
+
+
+
+
+
 
 - factory for components and a factory for sequences and transactions
 - factory has hierarchical overrides
