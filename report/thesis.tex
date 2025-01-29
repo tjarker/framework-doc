@@ -1,5 +1,79 @@
 \chapter{Introduction} %///////////////////////////////////////////////////////////////////////////////////////////////////////
 
+Computer chips are around us everywhere in our daily lives. They are in our phones, our cars, our computers and even in our washing machine. The complexity of these integrated circuits (IC) has increased dramatically since their inception in the 1960s. While the first ICs consisted of hand-placed transistors, modern hardware designs are captured in hardware description languages and synthesized by tools to generate the actual layout of the chip. The scaling mechanisms of Moore's law have given designers an ever increasing number of transistors to work with, which has led to an increase in functionality of the designs. With the advent of Systems-on-Chip, a single chip is now composed of a multitude of complex subsystems each with their own complex functionality. 
+
+Producing these chips is costly, with each production run costing millions of dollars. It is therefore imperative to guarantee that a design will be a first time success. This means that the design has to be demonstrated to be correct before it is sent off for fabrication. In addition to checking for physical correctness in the layout, the design most importantly also has to demonstrate functional correctness. This is a challenging task. The so-called verification of the design can take up to 40-50\% of the total design cost \cite{mehta2018asic}, 70\% of the design effort \cite{bergeron2012writing} and can manifest up to 80\% of the project code base \cite{bergeron2012writing}.
+
+
+
+
+- complexity of design has increased significantly ever since the ..
+- while in the first chips transistors were hand-placed, modern design use hardware description langs to describe the behavior and structure of a design and a synthesis tool to generate the actual layout
+- the scaling mechanisms of moores law gave designers more and more transistors to work with, which added more and more functionality to the designs
+- producing a chips is costly, so they need to be designed to be a first time success
+- this means the design has to be demonstrated to be correct before it is sent to the fab
+- this includes checking for design rules to be observed in the actual layout
+- but most importantly the design has to demonstrate functional correctness
+- this is a challenging task, which surpasses the design task itself
+- numbers such as 40-50\% of the design cost \cite{mehta2018asic}, 70\% of the design effort and manifest 80\% of codebase \cite[Ch. 1]{bergeron2012writing} show this clearly
+
+
+- considering these numbers it becomes apparent that verification is a bottleneck in the product development process
+- even worse verification does not add value to a product but inversly no verification can lead to a product not being able to be sold
+
+- in order to limit its impact on the overall design cost, verification has to be efficient
+- this means less effort per feature demonstrated to work correctly
+- specification describes features -> but how do we demonstrate that a feature works correctly?
+  - this requires scenarios to be developed or properties to be formulated
+  - this constitutes the verification plan
+- the verification plan then is used to implement test cases which exercise the design in a controlled environment to demonstrate that the feature works correctly
+- implementing these test cases can be made more efficient in two ways
+- on the one hand productivity boost can be achieved by language which makes it easy to express the intent of the verification engineer
+- on the other hand the amount of code to be written can be reduced by creating flexible components which may be reused and shared across test cases and even projects
+
+- SystemVerilog is the state-of-the-art language for verification
+- it provides many of the features which the development of modern verification techniques rely on
+- on top of SystemVerilog a IEEE standard for how the testing infrastructure should be designed with a focus on composability and reusability has been developed, the universal verification methodology (UVM)
+- these two have become a widely adopted industry standard with 2020 numbers showing over 70\% of IC/ASIC projects using UVM as a methodology \cite{foster2020wilson}
+
+
+- while UVM is an open standard, it has been influenced from a number of predecessors methdologies developed by the EDA vendors to guide users in the adoption of SV for verification
+- non-industry projects focus on basic verification functionality over methodologies
+- notably Cocotb provides a python verification framework 
+- and ChiselTest and ChiselVerify provides scala verification eco system for Chisel designs
+- one notable exception is PyUVM but that one is mostly a reimplementation of UVM in python
+
+- UVM was designed for SV
+- some parts are language agnostic such as general concepts
+- others are limited by the language capabilities 
+- others again are made possible by the language capabilities
+
+- recent work has focussed on bringing verification to more modern languages using open-source tools
+- Cocotb is a python verification framework which allows for the use of python to write testbenches
+- library ecosystem mostly matches capabilities of SV
+- PyUVM is a reimplementation of UVM in python
+
+- also development surrounding the Chisel hardware construction language
+- Chiseltest provides very basic testing infrastructure
+- chiselverify worked on providing more complex verification features to match SV capabilities
+
+- Cocotb and Chiselverify do not answer the question of how to acctually design complex reusable testbenches
+- they only provide the fabric
+- PyUVM only makes slight adjustments to UVM
+
+- so none answers the question of how we can use these modern high level flexbile languages with their many features to construct efficient and reusable testbenches
+- this is the question which this thesis aims to answer
+- it will investigate state-of-the art verification techniques and tools to understand the general concepts and needs
+- to gain further insight into the adoption of UVM and how it is used in practice a survey will be conducted with industry professionals
+- this insight will be used to create a verification framework which provides primitives to implement reusable and composable testbenches in a modern language environment
+
+- the thesis is structured in the following way
+
+
+- \cite{UVM12}
+
+\todo{add direct references to uvm ref manual}
+
 \todo{
   - "the" UVM
   - configDB
@@ -884,6 +958,8 @@ the Tools Workgroup in CHIPS Alliance aims to make Verilator fully capable of ru
 state Verilator only supports a subset of SystemVerilog features. One crucial element is the addition of dynamic
 scheduling in Verilator which is necessary for dynamically triggered events used in UVM. The effort of enabling all
 SystemVerilog features required for a full UVM testbench is still in an early phase.
+
+\todo{name Verilator + SystemC UVM \cite{Sasselli2023}}
 
 \section{Software Design Patterns} %===========================================================================================
 
@@ -1927,7 +2003,7 @@ data types are inspired by Chisel \cite{chiselpaper}.
 
 \todo{finish}
 
--
+\todo{talk about implicit clock -> sometimes its annoying to always pass clock to be able to manipulate time -> a context should provide a default clock \ttt{stepClockDomain(n)}, and the use can create new contexts using \ttt{withClockDomain(clk)}}
 
 %listing
 \begin{listing}
@@ -2651,9 +2727,9 @@ hierarchical name, source file and line number information should be added to gi
 issued in the code. The functionality of fatal errors in UVM is not necessary, since the Scala exception system can
 be used instead.
 
-\section{Register Abstraction} %--------------------------------------------------------------------------------------------
+\section{Register Abstraction} %-----------------------------------------------------------------------------------------------
 
-\subsection{Constrained-Random Stimuli Generation} %---------------------------------------------------------------------------
+\section{Constrained-Random Stimuli Generation} %------------------------------------------------------------------------------
 \label{sec:crv}
 
 The SystemVerilog language demonstrates how powerful the integration of random variables with constraints along side
@@ -2712,7 +2788,7 @@ class MyTx extends Transaction {
 
 \end{comment}
 
-\subsection{Functional Coverage} %---------------------------------------------------------------------------------------------
+\section{Functional Coverage} %---------------------------------------------------------------------------------------------
 
 Functional coverage is a tool which must be provided by a modern verification framework. Without it, no realistic
 picture of how well a developed test suite covers the features outlined in the specificaiton can be obtained.
@@ -2762,7 +2838,7 @@ class MyGroup extends CoverGroup {
 \end{lstlisting}
 \end{listing}
 
-\subsection{Debugging} %-------------------------------------------------------------------------------------------------------
+\section{Debugging} %-------------------------------------------------------------------------------------------------------
 
 While tests should be self-checking, it may be necessary to debug a failing test. In this case, waveforms are an
 important tool which allow for the tracing back of the error to its source. Verilator supports the dumping of the
@@ -3112,7 +3188,7 @@ The GCD design is wrapped into a BFM in the test code. The BFM provides methods 
 
 \section{Use Case 2: Clock Domain Crossing} %-------------------------------------------------------------------------------
 
-The second use case should demonstrate how a design with multiple clocks is handled. For this purpose a primitive clock domain crossing circuit is used. The circuit uses a 4-phase handshake with the request and acknowledge signals crossing the clock domains through two synchronization flip-flops each. The receiving clock domain is allowed to sample the data provided by the sending clock domain in the time window between request being asserted and acknowledge being asserted. The design is implemented in SystemVerilog. 
+The second use case should demonstrate how a design with multiple clocks is handled. For this purpose a primitive clock domain crossing circuit is used. The circuit uses a 4-phase handshake with the request and acknowledge signals crossing the clock domains through two synchronization flip-flops from a \SI{6}{ns} clock to a \SI{10}{ns} clock. The receiving clock domain is allowed to sample the data provided by the sending clock domain in the time window between request being asserted and acknowledge being asserted. The design is implemented in SystemVerilog. 
 
 In the test code, two threads are spawned, one for each clock domain. The sender side resets its synchronization flip-flops and performs a handshake to transfer the value \ttt{0xDEADBEEF}. Both actions are performed through a BFM. The receiver thread also resets its flip-flops and then takes part in a handshake, checking whether the sampled value is the one that is expected. The test code is shown in Listing \ref{lst:cdc_test} in the appendix, while a waveform for the test is presented in Figure \ref{fig:cdc_timing}.
 
