@@ -1,3 +1,14 @@
+
+\todo{add direct references to uvm ref manual \cite{UVM12}}
+
+\todo{\\
+  - "the" UVM\\
+  - configDB\\
+  - Fig. or Figure\\
+  - DUT or DUT
+}
+
+
 \chapter{Introduction} %///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 Computer chips are around us everywhere in our daily lives. They are in our phones, our cars, our computers and even in our washing machine. The complexity of these integrated circuits (IC) has increased dramatically since their inception in the 1960s. While the first ICs consisted of hand-placed transistors, modern hardware designs are captured in hardware description languages and synthesized by tools to generate the actual layout of the chip. The scaling mechanisms of Moore's law have given designers an ever increasing number of transistors to work with, which has led to an increase in features in the designs. With the advent of Systems-on-Chip, a single chip is now composed of a multitude of complex subsystems each with their own complex functionality. 
@@ -12,9 +23,10 @@ SystemVerilog is the state-of-the-art language for verification. It provides dir
 
 However, verification is a software discipline at its core. While SystemVerilog's features such as object-oriented programming are intended to match the capabilities of modern general-purpose programming languages, efforts exist to bring verification to more popular and powerful languages to increase productivity and ease adoption. One such effort is Cocotb, which allows for the use of Python to write testbenches and exploits Python's ease of use and powerful ecosystem. Other efforts surround the Chisel hardware construction language, where the ChiselVerify project worked on providing verification features found in SystemVerilog to a Scala verification environment. These efforts however, focus on providing the primitive tools for verification as they are found in SystemVerilog. They do not answer the question of how exactly one should use the more powerful languages to write complex and reusable testbenches. While a UVM implementation exists in Python, PyUVM, it is mostly a direct port of the UVM to Python and does not reevaluate the design choices of the UVM in the context of Python, except for some minor API adjustments.
 
-This thesis aims to investigate how testbenches should be designed in a modern high-level language environment such that they are composable, flexible and reusable. The goal is to provide a framework which provides the primitives to construct testbenches in a standardized manner which takes advantage of the features of the host language. State-of-the-art verification techniques and languages will be investigated to understand the general concepts and needs of a verification framework. To gain further insight into verification practices and the adoption of the UVM in the industry, a small survey will be conducted through interviews with three companies which are active in the field of IC design and verification. The insight collected through the background research and the interviews will be used to design a verification framework. An implementation attempt will be made in a language of choice to demonstrate the feasibility of the framework.
+This thesis aims to investigate how testbenches should be designed in a modern high-level language environment such that they are composable, flexible and reusable. The goal is to provide a framework which provides the primitives to construct testbenches in a standardized manner which takes advantage of the features of the host language. State-of-the-art verification techniques and languages will be investigated to understand the general concepts and needs of a verification framework. To gain further insight into verification practices and the adoption of the UVM in the industry, interviews will be conducted with three companies which are active in the field of IC design and verification. The insight collected through the background research and the interviews will be used to design a verification framework. An implementation attempt will be made in a language of choice to demonstrate the feasibility of the framework.
 
 \todo{how is the thesis structured?}
+
 
 \begin{comment}
   
@@ -75,7 +87,7 @@ This thesis aims to investigate how testbenches should be designed in a modern h
 - so none answers the question of how we can use these modern high level flexbile languages with their many features to construct efficient and reusable testbenches
 - this is the question which this thesis aims to answer
 - it will investigate state-of-the art verification techniques and tools to understand the general concepts and needs
-- to gain further insight into the adoption of UVM and how it is used in practice a survey will be conducted with industry professionals
+- to gain further insight into the adoption of UVM and how it is used in practice interviews will be conducted with industry professionals
 - this insight will be used to create a verification framework which provides primitives to implement reusable and composable testbenches in a modern language environment
 
 - the thesis is structured in the following way
@@ -109,27 +121,22 @@ This thesis aims to investigate how testbenches should be designed in a modern h
 
 
 
-\todo{add direct references to uvm ref manual \cite{UVM12}}
-
-\todo{\\
-  - "the" UVM\\
-  - configDB\\
-  - Fig. or Figure\\
-  - DUV or DUT
-}
-
 \chapter{Background and Related Work} %/////////////////////////////////////////////////////////////////////////////////////////
 \label{ch:background}
 
 In this chapter, the problem of verification itself will be discussed. Furthermore, current approaches to
 verification will be outlined and concrete state-of-the-art verification languages and frameworks will be introduced.
 The goal is to provide an overview which lays the foundation for understanding what a verification framework should
-provide and analyze which aspects of the state-of-the-art can be improved. Verification concerns itself with
+provide and for analyzing which aspects of the state-of-the-art can be improved. 
+
+
+
+\begin{comment}
+
+  Verification concerns itself with
 hardware, but is itself a software discipline. As such, a framework for verification must concern itself with
 software engineering aspects, too. \todo{More specifically, questions of how software is kept modular and
 maintainable, }. A selection of these so-called software design patterns will be discussed in the final part of the chapter
-
-\begin{comment}
 - what is the purpose of verification
 - what tools do we have to ease verification
 - what tools do we have to measure verification progress
@@ -144,7 +151,7 @@ features, frameworks, as well as methodologies
 
 \section{Verification} %=======================================================================================================
 
-Verifying a hardware design is about making sure that everything works as expected. \citeauthor{bergeron2012writing}
+Verifying a hardware design is about showing that everything works as expected. \citeauthor{bergeron2012writing}
 provides his definition as: \textit{``Verification is a process used to demonstrate the functional correctness of a
 design''} \cite[Ch. 1]{bergeron2012writing}.
 
@@ -203,11 +210,11 @@ a feature is working as intended \cite[Ch. 1]{bergeron2012writing}.
 - testbench itself is a close system which tries to emulate the environment of the design in a controlled way
 
 \cite[Ch. 1]{bergeron2005writing}
-- functional testing can be differentiated by the degree on which signals internal to the DUV are used to determine the correctness of the design
-- problem lies in controllability and observability of the DUV
+- functional testing can be differentiated by the degree on which signals internal to the DUT are used to determine the correctness of the design
+- problem lies in controllability and observability of the DUT
 - how easy is it to trigger certain behavior, how easy is to it to see that the behavior was executed correctly
-- black-box testing only uses the inputs and outputs of the DUV, can especially suffer from low observability, since an potential error has to be detected far away from the actual cause
-- other extreme is white-box testing where full visibility of the internals is used in the test, it suffers from its lack of generality -> a change in the DUV requires a change in the testbench
+- black-box testing only uses the inputs and outputs of the DUT, can especially suffer from low observability, since an potential error has to be detected far away from the actual cause
+- other extreme is white-box testing where full visibility of the internals is used in the test, it suffers from its lack of generality -> a change in the DUT requires a change in the testbench
 - a compromise between both can be referred to as grey-box testing, tries to limit dependency on implementation specific stuff while still providing good observability and controllability
 
 \end{comment}
@@ -217,17 +224,17 @@ a feature is working as intended \cite[Ch. 1]{bergeron2012writing}.
 % also talk about assertions
 
 Functional verification can be differentiated by the degree on which signals internal to the device under
-verification (DUV) are used to determine the correctness of the design. From a maintainability perspective, it makes
+test (DUT) are used to determine the correctness of the design. From a maintainability perspective, it makes
 most sense to defer from accessing any internal signals in the implementation as part of the testbench and seeing the
-DUV as a black-box with a certain interface. Changes in the implementation would in this case require no changes in
+DUT as a black-box with a certain interface. Changes in the implementation would in this case require no changes in
 the testbench. It also means that different implementation attempts sharing the same interface could reuse the same
 testbench. However, this approach can suffer from a low controllability and observability. Controllability refers to
-how easily a certain functionality can be triggered inside the DUV by driving its inputs. Observability on the other
+how easily a certain functionality can be triggered inside the DUT by driving its inputs. Observability on the other
 hand, refers to how easily the effect of a certain functionality being triggered becomes visible at the outputs of
-the DUV \cite[Ch. 1]{bergeron2012writing}.
+the DUT \cite[Ch. 1]{bergeron2012writing}.
 
 In complex designs some features may suffer from low controllability and/or observability. In this case, white-box
-testing can be used, which provides full access to the internals of the DUV. Register state as well as outputs of
+testing can be used, which provides full access to the internals of the DUT. Register state as well as outputs of
 functional units related to the functionality under test can be directly accessed to verify its correctness. This
 approach suffers from the fact that each change in the implementation may require a change in the testbench. A
 compromise between black-box and white-box testing is grey-box testing. It tries to balance the dependency on
@@ -237,7 +244,7 @@ Functional verification using testbenches and test cases can be aided by asserti
 holds in the implementation. Assertions can for instance be used to check if a certain condition holds at a certain
 point in time, over a certain period of time or when another condition holds. They are placed directly in the source
 code next to the functionality that they are checking a property of. This gives them maximum visibility leading to
-maximum observability. These assertions can be used alongside a normal testbench which applies stimulus to the DUV
+maximum observability. These assertions can be used alongside a normal testbench which applies stimulus to the DUT
 though its interfaces. Should a property specified in an assertion at any point not hold, the error will point
 directly to the source of the problem. This is in contrast to a traditional testbench where an error occurring on the
 interface has to be traced back to the actual cause \cite[Ch. 14]{mehta2021introduction}.
@@ -264,11 +271,11 @@ simulation and then it is statically checked whether the property can be violate
 With ever increasing design complexity, it is not feasible to write directed test cases to methodically exercise and
 verify each feature under each possible condition as outlined in the verification plan. Instead, randomized stimulus
 can provide a way to increase productivity. If a long enough steam of random stimulus is applied to the interfaces of
-the DUV, it is likely that many of the test cases outlined in the verification plan will occur naturally, without any
+the DUT, it is likely that many of the test cases outlined in the verification plan will occur naturally, without any
 additional effort. It is even possible that a random stream of stimulus may create unforeseen conditions, improving
 the thoroughness of the verification effort \cite[Ch. 1]{bergeron2005verification}.
 
-Of course, it does not make sense to apply completely random stimulus to the DUV interfaces. Only a fraction of the
+Of course, it does not make sense to apply completely random stimulus to the DUT interfaces. Only a fraction of the
 applied stimulus would often be valid for complex interfaces like ethernet or PCIe ports. A mechanism to define what
 a valid transaction for a given interface looks like is needed. This is achieved by constraining the random stimulus.
 Constraints limit the set of legal assignments to the set of random variables used to derive a random stimulus for a
@@ -279,7 +286,7 @@ has to be aligned to the size of the transfer.
 The verification runtime will, given the constraints on the random variables, generate a set of assignments which
 satisfies all constraints using a constraint satisfaction problem solver. In addition to inter-variable
 constraints, distribution constraints are highly relevant,
-in order to ensure that the random stimulus is representative of the actual behavior of the DUV \cite[Sec. 7.5]{flake2020a}.
+in order to ensure that the random stimulus is representative of the actual behavior of the DUT \cite[Sec. 7.5]{flake2020a}.
 
 The verification approach of using random stimulus alongside constraints is called \todo{constrained-random verification}
 (CRV). It promises an increase in productivity, which is given by a single CRV testbench being able to exercise
@@ -307,7 +314,7 @@ hard-to-trigger edge cases \cite[Ch. 3]{bergeron2012writing}.
 
 \subsection{Coverage} %--------------------------------------------------------------------------------------------------------
 
-A testbench is measuring how well the DUV lives up to the specification. But how well is the collection of
+A testbench is measuring how well the DUT lives up to the specification. But how well is the collection of
 testbenches living up to checking all aspects outlined in the specification? In a case, where only directed tests are
 used, the answer is simple since each test case can be traced back to a specific feature in the specification. When
 CRV is used on the other hand, it becomes essential to have some kind of tool which can actually measure which
@@ -327,7 +334,7 @@ and which transitions have occurred. FSM coverage does not know about valid tran
 possible transitions are reported. Illegal ones have to be filtered out manually to extract a useful metric out of
 FSM coverage data \cite[Ch. 15]{mehta2021introduction}.
 
-Code coverage does not however know anything about the functionality of the design. A low code coverage indicates that
+Code coverage however, does not know anything about the functionality of the design. A low code coverage indicates that
 some functionality of the design has not been exercised and thus tested. A 100\% code coverage on the other hand does
 not mean that the verification task is done \cite[Ch. 2]{bergeron2012writing}.
 
@@ -340,10 +347,8 @@ The idea behind functional coverage is to monitor state, transitions, changes to
 combination of these (so-called cross-coverage). For each functionality, different cases of interest have to be
 defined and declared as so-called bins. Signals or variables can have different bins for specific values or ranges
 which may be augmented with predicates. At a given sampling event these bins record whether they have been hit, i.e.
-whether the condition they represent has been observed. The goal is to have all bins hit at least once, indicating
+whether the condition they represent has been observed. Cross-coverage creates the Cartesian product of the bins associated with two variables and records when combinations of bins have hits at the same time. The goal is to have all bins hit at least once, indicating
 that all aspects of the design have been exercised \cite[Sec. 7.6]{flake2020a}.
-
-\todo{maybe give more concrete example, especially for cross coverage}
 
 \begin{comment}
 
@@ -352,7 +357,7 @@ that all aspects of the design have been exercised \cite[Sec. 7.6]{flake2020a}.
 - especially in the case of CRV this becomes essential, since it is not clear what functionality has been tested under which conditions
 
 \cite[Ch. 2]{bergeron2012writing}
-- code coverage provides insight into how much of the source code or structure of the DUV has been exercised by a test suite
+- code coverage provides insight into how much of the source code or structure of the DUT has been exercised by a test suite
 - via adding instrumentation to the design, the activity of certain aspects of the design is monitored
 
 \cite[Ch. 15]{mehta2021introduction}
@@ -381,28 +386,27 @@ Writing monolithic testbenches to demonstrate the correctness of each feature
 in a design is not an efficient and sustainable solution. The testbenches would become too complex and large to
 maintain, and a lot of development time would be
 used to code some of the foundations each testbench relies on. A testbench can be split into two parts at the highest
-level: the part which eases the interaction with the DUV programmatically, the so-called test harness, and the part
+level: the part which eases the interaction with the DUT programmatically, the so-called test harness, and the part
 which is specific to the test case \cite[Ch. 6]{bergeron2012writing}.
 
 If these two parts were to be split such that the test harness could be reused across all testbenches for a given
-DUV, the question of what interface the test harness exposes to the test case code arises. Since no abstraction is
-achieved by working with the ports of the DUV directly, a higher level of abstraction is needed. This is where the
+DUT, the question of what interface the test harness exposes to the test case code arises. Since no abstraction is
+achieved by working with the ports of the DUT directly, a higher level of abstraction is needed. This is where the
 concept of transactions comes in. A transaction is an operation on an interface, as abstract as the transmission of a
 TCP package but also low level like an AXI bus write operation \cite[Ch. 1]{bergeron2005verification}.
 
-Given the abstraction level of transactions, components are needed to bridge the gap between the transaction level
-and the pin level of the DUV. These components are called transactors. Since the gap between the highest level of
+Given the abstraction level of transactions, components are needed to bridge the gap between different levels of abstractions. These components are called transactors. Since the gap between the highest level of
 abstraction and actual pin interactions can be quite large, such as in the case of TCP packages, intermediate levels
 of abstraction should be introduced, with transactors bridging the gap between them. This means that transactors can
 be layered and composed to meet the needs of a specific test case \cite[Ch. 4]{bergeron2012writing}.
 
-The lowest levels of transactors, which interfaces the pins of the DUV, are called bus-functional models (BFM). In
+The lowest levels of transactors, which interfaces the pins of the DUT, are called bus-functional models (BFM). In
 contrast to other transactors, BFMs are concerned with timing \cite[Ch. 4]{bergeron2012writing}. They encapsulate the
 protocols of an interface and translate a transaction into a potentially multi-clock cycle interaction with the
-interface pins of the DUV \cite[Ch. 3]{salemi2013uvm}.
+interface pins of the DUT \cite[Ch. 3]{salemi2013uvm}.
 
-Transactors assume that the DUV correctly handles all interactions of the abstraction levels below it. As such, a
-test should exist, verifying that each level of abstraction is correctly handled by the DUV. For instance, in a
+Transactors assume that the DUT correctly handles all interactions of the abstraction levels below it. As such, a
+test should exist, verifying that each level of abstraction is correctly handled by the DUT. For instance, in a
 packet based system with multi-cycle transmission, one test should verify that parts of a packet are correctly sent,
 such that all other test can safely assume this property \cite[Ch. 6]{bergeron2012writing}. This methodology centered
 around transactions and transactors allows for the structuring of a testbench into reusable components, which can be
@@ -432,7 +436,7 @@ composed to meet the needs of a specific test case and thus can increase the tes
 
 \section{Verification Languages and frameworks} %===============================================================================
 
-\todo{meta text}
+Having considered the general problem and concept of verification, the focus will now shift to actual frameworks and languages which are used to perform verification with. First, a look will be taken at the SystemVerilog language and its predecessors to better understand its design choices. Then, the Universal Verification Methodology (UVM) will be discussed in detail. Finally, open-source alternatives to SystemVerilog and UVM for verification will be introduced.
 
 \subsection{SystemVerilog's Predecessors} %------------------------------------------------------------------------------------
 
@@ -690,7 +694,7 @@ itself, since this would again not allow for reuse of the composed sequences. Th
 so-called virtual sequences, which are sequences that "play" other sequences in their body. A test case can reference
 such a virtual sequence instead of composing the individual sequences itself. The individual sequences in a virtual
 sequences do not have to necessarily target the same consumers, which means that sequences can be sent to different
-drivers in parallel. This allows for the encapsulation of cross-interface interactions with the DUV in a single
+drivers in parallel. This allows for the encapsulation of cross-interface interactions with the DUT in a single
 construct \cite[Ch. 23]{salemi2013uvm}.
 
 One aspect which has not been discussed yet, is how the transactions actually enter the static infrastructure of the
@@ -824,35 +828,35 @@ database makes it possible to change the parameters a specific component works w
 
 Now that the static infrastructure of a UVM testbench and the mechanisms for creating stimulus have been introduced,
 all that is left for a complete testbench is the test case itself. The test case holds the actual purpose of why this
-test is needed encoded in the stimulus stream it applies to the DUV. To achieve this, it creates an instance of the
+test is needed encoded in the stimulus stream it applies to the DUT. To achieve this, it creates an instance of the
 top-level environment which will hold all the static testbench infrastructure. It may or may not configure the
 environment such that it fits its needs. Then, the test case creates instances of relevant sequences and directs them
-to the relevant sequencers in the environment. The checking of the DUV's behavior and other analysis tasks like
+to the relevant sequencers in the environment. The checking of the DUT's behavior and other analysis tasks like
 functional coverage collection are all handled by the static infrastructure of the testbench. The test case only has
 to start the sequences and wait for the test to finish \cite[Ch. 4.3]{mehta2018asic}.
 
 \subsubsection{Register Abstraction Layer} %-----------------------------------------------------------------------------------
 
-Many designs today are rich in registers controlling the configuration and therefore the functionality of a DUV.
+Many designs today are rich in registers controlling the configuration and therefore the functionality of a DUT.
 These configuration registers are usually attached to a bus and memory-mapped. A common task in setting up a test
 case would be to set these registers to a specific state, which, with the tools presented up to now, would require
 the use of sequences which target specific addresses through a bus interface. This can become a tedious task and a
 abstraction of the interaction with the registers of a design would be useful.
 
-The UVM Register Abstraction Layer (RAL) provides a standard way to abstract the registers of a DUV, independent of
-the bus interface which is used to accesses them. A model of the registers inside the DUV is created using predefined
+The UVM Register Abstraction Layer (RAL) provides a standard way to abstract the registers of a DUT, independent of
+the bus interface which is used to accesses them. A model of the registers inside the DUT is created using predefined
 classes for fields, registers, blocks of registers but also memories mapped into an address space. These models can
 be generated by commercial tools based on a description of the register layout \cite{uvm_ral}.
 
 The accesses to the register model are either translated into actual transactions which are applied through the bus
 interface causing side effects in the process, or they are performed through simulator specific backdoor accesses
-which do not cause side effects in the DUV. The UVM also allows for configuring the model to a desired state before
-committing it to the DUV in one go \cite{uvm_ral}.
+which do not cause side effects in the DUT. The UVM also allows for configuring the model to a desired state before
+committing it to the DUT in one go \cite{uvm_ral}.
 
 The classes used to construct a register model capture detailed information about the registers, such as for instance
 their accesses policies like read-only registers, but also more complex ones like writing a 1 to a bit to clear it.
 This information is used to predict the result of a read or write to a register in the model, such that it stays
-synchronized with the actual registers in the DUV without the need to use backdoor accesses in every register
+synchronized with the actual registers in the DUT without the need to use backdoor accesses in every register
 accesses \cite{uvm_ral}.
 
 \begin{comment}
@@ -862,12 +866,12 @@ accesses \cite{uvm_ral}.
 - with the tools preseted up to now, we would have to use sequences with specific addresses and data to set the registers
 - this is a very tedious task, and engineers would probably develope their own abstraction containing addresses of regs
 - the UVM RAL provides a standard way to abstract the registers of a DUT, independent of bus interface
-- a model of the registers in the DUV is created using predefined classes for fields, registers, blocks or memories
+- a model of the registers in the DUT is created using predefined classes for fields, registers, blocks or memories
 - accesses to the model are either translated into transactions on the bus or are performed through backdoor accesses
-- thus model is connected to the actual registers in the DUV
+- thus model is connected to the actual registers in the DUT
 - frontdoor access use transactions for access and cause sideeffects
 - backdoor access uses simulator specific access methods and does not cause sideeffects
-- also allows configuring the model with .set before commiting to DUV using .update
+- also allows configuring the model with .set before commiting to DUT using .update
 
 - register fields can have different access policies such as RO, RW but also special ones like write 1 to clear a bit
 -
@@ -895,7 +899,7 @@ others takes care of the registration of the component with the UVM factory.
 
 \subsection{Open-Source Alternatives} %----------------------------------------------------------------------------------------
 
-\todo{meta text}
+While the UVM standard itself is open and an open-source reference implementation exists in SystemVerilog, no open-source simulator has implemented the SystemVerilog standard to a degree sufficient to compile the UVM reference implementation \cite{Sasselli2023}. In this section, developments in the open-source verification community which aim to bring modern verification features to new languages and environments are discussed.
 
 \subsubsection{Cocotb} %-------------------------------------------------------------------------------------------------------
 
@@ -971,14 +975,16 @@ UVM phases, sequences and the register abstraction layer.
 \subsubsection{UVM support in Verilator} %-------------------------------------------------------------------------------------
 
 In addition to bringing modern verification features to new languages and environments to increase the accessibility,
-work is also in progress to bring UVM support to Verilator \cite{uvm_verilator}. Verilator is a popular open-source
+work is also in progress to bring SystemVerilog UVM support to Verilator \cite{uvm_verilator}. Verilator is a popular open-source
 Verilog simulator which transpiles Verilog code to executable C++ models of the hardware design. The effort lead by
 the Tools Workgroup in CHIPS Alliance aims to make Verilator fully capable of running UVM testbenches. In its current
 state Verilator only supports a subset of SystemVerilog features. One crucial element is the addition of dynamic
-scheduling in Verilator which is necessary for dynamically triggered events used in UVM. The effort of enabling all
-SystemVerilog features required for a full UVM testbench is still in an early phase.
+scheduling in Verilator which is necessary for dynamically triggered events used in the UVM. The effort of enabling all SystemVerilog features required for a full UVM testbench is still in an early phase.
 
-\todo{name Verilator + SystemC UVM \cite{Sasselli2023}}
+Verilator does however allow for the integration with SystemC, a C++ library for system modelling. An official UVM SystemC library exists, which can be used in combination with Verilator to create UVM testbenches in an open-source environment \cite{Sasselli2023}.
+
+
+\begin{comment}
 
 \section{Software Design Patterns} %===========================================================================================
 
@@ -1022,7 +1028,7 @@ maintains a list of observers and has the responsibility to notify them when its
 collectors are notified of transactions on the DUT interfaces through the monitor. In this case it is not directly a
 change of state which the observers are notified about, but the occurrence of an event.
 
-\begin{comment}
+
 
 - factory pattern
 - inversion of control and dependency injection \cite{ioc_di}
@@ -1036,26 +1042,10 @@ change of state which the observers are notified about, but the occurrence of an
 
 \end{comment}
 
-\begin{comment}
 
-\section{Software Testing Methods} %===========================================================================================
 
-\subsection{Unit Testing} %----------------------------------------------------------------------------------------------------
-
-\subsection{Integration Testing} %---------------------------------------------------------------------------------------------
-
-\subsection{Property-Based Testing} %------------------------------------------------------------------------------------------
-
-\subsection{Black/Grey/White-Box Testing} %------------------------------------------------------------------------------------
-
-\subsection{Fuzzing} %---------------------------------------------------------------------------------------------------------
-
-\subsection{Mocking} %---------------------------------------------------------------------------------------------------------
-
-\end{comment}
-
-\chapter{Problem Formulation and Methods}
-%///////////////////////////////////////////////////////////////////////////////////////
+  
+\chapter{Problem Formulation and Method} %////////////////////////////////////////////////////////////////////////////////////
 
 The UVM provides abstractions to compartmentalize a testbench in a standardized way. Instead of each engineer or
 company defining their own abstractions, the UVM provides shared abstractions and a standardized application
@@ -1091,7 +1081,7 @@ hand their implementation in SystemVerilog has to be examined. These considerati
     flexible verification framework?
 \end{enumerate}
 
-To answer these questions, the following methods will be used. First, a small survey concerning UVM and verification
+To answer these questions, the following methods will be used. First, interviews concerning UVM and verification
 will be conducted through informal interviews with a small number of companies in the Copenhagen area which use UVM
 in their verification efforts. The goal of the interview is to get an understanding of how the UVM is received in the
 industry, how and what parts of the UVM are used and what improvements the companies themselves could imagine. Taking
@@ -1099,6 +1089,8 @@ account the insight gained from the interviews, the UVM will be analyzed to iden
 and alternative design choices will be reflected upon to synthesize a set of requirements for a verification
 framework embedded in a modern general-purpose language. Finally, an implementation attempt will be made following
 the established requirements to evaluate the feasibility of the proposed framework and its ease of use compared to the UVM.
+
+
 
 \begin{comment}
 
@@ -1127,7 +1119,7 @@ method:
 \end{comment}
 
 % talk about company interviews
-\chapter{Industry Survey} %////////////////////////////////////////////////////////////////////////////////////////////////////
+\chapter{Industry Interviews} %////////////////////////////////////////////////////////////////////////////////////////////////////
 
 \todo{meta text}
 
@@ -1642,7 +1634,9 @@ Company 3 develops ASICs for the hearing aid industry.
 
 \end{comment}
 
-\section{Takeaways from the Industry Survey} %=================================================================================
+\section{Takeaways from the Interviews} %=================================================================================
+
+\todo{revise}
 
 In general, companies seem to be satisfied with what the UVM can offer them. They acknowledge that it may have some
 shortcomings, but it is an industry standard which most importantly is supported by all major EDA vendors, saving the
@@ -1667,8 +1661,8 @@ concern though, and has inhibited the use of co-simulation frameworks like cocot
 compilation times seem to be an issue for some companies.
 
 As it can be seen in the example provided by Company 2, UVM is not perfect in facilitating dynamic tests, where the
-test case produces stimuli as a reaction to the DUV's responses when these are spread over different interfaces. The
-model of how the test case can get feedback from the DUV should therefore be investigated.
+test case produces stimuli as a reaction to the DUT's responses when these are spread over different interfaces. The
+model of how the test case can get feedback from the DUT should therefore be investigated.
 
 The opinions on the UVM factory differ, with some companies seeing it as a key part of creating flexible testbenches
 and others seeing it as the source of hard to debug errors. It could be interesting to investigate what other options
@@ -1707,13 +1701,11 @@ other languages could do in the context of hardware verification
 interactive test case code
 \end{comment}
 
-\chapter{Analysis and Design}
-%///////////////////////////////////////////////////////////////////////////////////////////////////////////
+\chapter{Analysis and Design} %////////////////////////////////////////////////////////////////////////////////////////////////
 
-\todo{meta}
 
-In this chapter, ideas for a verification framework embedded in a modern programming language will be developed based
-on the understanding of existing tools and frameworks as well as the insights gained from the industry survey.
+
+In this chapter, a design for a verification framework embedded in a modern programming language will be developed. The solutions that existing tools and frameworks offer will be analyzed to uncover general concepts and separate them from the specific implementations. These concepts will be used to develop requirements for the new framework and a solution which is tailored to the host language will be proposed.
 
 \begin{comment}
 - here, the requirements should be made and possible approaches outlined
@@ -1755,7 +1747,7 @@ story:
 
 \section{Scope} %==============================================================================================================
 
-First of all, a overall scope for the verification framework has to be outlined. The goal is to develop a
+Before a design can be proposed, the overall scope for the verification framework has to be outlined. The goal is to develop a
 verification framework which is embedded in a modern programming language and which takes inspiration from UVM for
 reusable testbenches. The framework should provide a set of features such that it could be used instead of
 SystemVerilog and UVM for the development of testbenches.
@@ -1926,7 +1918,9 @@ Like the choice of host language, this has implications on the design of the fra
 or only 2-state logic is supported.
 The decision is influenced by the choice of supported HDL's, ease of interfacing with the simulation and
 finally of course performance. Since the project itself aims to be open-source, a proprietary simulator
-is not an option. The two most popular open-source simulators are Icarus Verilog and Verilator. Icarus Verilog
+is not an option. 
+
+The two most popular open-source simulators are Icarus Verilog and Verilator. Icarus Verilog
 compiles a Verilog design into its own intermediate representation which can be executed by a separate simulation
 runtime engine, a kind of interpreter \cite{iverilog}. Using Icarus Verilog as a simulation backend would require
 interfacing with this simulation runtime. It is built to support nearly all of the IEEE-1364-2005 Verilog standard,
@@ -1951,10 +1945,13 @@ One feature not supported by Verilator is the use of 4-state logic. Verilator on
 static analysis of the source code instead to identify initialization issues and warn the user about them. Icarus
 Verilog supports 4-state logic as defined in the Verilog standard.
 
+An new alternative to Verilator is ESSENT, a high-performance Verilog simulator, which is capable of doubling the performance of Verilator \cite{beamer2021essent}. It does however use FIRRTL, an intermediate representation for RTL designs, as input. The Slang SystemVerilog compiler \cite{slang} is capable of translating SystemVerilog designs to FIRRTL, but does not support all features of SystemVerilog yet. The additional translation step from SystemVerilog to FIRRTL is a disadvantage compared to the other simulator options. This fact alongside the maturity of both Icarus Verilog and Verilator, makes ESSENT not the prefered choice for the simulation backend.
+
 In terms of language support and capabilities, both simlators are close to each other. The lacking support of 4-state
 logic in Verilator is deemed acceptable, since initialization errors are still caught. Considering the ease of
 integrating verilated models with other software components in addition to the
 superior performance, Verilator is identified as the better option for a simulation backend of the verification framework.
+
 
 %\section{Requirements} %=======================================================================================================
 
@@ -1964,15 +1961,15 @@ A test writer can interact with a simulation in two ways. On the one hand, the p
 driving inputs or reading the state of a port, and on the other hand the advancement of time in the simulation can be
 controlled. Concerning the former, a mechanism of referencing ports is required. Furthermore, each port has to be
 associated with a type which decides what values a port is allowed to be driven with and how the bits sampled on a
-port should be interpreted, i.e. as a signed or unsigned integer.
+port should be interpreted, e.g. as a signed or unsigned integer.
 
 Controlling time in a simulation is about letting time progress until points of interest. These points of interest can
 be absolute points in time, but also events like signal transitions. At the most simple level, a simulation interface
 can allow for delays which for instance advance time by a certain amount of nanoseconds. This becomes quickly
-tedious, since one is most of the time interested in events such as clock edges which would have to be checked for
+tedious, since most of the time, one is interested in events such as clock edges which would have to be checked for
 manually. A more powerful abstraction is to let the user wait for events like rising edges of signals as a
 synchronization point. The intent of the test code becomes more clear this way. However, the timing of when inputs
-should be driven and outputs should be sampled relative to the clock edges still has to be managed explicitly by the user.
+should be driven and outputs should be sampled relative to the clock edges still has to be managed explicitly by the user. This mechanism is what SystemVerilog and Cocotb provide.
 
 In a sequential digital design, the system behavior is defined by the clock. Each clock cycle, new inputs can be
 applied and lead to a state change once the active edge of the clock occurs. A new abstraction can thus be created,
@@ -3265,6 +3262,34 @@ replicated differently?}
 
 \chapter{Discussion} %/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+1. summary of findings
+  - recap results from design and implementation
+  - relate results back to original research questions
+
+2. comparison to existing work
+  - how does the framework compare to existing verification frameworks and methods 
+  - does it improve efficiency, usability, scalability?
+
+3. strengths and contributions
+  - what aspects work particularly well and are novel?
+  - how does the framework improve certain aspects?
+
+4. limitations and challenges
+  - what are the main difficulties and limitations of the framework?
+  - are there cases where it does not work as expected?
+
+5. future work
+  - what are the next steps for the framework?
+  - how can it be improved and extended?
+
+- general topics
+  - what works well?
+  - what is not possible which is possible in UVM
+  - what could in general be improved
+
+
+
 use cases:
 - less verbose -> we define behavior in one place and it is not spread over multiple
 
@@ -3276,6 +3301,9 @@ use cases:
 limited and does not allow for creating cases which would show the full potential
 - I also don't have the use case and expertise to showcase full blown UVM
 - the design of such a framework should build on actual experience with large verification projects
+
+- it is hard to motivate a framework made for reuse with simple use cases
+- but complex use cases are outside the scope of the project
 
 - performance => we should implement more in C++ and cross the native jvm boundary less often
 - we can hand references to closures to native code and it can invoke callbacks -> this is how cocotb does it
