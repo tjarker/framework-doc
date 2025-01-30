@@ -1786,6 +1786,24 @@ story:
 
 \section{Scope} %==============================================================================================================
 
+The aim of this project is to provide a capable verification framework which takes inspiration from existing frameworks such as Cocotb, ChiselTest and ChiselVerify to provide a useful simulation interface and which takes inspiration from UVM to extend and co-design this simulation interface with a library of primitives for building reusable testbench infrastructure. This is quite a daunting task, involving many different aspects from simulators, to API design, to concurrent programming and verification methodology. In order to make this task achievable within the time frame of this project, the scope has to be narrowed down.
+
+In order to be able to build a library for reusable testbench infrastructure, some basic simulation functionality is strictly necessary. An interface to the simulation of an RTL design has to be provided. This interface has to allow for the control of the simulation by multiple threads in a safe manner such that multiple components like they are found in UVM can run concurrently. This multi-threaded simulation interface should allow for the creation of simple unit tests as they are found in ChiselTest and serve as the basis for complex structured testbenches as they are found in UVM.
+
+While features like constrained-random stimulus generation and function coverage are essential to a modern verification framework, they are not part of the scope of this project. These features have already been explored in the context of Python and Scala and could be integrated into the new framework at a later point. 
+
+Concerning the library for reusable testbench infrastructure, the focus will be on providing UVM-like capabilities while also trying to simplify the design choices and reduce the complexity of the framework. This means that not all features of UVM will be integrated into the new framework, and not all features will exhibit the same complexity as they do in UVM. This also necessarily means that the new framework will not be as \textit{universal} as the UVM itself claims to be. The goal is instead to identify a solid subset of UVM concepts and features which provides primitives to build standardized and composable testbenches. These features should cover the three main aspects of a testbench as they have been identified by \citeauthor{sutherland2015uvm} \cite{sutherland2015uvm}: the static testbench infrastructure in the form of components, the stimulus aspect of the testbench in the form of sequences and finally the composition of both in the form of test cases. Penetrating all these features is the phasing system, which should therefore also be part of the scope of this project.
+
+While these named aspects lay the foundation of a composable testbench, other aspects like the register abstraction layer (RAL) are not strictly required, but make a certain aspect of the testbench construction easier by introducing additional abstraction. Although the company interviews have shown that the RAL is a point of criticism in UVM which should be investigated further, it had to be removed from the scope of this project due to time constraints.
+
+
+
+
+
+
+
+\begin{comment}
+
 Before a design can be proposed, the overall scope for the verification framework has to be outlined. The goal is to develop a
 verification framework which is embedded in a modern programming language and which takes inspiration from UVM for
 reusable testbenches. The framework should provide a set of features such that it could be used instead of
@@ -1825,7 +1843,6 @@ in the background then. Maybe they can be described more shallow}
 
 \todo{elaborate}
 
-\begin{comment}
 - a library of primitives for reusable testbench infrastructure
 
 - purpose: ideas for a verification framework in a modern language which takes inspiration from UVM for reusable testbench components and could provide a replacement for SystemVerilog+UVM
@@ -2841,33 +2858,17 @@ hierarchical name, source file and line number information should be added to gi
 issued in the code. The functionality of fatal errors in UVM is not necessary, since the Scala exception system can
 be used instead.
 
-\section{Register Abstraction} %-----------------------------------------------------------------------------------------------
+
+\begin{comment}
+  \section{Register Abstraction} %-----------------------------------------------------------------------------------------------
+
+\todo{should we just drop this?}
+
+
+\end{comment}
 
 \section{Constrained-Random Stimuli Generation} %------------------------------------------------------------------------------
 \label{sec:crv}
-
-The SystemVerilog language demonstrates how powerful the integration of random variables with constraints along side
-a constraint solver into the language itself can be. A simple class definition with fields marked with the \ttt{rand}
-keyword together with a set of constraints allows one to create a random stimulus stream. This mechanism should be a
-part of the verification framework. The ChiselVerify project showcases how a small domain-specific language for a
-constraint system can be created in Scala. It is outside the scope of this project to include full support for
-constrained-random stimulus generation. However, some general thoughts on how it could be integrated with the rest of
-the verification framework shall be given.
-
-In ChiselVerify, only integer types bounded by a range are supported as random types. Instead, a \ttt{Rand[T]} type
-should be introduced where \ttt{T} could be any scala type, also a random type itself allowing for nesting of
-randomizable objects such as in SystemVerilog. It would have to be investigated whether existing constraint solvers
-can handle all primitve Scala types such as floating points directly, otherwise they could be broken done further
-into integer types for the sign, mantissa and exponent when the porblem description is handed to the solver.
-
-In addition to primitive Scala types, bit-vector types where the number of bits limit the value range should also be
-supported like in ChiselVerify. Inspiration for how to generate general Scala types could be taken from
-property-based testing frameworks such as ScalaCheck \cite{scalacheck}, which automatically generate random test
-cases for a given function. For the verification of singal processing circuits, it may be of interest to add
-continuous random variables, which are only allowed a certain rate of change between two randomizations.
-
-In the verification framework, random variables should be used in transactions. A simple sketch for a syntax is shown
-in Listing \ref{lst:crv_syntax}.
 
 \begin{listing}
 \begin{lstlisting}[language=scala, captionpos=b, caption=Outline of the syntax for random variables and constraints.,label=lst:crv_syntax]
@@ -2885,6 +2886,28 @@ class MyTx extends Transaction {
 }
 \end{lstlisting}
 \end{listing}
+
+The SystemVerilog language demonstrates how powerful the integration of random variables with constraints along side
+a constraint solver into the language itself can be. A simple class definition with fields marked with the \ttt{rand}
+keyword together with a set of constraints allows one to create a random stimulus stream. The ChiselVerify project showcases how a small domain-specific language for a
+constraint system can be created in Scala. While it was decided that constrained-random stimulus generation was outside the scopt of this project, some general throughts onn how it could be integrated with the rest of the verification framework shalll be given. 
+
+In ChiselVerify, only integer types bounded by a range are supported as random types. Instead, a \ttt{Rand[T]} type
+should be introduced where \ttt{T} could be any scala type, also a random type itself allowing for nesting of
+randomizable objects such as in SystemVerilog. It would have to be investigated whether existing constraint solvers
+can handle all primitve Scala types such as floating points directly, otherwise they could be broken done further
+into integer types for the sign, mantissa and exponent when the porblem description is handed to the solver.
+
+In addition to primitive Scala types, bit-vector types where the number of bits limit the value range should also be
+supported like in ChiselVerify. Inspiration for how to generate general Scala types could be taken from
+property-based testing frameworks such as ScalaCheck \cite{scalacheck}, which automatically generate random test
+cases for a given function. For the verification of singal processing circuits, it may be of interest to add
+continuous random variables, which are only allowed a certain rate of change between two randomizations.
+
+In the verification framework, random variables should be used in transactions. A simple sketch for a syntax is shown
+in Listing \ref{lst:crv_syntax}.
+
+
 
 \begin{comment}
   However, it only supports integer types with associated ranges.
@@ -2904,12 +2927,27 @@ class MyTx extends Transaction {
 
 \section{Functional Coverage} %---------------------------------------------------------------------------------------------
 
+\begin{listing}
+\begin{lstlisting}[language=scala, captionpos=b, caption=Outline of the syntax for the collection of functional coverage.,label=lst:cover_syntax]
+class MyGroup extends CoverGroup {
+  val pa = coverpoint(a) {
+    bin("a0", 0 until 10)
+    bin("a1", 10 until 20)
+  }
+  val pb = coverpoint(b) {
+    bin("b0", 0 until 10)
+    bin("b1", 10 until 20)
+  }
+}
+\end{lstlisting}
+\end{listing}
+
 Functional coverage is a tool which must be provided by a modern verification framework. Without it, no realistic
 picture of how well a developed test suite covers the features outlined in the specificaiton can be obtained.
 SystemVerilog has its own language subset for functional coverage collection revolving around coverage groups. The
 ChiselVerify project provides mechansims to express functional coverage but only on the inputs and ouputs of the DUT.
-While it is outside of the scope of this project to provide a full functional coverage system, it shall be briefly
-discussed how a functional coverage system could be integrated into the verification framework.
+Although outside the scope of the project, a short outline of how functional coverage could be integrated into the
+verification framework shall be given.
 
 Functional coverage has to be measured on random variables and is therefore closely connected with the
 constrained-random stimulus generation. Like in SystemVerilog and ChiselVerify, coverage collection should build on
@@ -2937,20 +2975,7 @@ functional coverage should be able to collect coverage for scala values! transac
 a covergroup with its sampling event should be passed to verification runtime
 \end{comment}
 
-\begin{listing}
-\begin{lstlisting}[language=scala, captionpos=b, caption=Outline of the syntax for the collection of functional coverage.,label=lst:cover_syntax]
-class MyGroup extends CoverGroup {
-  val pa = coverpoint(a) {
-    bin("a0", 0 until 10)
-    bin("a1", 10 until 20)
-  }
-  val pb = coverpoint(b) {
-    bin("b0", 0 until 10)
-    bin("b1", 10 until 20)
-  }
-}
-\end{lstlisting}
-\end{listing}
+
 
 \section{Debugging} %-------------------------------------------------------------------------------------------------------
 
@@ -2961,10 +2986,11 @@ enable it. As such, the file name for the waveform is accepted as an optional ar
 \ttt{runTest} functions.
 
 Debugging purely using waveforms can be cumbersome. A better approach can sometimes be to debug the simulation
-interactively Debugging UVM tests has the advantage of a shared design and verification code base in one language and
-one simulator executing everything. This allows for the insertion of breakpoints anywhere and stepping through code
+interactively. Debugging SystemVerilog testbenches has the advantage of a shared design and verification code base with one simulator executing everything. This allows for the insertion of breakpoints anywhere and stepping through code
 in a debugger which is integrated into the simulator. Testing frameworks like Chiseltest and Cocotb do not allow for
-this level of interactive debugging. While it is outside of the scope of the project, it could be of interest to
+this level of interactive debugging. 
+
+While it is outside of the scope of the project, it could be of interest to
 explore options of how interactive debugging might be achieved in co-simulation frameworks. One approach could
 involve the Scala REPL, a shell where Scala code can be executed interactively. A new simulation entry point, like
 shown in Listing \ref{lst:debug_syntax}, could be provided to directly return a reference to the DUT. This reference
@@ -2972,7 +2998,7 @@ could then be used to interact with the DUT in the Scala REPL. The waveform coul
 that the user may inspect signals while the simulation evolves.
 
 \begin{listing}
-\begin{lstlisting}[language=scala, captionpos=b, caption=Outline of the syntax for the collection of functional coverage.,label=lst:debug_syntax]
+\begin{lstlisting}[language=scala, captionpos=b, caption=Outline of an interactive debugging approach using the Scala REPL.,label=lst:debug_syntax]
 > val dut = simulateInteractive(new MyDut)
 > val bfm = new MyBfm(dut)
 > bfm.send(new MyTx)
@@ -2982,14 +3008,19 @@ that the user may inspect signals while the simulation evolves.
 
 \chapter{Implementation} %/////////////////////////////////////////////////////////////////////////////////////////////////////
 
+In this chapter, some aspects of the implementation of the verification framework are discussed. The chapter is split into two parts, the first part discusses the implementation of the simulation interface which is provided by the simulation runtime. The second part discusses the implementation of the verification enviroment which is built on top of the simulation interface and provides the primitives for composing flexible testbenches.
+
+
+
 \section{Simulation Runtime} %=================================================================================================
 
-\subsection{Interfacing the Verilated Model} %---------------------------------------------------------------------------------
+The simulation runtime consists of Scala library code which bridges the interaction between the test code and the Verilator model. This means that it has to provide an interface to multiple concurrent simulation threads, coordinate their execution and communication between them and translate the commands received by the simulation threads to interactions with the Verilator model of the DUT.
+
+\subsection{Interfacing the Verilator Model} %---------------------------------------------------------------------------------
 
 Verilator transpiles the SystemVerilog source code into a C++ class. A mechanism is needed by which the Scala test
 code can interact with an instance of this class. The JNA (java native access) library can be used to call native
-functions from the java virtual machine (JVM). In C++, a simulation context class is used to keep all required
-objects. The following set of functions is provided, which take the simulation context as an argument to interact
+functions from the java virtual machine (JVM). In C++, a simulation context class is used to group all objects associated with an simulation instance. The following set of functions is provided, which take the simulation context as an argument to interact
 with the simulation:
 
 \begin{itemize}
@@ -3000,15 +3031,17 @@ with the simulation:
   \item \ttt{getOutput\_XX} gets the value of the output signal mapped to the provided id
   \item \ttt{getOutputWide\_XX} gets the value of the output signal mapped to the provided id for outputs wider than 64 bits
   \item \ttt{tick\_XX} evaluates the model and advances the simulation by one clock cycle
+  \item \ttt{getRegister\_XX} gets the value of the register mapped to the provided id
 \end{itemize}
 
 The functions are suffixed with the name of the top-level module (signified by \ttt{\_XX}) to make them unique,
-allowing for multiple models to be loaded into the same JVM instance. The simulation context and functions are
+allowing for multiple models to be loaded into the same JVM instance. The source code for these functions and the simulation context class is generated dynamically before a simulation is started. They are then
 compiled together with the Verilator model into a shared library which can be loaded by the JNA library at runtime. A
-Makefile is generated alongside the model specific simulation interface functions in the Scala code before a
+Makefile is generated alongside the model specific simulation interface functions before a
 simulation is started. The usage of a Makefile results in the shared library to be recompiled only when the model changes.
 
-\todo{mention somewhere that an attempt for register access was successfully made}
+The inputs and outputs of a DUT are associated with a static id which allows for an efficient lookup of the signal in the C++ source code through a switch statement. Inputs and outputs wider than 64 bits are split into arrays of 32-bit integers in Verilator models. Here the simulation runtime has to take care of the splitting and reassembling of the values. Verilator provides access to internal state variable of the model. Since registers have to be declared statically as part of the interface of the DUT in Scala, they can also be associated with an id which is used to reference them in the C++ code.
+
 
 \subsection{Concurrency} %----------------------------------------------------------------------------------------------
 
@@ -3101,16 +3134,13 @@ advances to the next time slot with events and executes them. The priority order
 time slot is such that all interactions with the simulation (i.e. \ttt{Drive}, \ttt{PosEdge} and \ttt{NegEdge})
 happen before threads are released.
 
-\todo{explain context parameters somewhere}
 
 All simulation threads require a reference to the simulation controller. This could be achieved by using a singleton
-object, but this would only allow for a single simulation to run at a time. A so-called dynamic variable, which
-allows assigning a singleton with a value for a certain scope could be used instead. Each simulation could thus have
-its own view on the singleton. A third option involves context parameters in Scala. Since the Gears framework already
-relies on context parameters to provide access to the asynchronous context, the same mechanism is used to provide
-access to the simulation controller. As such functions which interact with the simulation controller need to have the
-following signature: \ttt{def fun(args...)(using Sim, Async)}. The \ttt{using} keyword is used to denote context
-parameters. Since interactions with the simulation controller require the use of the Gears library, the \ttt{Async}
+object, but this would only allow for a single simulation to run at a time. A so-called dynamic variable offers a solution to this problem. It allows to change the value from the view point of code run inside a certain context. 
+A third option is the use of context parameters in Scala. In addition to the usual parameters, Scala functions and constructors can accept parameters which are passed \textit{implicitly} by the context of the caller. A context parameter is declared by adding \ttt{using} statement to function parameters, e.g. \ttt{def fun(..)(using T)}. In this case Scala will look for a context parameter of type \ttt{T} when \ttt{fun} is called. It can be provided by \ttt{given T = ...} in the calling context or it may inherit the context parameter from its caller. The Gears library uses a context parameter to pass a \ttt{Async} paramter around which keeps track of the current context which for instance includes all spawned futures. Similarly, a simulation context could be used to keep track of the simulation threads and give access to the simulation instance.
+
+Since Gears already relies on context parameters, it is decided to use the same mechanism to provide access to the simulation controller. As such functions which interact with the simulation controller need to have the
+following signature: \ttt{def fun(args...)(using Sim, Async)}. Since interactions with the simulation controller require the use of the Gears library due to the usage of channels, the \ttt{Async}
 context parameter is also required. The functions to interact with the DUT such as \ttt{dut.port.poke(value)} use the
 \ttt{Sim} and \ttt{Async} context parameters to send the appropriate command to the simulation controller.
 
@@ -3260,7 +3290,7 @@ methods. Future extensions could add features such as transactions ID's and the 
 discussed in Section \ref{sec:crv}.
 
 Sequences are implemented using channels which are hidden from the user. The user implements the sequence in the
-\ttt{body} method using the \ttt{yieldTx(t)} and \ttt{yieldSeq(se`q)} methods. These methods actually send
+\ttt{body} method using the \ttt{yieldTx(t)} and \ttt{yieldSeq(seq)} methods. These methods actually send
 transactions through one channel and await a response on another. Creating an instance of the sequence spawns a
 separate fork for it, in which the body is run. The channels in the sequence are used by the sequencer to get
 transactions and forward them to the driver, as well as send back the response from the driver. One can wait for a
@@ -3279,7 +3309,14 @@ calling the test with the \ttt{@main} annotation.
 
 \subsection{Factories and Configuration} %-------------------------------------------------------------------------------------
 
-\subsection{Register Abstraction} %--------------------------------------------------------------------------------------------
+\todo{formulate}
+
+- needs to be hiearchy aware
+- this is done through Hierarchy context parameter which all components, sequences, and txs have to accept
+- this is assumed by the factory when creating instances
+- the hierarchy holds references to parent and local params and overrides
+- a factory call and parameter look up goes through the hierarchy to find the highest level defintion
+- factory itself is done through ClassTags with allow for obtaining constructor at runtime and creating instances
 
 \chapter{Evaluation}
 %////////////////////////////////////////////////////////////////////////////////////////////////////////////
