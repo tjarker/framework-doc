@@ -2642,6 +2642,18 @@ In Scala, complex type relations can be expressed in the type arguments of a gen
 Component, R <: T]} can be used to express that \ttt{R} is a subtype of \ttt{T} which is a component. This can be
 used to make a factory safe, such that only subtypes can override a type. 
 
+For the verification framework it is decided to provide multiple factories: Components, sequences and transactions each have their own factory, taking care of setup steps specific to each primitive and expecting a constructor interface specific to each primtive. The configuration of these factories as well as the defining of key-value parameter paris are done through a \ttt{Config} singleton.
+
+The \ttt{Config} singleton provides a \ttt{set(k,v)} method to set a configuration parameter and a \ttt{tryGet[A](k)} method to attempt to retrieve a configuration parameter of type \ttt{A} with key \ttt{k}. The latter return a Scala \ttt{Option[A]} type which is \ttt{None} if the key does not exist or the value cannot be cast to type \ttt{A}. It returns \ttt{Some(v)} if the look-up was successful, where \ttt{v} is the actual value of type \ttt{A}. A method \ttt{get[A](k)} is also provided which throws an exception if the look-up fails. Furthermore, a \ttt{getOrElse[A](k, default)} method is provided which returns the default value of type \ttt{A} if the key does not exist or the value cannot be cast to type \ttt{A}. This is a more concise interface than the UVM configuration database exposes.
+
+The \ttt{Config} singleton also provides a \ttt{OverrideType[A,B]} method, where \ttt{B} has to be derived from \ttt{A}. This method affects which type a factory returns.
+
+A demonstration of the API to the factories is shown in Listing \ref{lst:factory}. The factory objects \ttt{Comp}, \ttt{Sequence} (not \ttt{Seq} since that name is used in Scala) and \ttt{Tx} provide \ttt{create[A]} methods to produce an object of type \ttt{A} or the type which \ttt{A} is overridden with. The code from line 10 to 21 shows how a unique configuration can be created for a component. The factory \ttt{create} method accepts a key-value pair map itself which is visible to the object that is created. Instead of passing parameters directly to the factory, another mechanism is also provided which allows for the creation of a configuration context. Calling \ttt{Comp.builder} returns a builder object which can capture parameters and overrides using the \ttt{withParams} and \ttt{withOverride} methods. A builder could be bound to a variable and used to create multiple objects with the same configuration. 
+
+When \ttt{set} is called inside a component, the created parameter is visible to itself and all its decendants. However, should its parent have defined the same key, the value of the parent has precedence. This way a parent can overrule default type overrides and parameters in all its decendants. 
+
+
+
 
 
 \begin{comment}
@@ -2702,28 +2714,25 @@ swappable components
 
 
 \begin{listing}
-\begin{lstlisting}[language=scala, captionpos=b, caption=\todo{???.},label=lst:factory]
-Comp.overrideType[MyComponent, MyDerivedComponent]
-val c0 = Comp.create[MyComponent]
-val c1 = Comp.create[MyComponent](
+\begin{lstlisting}[language=scala, captionpos=b, caption={Demonstration of the API for the four different factories for components, sequences, transactions and configuration objects.},label=lst:factory]
+Config.overrideType[MyType, MyDerivedType]
+Config.set(key, value)
+Config.get(key)
+
+Config.get[MyConfig].myParam
+
+Comp.create[MyComponent]
+Sequence.create[MySequence]
+Tx.create[MyTx]
+
+Comp.create[MyComponent](
   key -> 10, ...
 )
-
-Sequence.create[MySequence]
-Sequence.overrideType[MySequence, MyDerivedSequence]
-
-Tx.create[MyTx]
-Tx.overrideType[MyTx, MyDerivedTx]
-
-Config.set(Param.Msg, "hello")
-Config.get(Param.Msg)
-Config.overrideType[MyConfig, MyDerivedConfig]
-Config.get[MyConfig].myParam
 
 Comp.builder
   .withParams(
     "param1" -> 10,
-    Param.Msg -> "hello"
+    key -> "hello"
   )
   .withOverride[MyDriver, MyDerivedDriver]
   .create[MyComponent]
