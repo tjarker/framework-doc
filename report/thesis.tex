@@ -1809,6 +1809,8 @@ should be easily composable into testbenches and test cases.
 \todo{in UVM sim interface and lib are separated, here we have the chance to co design them -> therefore own
 simulation interface from scratch}
 
+\todo{also put a focus on co-designing the simulation interface and the library}
+
 \todo{should functional coverage and crv be considered outside of the scope from the start? But why talk about them
 in the background then. Maybe they can be described more shallow}
 
@@ -2048,18 +2050,36 @@ for instance be necessary in gate-level simulations with delay models of the gat
 % modeled. Vera on the other hand, tries to model the interface timing accuratly, but this opens questions about the
 % ordering driving and sample events and dependencies between them.
 
+\begin{comment}
+  {signal: [
+  {name: 'clk_a', wave: 'p...p', period:2},
+  {name: 'in_a', wave: '34.3.4.3.'},
+  {name: 'out_a', wave: '5.6.5.6.5'},
+  {name: ''},
+  {name: 'clk_b', wave: 'p..',period:3},
+  {name: 'in_b', wave: '78.7.8', period:1.5},
+  {name: 'out_b', wave: '9.3.9.',period:1.5},
+]}
+f
+\end{comment}
+
 %multi-clock designs
 Neither Vera nor Chiseltest support testing a design with multiple clock domains \cite[Sec.
 7]{flake2020a}\cite{chiseltest_multiclock}. In Vera, the interface to the DUT is associated with a single clock. In
-Chiseltest, the \ttt{Module} case type contains a single clock which is driven by Chiseltest. Due to the lack of
-fine-grained control of time in either language, clock ports can't be driven with arbitrary frequencies by user code either.
+Chiseltest, the Chisel \ttt{Module} base type contains a single clock which is driven by Chiseltest. Due to the lack of
+fine-grained control of time in either language, clock ports can't be driven with arbitrary frequencies by user code either. Cocotb gives the user direct access to time and allows therefore for the creation of arbitrary and multiple clocks. It is up to the user to synchronize himself with the clock edges, which gives maximum flexibilty but also requires more work from the user. 
 
 For the verification framework, it is chosen to use a \ttt{step} interface to control time like in ChiselTest. It is
 however extended to support multiple clock domains. It is decided to drive all signals at the falling edge of the
-clock domain that they are associated with. The option of adding skews like in Vera, could be added in the future. In
-order to support multiple clocks, the explicit definition of periods has to be possible.
+clock domain that they are associated with. An example for two clock domains is shown in Figure \ref{fig:wavedrom}. Inputs in a clock are changed at the falling edge of the clock by the user, while the sequential design reacts at the rising edge of the clock. Since inputs are actually driven \textit{after} all threads have finished their work, the affects of the change in input on mealy outputs, i.e. outputs which are a function of the input, are first visible in the \textit{next} clock cycle to the user. This is a limitation which simplifies the building of the simulation interface, but could be addressed in future extensions. The option of adding skews like in Vera, could also be added in the future. 
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{diagrams/wavedrom.pdf}
+\caption{Waveform showing the timing of signal changes for inputs and outputs with respect to their clock domains \ttt{a} and \ttt{b}.}
+\label{fig:wavedrom}
+\end{figure}
 
-This information will be captured in an interface definition which captures the inputs and outputs of the DUT in
+In order to support multiple clocks, the explicit definition of periods has to be possible. This information will be captured in an interface definition which captures the inputs and outputs of the DUT in
 Scala. While Cocotb can take advantage of dynamic typing to automatically add fields to the DUT object at runtime,
 Scala requires us to declare a class for the DUT statically. This interface defintion should be declared as a class.
 It has to point to the underlying source files and contains fields for each input and output of the DUT. The adopted
@@ -2072,13 +2092,10 @@ The API for interacting with the DUT is inspired by ChiselTest. Inputs provide \
 while outputs only provide a \ttt{peek} method. Clock ports have a \ttt{step(n)} method to advance the simulation by
 \ttt{n} clock cycles.
 
-\todo{talk about implicit clock -> sometimes its annoying to always pass clock to be able to manipulate time -> a
-  context should provide a default clock \ttt{stepClockDomain(n)}, and the use can create new contexts using
-\ttt{withClockDomain(clk)}}
 
-\todo{talk about regions -> monitor}
 
-\todo{talk about register access}
+Up until now, the DUT has been considered a black box which can only be interacted with through its ports. For some designs this can limit the observability severly. In Cocotb, the user can access any internal signal of the DUT. In the current ChiselTest version, access to internal signals is not possible. For the verification framework, is is chosen to allow limited acccess to internal signals. Only registers shall be accessable and it is only possible to read their value. In order to allow for the reading of internal registers, an additional function is added which can be used in an interface declaration to give access to a register. For instance, access to the state register could be given by declaring \ttt{val state = Reg(3.W, "state")} in the interface. The name provided in the string is the hierarchical path starting from inside the top module. To read the register, the \ttt{peekReg} method is used, which returns the integer value of the register.
+
 
 %listing
 \begin{listing}
@@ -2201,8 +2218,6 @@ one a sender port. The parent component can then connect the two ports.
 The simulation starts in one root thread which can be forked into multiple threads. The simulation finishes when the
 root thread exits. It can use the \ttt{join} functionality to wait for other threads to exit before finishing the simulation.
 
-\todo{we need to provide one to many channels}
-
 \begin{comment}
 - concurrency is a key feature for working with hardware designs which are inherently parallel
 - threads can be running or sleeping
@@ -2234,18 +2249,17 @@ simulation to synchronize components, and allow better inheritance based composi
 define what should be done in the \textit{reset} phase, while specific test cases only have to implement the test
 code in the \textit{main} phase.
 
-When it comes to the build phases, it is not clear why the splitting of the construction of the testbench has to be
-split into multiple phases. In \cite{uvm_phases}, it is argued that this is necessary to ensure that components exist
+In \cite{uvm_phases}, it is argued that having multiple build phases is necessary to ensure that components exist
 before they are referenced. Since UVM components are classes and can be instantiated at any time in constrast to
-modules which are static, it is thought to be necessary to add these phases for coordination and avoiding errors.
+modules which are static, it is argued to be necessary to add these phases for coordination and avoiding errors. The build phases are however not run in parallel. This means, the order in which components are created and connected is deterministic and known.
 
-In this framework, a simpler approach is chosen which builds on the fact, that in the component hieararchy, only
-should ever assume its child components to be fully constructed and internally connected. Scala encourages the use of
+In this framework, a simpler approach is chosen which builds on the fact, that in the component hieararchy, a component
+should only ever reference its child components and do so only after they have been created. Scala encourages the use of
 the class constructor to fully initialize an object. The declaration of fields and the construction code are merged
 inside the class body. Referencing fields before they have been initialized results in an error. The constructor of a
 component should start by preparing the parameters for its child components and then instantiate them. After the
 child components constructors have returned, they can be assumed to be fully initialized. It is thus possible to
-connect channels and expose references to channels of child components as a field in the current component. All this
+connect channels of child components. All this
 code will run in zero simulation time and instantiating the top-level component will result in a fully constructed
 and connected testbench hierarchy. Due to Scala's way of handling constructor code and field definitions, it is
 impossible to reference uninitialized components using this approach. When inheritance is used, Scala automatically
@@ -2255,7 +2269,7 @@ assumed to be initialized in the constructor of the derived class.
 The reason for having a \textit{end of elaboration} phase according to \cite[Ch 4.6]{mehta2018asic} is to finalize
 the configuration of components. It is decided that all configuration of a component should happen in the constructor
 of its parent, thus removing the need of the phase. A \textit{start of simulation} phase could be useful for printing
-of configuration and test information according to \cite[4.6]{mehta2018asic}. Since this is not functionally
+of configuration and test information according to \cite[4.6]{mehta2018asic}. Since this is not strictly
 necessary, it is left out of the framework.
 
 The run phase is called \textit{simulation} phase and the main phase is called the \textit{test} phase in the
@@ -2264,16 +2278,15 @@ immediately before and
 after the associated phase. According to \cite[Ch 4.6]{mehta2018asic}, not much use is anticipated for these phases
 and they are left out, too.
 
-This leaves the cleanup phases \textit{extract}, \textit{check}, \textit{report} and \textit{final}. It is necessary
+This leaves the cleanup phases \textit{extract}, \textit{check}, \textit{report} and \textit{final} which are run \textit{after} the simulation has finished. It is necessary
 to have at least one phase after the simulation has ended to give components a chance to analyze observed
 transactions and coverage statistics in order to report results. Viewing phases as synchronization constructs, the
 division into multiple phases is thus not strictly necesary. What it does facilitate is composability through
 inheritance. A component could use the \textit{extract} implementation of its super-class and only specify new
 behavior for the \textit{report} phase. However, this could also be achieved by the super-class declaring a
-\textit{extract} method which the derived class can use in its \textit{report} implementation. How the extracting and
+\textit{extract} method independent of the phasing, which the derived class can use in its \textit{report} implementation. How the extracting and
 checking functionality is split into methods can be up to the user and does not have to be part of the phase system.
-As such, it is decided to only include a \textit{report} phase, which includes the extraction and checking
-functionality before printing the actual results.
+As such, it is decided to only include a \textit{report} phase which should be used by all analysis components to write a report to the console or a file. How the data for the report is prepared is up to the component.
 
 Scala has support for traits which describe a set of methods and fields which a class has to implement. One class can
 implement a series of traits. This makes it possible to make phases opt-in, by implementing the relevant trait in a
@@ -2294,7 +2307,7 @@ for standard cases, provide the synchronization points necessary to structure th
 One callenge a distributed testbench faces is the decision of when a phase has finished. In UVM, components can raise
 an objection, which that they are not yet ready to proceed to the next phase. They signal that they are done by
 dropping the objection. This way also a driver could for instance block the run phase from finishing until it has
-received its last response. In the verification framework a less powerful but simples approach is chosen. Components
+received its last response. In the verification framework a less powerful but simple approach is chosen. Components
 running code in the simulation phase have no way to object to the simulation finishing. Instead the reset, configure,
 test and shutdown phases finish once all participants have returned from the method associated with the phase. The
 simulation phase is thus meant for components which provide a static service in the testbench such as a driver or
@@ -2307,11 +2320,6 @@ finish. In this case, a controlling phase such as the test phase should interrog
 as drivers to determine when all its actions have taken effect. This could for instance be done by waiting for
 sequence to finish producing stimulus, or by waiting for a monitor to observe a certain number of transactions on an interface.
 
-\todo{when does this phase exit objection system NOT work?}
-
-\todo{we can merge all phases into report because no communication between components is necessary. or more precisely
-  we are not just accessing data which could be invalid. communication would be fine. but usually report would operate
-only on data in itself. therefore the decomposition into extract.... is orthogonal to phases which are for synchronization}
 
 \begin{comment}
 - core concept in UVM
@@ -2384,12 +2392,11 @@ primitives which are mentioned by the authors match with those generally present
   \item The test: Contains the top environment and controls stimulus generation
 \end{itemize}
 
-Each of these components has a distinct role in the static verification environment, as it has been outlined in
-Chapter \ref{ch:background}. As such, each of them is needed to build a complete testbench, and the framework should
+Each of these components has a distinct role in the static verification environment. As such, each of them is needed to build a complete testbench, and the framework should
 provide base classes for each of them which the user can extend.
 
 In UVM these base components are implemented in a class hiearchy with \textit{uvm void} being the base class. Derived
-from this is the \ttt{uvm\_object} which provides a series of features like printing, recording, copying, comparing
+from this is the \textit{uvm object} which provides a series of features like printing, recording, copying, comparing
 as well as packing and unpacking, i.e. serialization, of objects. The \textit{uvm report object} is derived from
 this, adding logging funnctionality. The \textit{uvm component} base class is derived from the \textit{uvm report
 object} and adds phasing, hierarchy tracking and the factory interface. UVM sequence items and sequences are derived
@@ -2413,7 +2420,9 @@ Furthermore, it is important to copy transactions, which is facilitated by imple
 Serialization and recording of transactions is considered outside of the scope of the framework. The Sequence base
 type is used to generate transactions. It's design will be considered in more detail in Section \ref{sec:stimulus_sequences}.
 
-\todo{should we have only a channel or receiver sender ports? receiver sender allow for late connect}
+While the channel type for the verification framework has already been introduced, for components a port system like it is found in the UVM offers more flexibility. Instead of having to pass references to channels to components when they are constructed, ports allow for the connection of channels after the components have been created. For this reason, a sender and a receiver port shall be provided which each provide a \ttt{connect} method to connect with the opposite port type. 
+
+It was discussed in previously that the simplified system to decide when a phase should finish may require test cases to interrogate service providing components such as drivers or monitors to determine when they have finished their work. For this purpose, synchronization methods for waiting for a certain number of transactions shall be provided. A driver has the \ttt{waitForNumOfDrivenTxs(n)} method which blocks until the driver has driven \ttt{n} transactions in total. A monitor has the \ttt{waitForNumOfObservedTxs(n)} method which blocks until the monitor has observed \ttt{n} transactions in total.
 
 \begin{comment}
 
@@ -2574,11 +2583,11 @@ Simulation(new MyDUT) { dut =>
 \section{Testbench Configurability} %---------------------------------------------------------------------------------------
 
 In the UVM, a factory for objects and component is used to keep the testbench flexible. The factory allows the
-overwriting of one type with a derived one. This allows for an easy exchange of one component implementation with
+overwriting of one type with a derived one. This allows for instance for an easy exchange of one component implementation with
 another, because the instantiation of objects is delegated to the factory. The interface for using the factory is
-standardized. Objects can pass a string to the factory to set the UVM name of the object, while components can pass a
+standardized. General UVM objects can pass a string to the factory to set the UVM name of the object, while components can pass a
 name and a parent component reference. This leaves no option to pass parameters to the constructor of a component.
-Instead, the UVM provides the configuratio database, a key-value store, to share configuration parameters between
+Instead, the UVM provides the configuration database, a key-value store, to share configuration parameters between
 components. The configuration database is hierarchy-aware, meaning that each component has its own view on the
 configuration database, and can thus receive a unqiue configuration. The configuration database also facilitates the
 sharing of configuration parameters between components, since a key-value pair available at one level in the
@@ -2586,8 +2595,8 @@ hierarchy is also available at all child levels.
 
 The factory is a powerful tool to make code flexible by design. A component has to be programmed once, but can be
 configured in many ways by swapping out the implementation of its sub-components without chaging the code. But the
-usage of the factory also requires the use of the configuration database which circumvents any built in way of
-passing configuration parameters to classes, such as through the constructor. Accessing the configuration database
+usage of the factory also makes the use of the configuration database necessary which circumvents any built in way of
+passing configuration parameters to classes, such as through the constructor. Accessing the configuration database in UVM
 requires manual error checking to ensure that the expected key-value pairs actually exist.
 
 Another mechanism in the UVM to factilitate configurability is through callbacks. A callback encapsulates a set of
@@ -2597,46 +2606,46 @@ dynamically, allowing for the behavior of the component itself to be changed. Ac
 setup and performance overhead. \citeauthor{sutherland2015uvm} argues that inheritance meachnisms should be used instead.
 
 In Scala, functions are first class citizens and can be passed around as objects. This makes it easy to pass
-functions to components, which may use them for a specific task. The component only has to provide an interface to
-exchange the function implementation, either through a constructor argument or a method.
+functions to components, which may depend on them for a specific task. The component only has to provide an interface to
+exchange the function implementation, either through a constructor argument or a method, to allow for functionality similar to UVM callbacks.
 
-These mechanisms are not the only options to decouple a class implementation from its dependencies, i.e. other
+The discussed mechanisms are not the only options to decouple a class implementation from its dependencies, i.e. other
 objects it relies upon. Dependency injection is a design pattern which prescribes that the dependencies of a class
 should be provided by its environment and not instantiated in the class itself. This can be done through the
 constructor or through setter methods for the dependencies. By using interfaces for the dependencies to capture the
 provided functionality, the class is maximally decoupled from the actual implementation of the dependencies.
 
-\todo{should we mention DI frameworks like spring}
 
 Each of these three approaches have their advantages and disadvantages. While the factory facilitates the swapping of
 components simply by calling the factory instead of a constructor, it creates an indirection in the passing of
-parameters to components with components relying on string keys to locate their respective configuration parameters.
+parameters with components relying on string keys to locate their respective configuration parameters.
 This can be error-prone and no help can be provided by the compiler to ensure that all necessary parameters are provided.
 
-Dependency injection on the other hand allow for the usage of constructors or configuration methods to pass
+Dependency injection on the other hand allows for the usage of constructors or configuration methods to pass
 parameters, which lets the compiler check their validity. On the other hand, it requires the code to be written in a
-way to anticipate the swapping of components. A component always has to consider whether the dependencies of its
-children should be hardcoded or instead kept flexible by exposing the dependencies through its own constructor. This
-would make higher level components, extremely complex if they would have to collect all the dependencies of their
+way which anticipates the swapping of components. A component always has to consider whether the dependencies of its
+children should be hardcoded or instead kept flexible by exposing the dependencies through its own constructor or a method. This
+would make top-level components extremely complex if they would have to collect all the dependencies of their
 children either through their constructor or through a series of methods.
 
 Using callbacks could be achieved more easily in Scala than in SystemVerilog. But the component has to anticipate the
-functionality which should be exchangable just like in dependency injection and unlike in the factory approach.
-
-For smaller verification libraries, dependency injection could be a more standard way to achieve configurability. For
+functionality which should be exchangable just like in dependency injection. For smaller verification libraries, dependency injection could be a straightforward way to achieve configurability. For
 larger libraries, the factory approach seems to be more suitable due to the fact that the configurability does not
-pollute the code. Only the need for the configuration database to pass parameters makes the code more verbose. While
-the relying on string keys can be a source of errors, it can also be an advantage for communicating parameters
-between components which do not hold references to each other.
+pollute the code.
 
-Using dependency injection does not need any infrastructure from the framework, since it only works with language
+Using dependency injection does not need any infrastructure from the framework, since it only relies on language
 primitives. As such it is always an option to use dependency injection if one wants to avoid the factory and
-configuration database. The verification framework should provide a factory mechanism and a way to pass parameters
+configuration database. The verification framework should however provide a factory mechanism and a way to pass parameters
 akin to the configuration database which is tailored to the capabilities of the language.
 
 In Scala, complex type relations can be expressed in the type arguments of a generic function. As such \ttt{[T <:
 Component, R <: T]} can be used to express that \ttt{R} is a subtype of \ttt{T} which is a component. This can be
-used to make a factory safe, such that only subtypes can override a type. There are two ways a factory could be
+used to make a factory safe, such that only subtypes can override a type. 
+
+
+
+\begin{comment}
+  There are two ways a factory could be
 implemented in Scala which have implications on whether a type first has to be registered before it can be used with
 the factory or not. Since this affects the design of the API, the approach has to be decided as part of the design.
 If a type has to be registered with the factory, a closure could be provided which the factory uses to construct new
@@ -2647,6 +2656,7 @@ signature. If this is not the case, for instance for a component with an integer
 This approach is thus less safe, but does not require explicit registration of a type with the factory. Since the
 passing of parameters using a mechanism akin to the configuration database does not come with any compile time checks
 either, it is decided to use runtime reflection and thus no registration of types with the factory is necessary.
+
 
 The creation of the different primitives in the framework such as components, transactions or sequences, have
 different implications. The creation of a component involves the management of hierarchical references to make the
@@ -2688,6 +2698,9 @@ swappable components
 
 \todo{should the factories for non-components be separate or merged?}
 
+\end{comment}
+
+
 \begin{listing}
 \begin{lstlisting}[language=scala, captionpos=b, caption=\todo{???.},label=lst:factory]
 Comp.overrideType[MyComponent, MyDerivedComponent]
@@ -2718,7 +2731,11 @@ Comp.builder
 \end{lstlisting}
 \end{listing}
 
-- config system:
+
+
+\begin{comment}
+
+  - config system:
 - one is strictly hierarchical
 - then there is a global one
 
@@ -2730,8 +2747,6 @@ Comp.builder
 
 - the factory can create a specific contex before creating a component!
 - that means unique parameters and overrides
-
-\begin{comment}
 
 - the UVM uses factory to be able to exchange component implementations
 - due to the standardized constructor interface which only has the name and parent for components, the config db is necessary to pass parameters to components
@@ -3236,11 +3251,13 @@ methods. Future extensions could add features such as transactions ID's and the 
 discussed in Section \ref{sec:crv}.
 
 Sequences are implemented using channels which are hidden from the user. The user implements the sequence in the
-\ttt{body} method using the \ttt{yieldTx(t)} and \ttt{yieldSeq(seq)} methods. These methods actually send
+\ttt{body} method using the \ttt{yieldTx(t)} and \ttt{yieldSeq(se`q)} methods. These methods actually send
 transactions through one channel and await a response on another. Creating an instance of the sequence spawns a
 separate fork for it, in which the body is run. The channels in the sequence are used by the sequencer to get
 transactions and forward them to the driver, as well as send back the response from the driver. One can wait for a
 sequence to finish by calling \ttt{waitUntilDone} which awaits the fork executing the body.
+
+\todo{not all composition methods have been implemented}
 
 \subsection{Test Cases} %------------------------------------------------------------------------------------------------------
 
@@ -3409,6 +3426,16 @@ replicated differently?}
 - what is not possible which is possible in UVM
 - what could in general be improved
 
+
+- contributions:
+  - step system with multiple clocks
+  - register access
+  - uvm 
+    - declarative opt-in phases through traits
+    - removal of multiple build phases
+    - reduced class library complexity (some of which should be hidden from the user anyways)
+    - mixing UVM generator like seq with scala seq
+
 use cases:
 - less verbose -> we define behavior in one place and it is not spread over multiple
 
@@ -3420,6 +3447,12 @@ use cases:
 limited and does not allow for creating cases which would show the full potential
 - I also don't have the use case and expertise to showcase full blown UVM
 - the design of such a framework should build on actual experience with large verification projects
+
+
+- it could be useful to have a user extendible phasing system
+
+
+- register access should be typed and include writing
 
 - it is hard to motivate a framework made for reuse with simple use cases
 - but complex use cases are outside the scope of the project
