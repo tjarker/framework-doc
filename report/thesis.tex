@@ -3316,14 +3316,16 @@ calling the test with the \ttt{@main} annotation.
 
 \subsection{Factories and Configuration} %-------------------------------------------------------------------------------------
 
-\todo{formulate}
+% - needs to be hiearchy aware
+% - this is done through Hierarchy context parameter which all components, sequences, and txs have to accept
+% - this is assumed by the factory when creating instances
+% - the hierarchy holds references to parent and local params and overrides
+% - a factory call and parameter look up goes through the hierarchy to find the highest level defintion
+% - factory itself is done through ClassTags with allow for obtaining constructor at runtime and creating instances
 
-- needs to be hiearchy aware
-- this is done through Hierarchy context parameter which all components, sequences, and txs have to accept
-- this is assumed by the factory when creating instances
-- the hierarchy holds references to parent and local params and overrides
-- a factory call and parameter look up goes through the hierarchy to find the highest level defintion
-- factory itself is done through ClassTags with allow for obtaining constructor at runtime and creating instances
+One of the key challenges in the implementation of the factories and configuration system is to make it hierarchy aware. This means most importantly that a component has a reference to its parent. In the verification framework, this is achieved by context parameters, which all components, sequences and transactions must accept in their constructors. The context parameter is of the \ttt{Hierarchy} type. When a component is created, it has to be given as an argument to the \ttt{Comp} function. This function returns the instance, but internally prepares the new hierarchy context for the created component. In addition to the reference to the parent component, the hierarchy context also holds the local parameters and overrides. When a parameter is looked up, the hierarchy is traversed from starting from the root component to find the highest level definition. The factory itself is implemented using Scala's class tags. Through a class tag, the constructor the associated class can be obtained at runtime and an instance can be created.
+
+An important part of creating objects through class tags, is that the constructor has to follow an expected signature. In the implementation, Scala's metaprogramming capabilities are used to verify that the constructor matches the expected signature and throw a compile time error if it does not.
 
 \chapter{Evaluation}
 %////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3496,152 +3498,167 @@ A disadvantage of the framework is that the interface of the DUT has to be repli
 The implementation of the framework uses virtual threads, a relatively new feature in the UVM, to provide lightweight concurrency. ChiselTest uses normal operating system threads which have more overhead. Furthermore, ChiselTest actually serializes the execution of threads, while the verification framework lets all threads released in a clock cycle run truely concurrently. This is also in contrast to Cocotb, where coroutines with cooperative multitasking are used. The Gears library was used to provide a set of higher level concurrent abstractions such as futures and channels. This is however not strictly necessary and a more direct integration of the management of threads with the simulation environment might be a better solution in the long run which allows for greater control over the management of the threads. This is especially true, because all of the asynchronous functionality of the Gears library like the \ttt{await} calls are hidden from the user between the API of the framework.
 
 % context params
-- the usage of gears requires the Async context parameter to be added to all functions which interact with the simulation
-- on top of that the Sim context parameter is used to provide access to the simulation controller
-- this is a bit cumbersome
-- if gears was removed, the Async context parameter could be removed as well
-- else it may be worth considering to use dynamic variables to provide access to the simulation controller such as it is done in chiseltest
-- context parameters is however the prefered way in scala 3 to provide context dependent values which a simulation conext is
-- in chiseltest, calling some methods without the sim context being defined causes runtime errors whereas in this framework it is a compile time error
+% - the usage of gears requires the Async context parameter to be added to all functions which interact with the simulation
+% - on top of that the Sim context parameter is used to provide access to the simulation controller
+% - this is a bit cumbersome
+% - if gears was removed, the Async context parameter could be removed as well
+% - else it may be worth considering to use dynamic variables to provide access to the simulation controller such as it is done in chiseltest
+% - context parameters is however the prefered way in scala 3 to provide context dependent values which a simulation conext is
+% - in chiseltest, calling some methods without the sim context being defined causes runtime errors whereas in this framework it is a compile time error
+
+One issue with the current implementation of the framework is that context parameters are polluting a lot of the code. This is especially the case due to the need to both accept the simulation as well as the Gears async context parameter in all functions which interact with the simulation. If the Gears library was removed, the Async context parameter could be removed as well and its functionality could be integrated into the simulation context. Having to accept one context parameter already seems like a more acceptable solution. As an alternative, the Scala context parameter system could be completely avoided and dynamic variables could be used instead to provide context. This is how the simulation controller is accessed in ChiselTest. This has the disadvantage that accesses outside of a context which provides simulation capabilities, i.e. a test case, would cause runtime errors instead of compile time errors as in the current implementation. 
 
 % interfacing with Sv
-- the RTL design is simulated using a Verilator model
-- like in chiseltest, native functions interacting with the C++ model are called through JNA
-- one advantage that this simulation approach has, which chiseltest and cocotb share, over SV is that simulation model compilation is decoupled from tb compilation
-- this means a change in tb does not require a recompilation of the RTL
-- this is especially useful for large designs
-- in the framework, the control of the simulation happens in Scala -> therfore many native calls which are expensive
-- in spinal HDL sim, the control is done in C++ which calls the scala code
-- it would be interesting to see how this affects performance
-- what should be done is to limit the number of calls to the native code
-  - set multiple inputs at once
+% - the RTL design is simulated using a Verilator model
+% - like in chiseltest, native functions interacting with the C++ model are called through JNA
+% - one advantage that this simulation approach has, which chiseltest and cocotb share, over SV is that simulation model compilation is decoupled from tb compilation
+% - this means a change in tb does not require a recompilation of the RTL
+% - this is especially useful for large designs
+% - in the framework, the control of the simulation happens in Scala -> therfore many native calls which are expensive
+% - in spinal HDL sim, the control is done in C++ which calls the scala code
+% - it would be interesting to see how this affects performance
+% - what should be done is to limit the number of calls to the native code
+%   - set multiple inputs at once
+
+The RTL design is simulated using a Verilator model. Like in ChiselTest, native functions interacting with the C++ model are called through JNA. One advantage that this simulation approach has, which ChiselTest and Cocotb share, over SystemVerilog is that simulation model compilation is decoupled from the compilation of the testbench. This means that a change in the testbench does not require a recompilation of the design source code. This is especially useful for large designs with long compilation times. One disadvantage of implementing the simulation control in Scala is that calling native C++ code is expensive since JVM parameters have to translated to native ones. In the simulation framework from SpinalHDL, the simulation runtime is moved to C++. The situation is as such reversed, with the C++ code calling Scala closures to execute the user code. It would be interesting to measure how this affects performance compared to the current implementation. In general, the number of calls to the native code should be limited. For instance, setting multiple inputs at once instead of one by one could be a good optimization.
 
 % unit tests
-- small unit tests are possible through the Simulation entry point
-- chiseltest integrates tests with the scalatest framework to organize test execution
-- tests are declared with a text and are grouped together
-- this is not possible in the framework but could be added in the future
+% - small unit tests are possible through the Simulation entry point
+% - chiseltest integrates tests with the scalatest framework to organize test execution
+% - tests are declared with a text and are grouped together
+% - this is not possible in the framework but could be added in the future
+
+The first two use cases demonstrate the usage of the verification framework for small directed unit tests. For now these tests are however not organized in any way and provide no mechanism of grouping and labeling tests. ChiselTest integrates with the ScalaTest framework to provide this functionality. This could be added to the verification framework in the future.
 
 % complex TB
-- the framework ended up orienting itself closely on UVM
-- the UVM and especially the subset presented by \citeauthor{sutherland2015uvm} provides a clear and relatively simple structure for testbenches
-- it allows to ignore many of the more complex features of the UVM
-- the structure of components, sequences and test cases establishes clear interfaces between the different parts of the testbench and makes sense
-- what this framework provides is some simplifications in the conccepts and some adjustments to the API to make the usage more concise and simple
-- furthermore, it was aimed to make the usage more safe through scalas type system
+% - the framework ended up orienting itself closely on UVM
+% - the UVM and especially the subset presented by \citeauthor{sutherland2015uvm} provides a clear and relatively simple structure for testbenches
+% - it allows to ignore many of the more complex features of the UVM
+% - the structure of components, sequences and test cases establishes clear interfaces between the different parts of the testbench and makes sense
+% - what this framework provides is some simplifications in the conccepts and some adjustments to the API to make the usage more concise and simple
+% - furthermore, it was aimed to make the usage more safe through scalas type system
+
+The third and fourth use cases demonstrate the capability of the framework to replicate UVM testbenches. The framework ended up keeping the structure of a testbench closely to that of UVM. Especially the subset of UVM presented by \citeauthor{sutherland2015uvm} \cite{sutherland2015uvm} provides a clear and relatively simple structure for testbenches. It was chosen to follow the advice which allowed to ignore many of the more complex features of the UVM. The structure of components, sequences and test cases establishes clear interfaces between the different parts of the testbench and it made as such sense to keep it. What this framework contributes is some simplifications in the concepts and some adjustments which make the usage more concise and in some cases more safe through the use of Scala's type system.
 
 % phasing
-- the phasing system was simplefied focussing on the primary purpose of phases: synchronizing multiple concurrent components
-- an argument was made, that in this framework, the building of the testbench can be done through the constructor in one pass instead of multiple phases
-- since components are completely initialized once their constructor returns (including subcomponents) it is impossible to reference uninitialized components
-- only the connection of channels is chosen to be done after the constructor by the usage of ports like in UVM
-- when inheritance is used, scala automatically calls the constructor of the base class
-- this can create situations where the base class constructor configures a component in a way which is not desired by the derived class
-- in UVM the construction and configuration of components is split into multiple phases and only one part could be completely overwritten
-- in the framework, the base classes config would have to be reversed in the derived class
-- this is only possible if no side effects are created by the base class config
-- this is a limitation which comes from the simplification of the phasing system
-- one improvement over UVM is that phases are opt-in which makes it clearer which phases a compoennt actually uses
+% - the phasing system was simplefied focussing on the primary purpose of phases: synchronizing multiple concurrent components
+% - an argument was made, that in this framework, the building of the testbench can be done through the constructor in one pass instead of multiple phases
+% - since components are completely initialized once their constructor returns (including subcomponents) it is impossible to reference uninitialized components
+% - only the connection of channels is chosen to be done after the constructor by the usage of ports like in UVM
+% - when inheritance is used, scala automatically calls the constructor of the base class
+% - this can create situations where the base class constructor configures a component in a way which is not desired by the derived class
+% - in UVM the construction and configuration of components is split into multiple phases and only one part could be completely overwritten
+% - in the framework, the base classes config would have to be reversed in the derived class
+% - this is only possible if no side effects are created by the base class config
+% - this is a limitation which comes from the simplification of the phasing system
+% - one improvement over UVM is that phases are opt-in which makes it clearer which phases a compoennt actually uses
+
+One of the concepts which was simplified is the phasing system. One contribution is the usage of traits to make phases opt-in instead of having all components include all phases by default. Focussing on the primary purpose of phases, the synchronization between multiple concurrent components, it was also argued that not all phases, especially in the build and cleanup regions, were strictly necessary. An argument was made that in this framework, the building of the testbench can be done through the constructor in one pass instead of multiple phases. Since components are completely initialized once their constructor returns, including their subcomponents, it is impossible to reference uninitialized components this way. There is a limitation to this approach however. When inheritance is used, Scala automatically calls the constructor of the base class. This can create situations where the base class constructor configures a component in a way which is not desired by the derived class and that configuration would have to be reversed in the derived class. This can be difficult if side effects are created by the base class constructor. In the UVM, the construction and configuration can be split over multiple phases such that the derived component only has to overwrite the part which is not desired. This is however a very specific case and the simplification of the phasing system is generally beneficial to the usability of the framework. 
 
 % components
-- the components follow the UVM structure
-- only some slight improvements in how components access data from channels was made
-- synchronization mechanisms to wait for monitors and drivers were added
-- the sequencer implementation plays one sequence after the other
-- a parallel sequencer implementation was not added
-- in UVM sequences request access to the driver which the sequencer grants on a per transaction basis
-- here the sequencer receives the whole sequence and forwards all transactions to the driver and waits for the next sequence
-- for simple cases this works, but sometimes it is wanted to mix transaction streams
-- a future improvement could be to let the sequencer pull from multiple active sequences as it wishes
-- one concept which has not been adressed by the framework are virtual sequencers which coordinate the running of sequences on multiple sequencers
-- this should be investigated in the future
+% - the components follow the UVM structure
+% - only some slight improvements in how components access data from channels was made
+% - synchronization mechanisms to wait for monitors and drivers were added
+% - the sequencer implementation plays one sequence after the other
+% - a parallel sequencer implementation was not added
+% - in UVM sequences request access to the driver which the sequencer grants on a per transaction basis
+% - here the sequencer receives the whole sequence and forwards all transactions to the driver and waits for the next sequence
+% - for simple cases this works, but sometimes it is wanted to mix transaction streams
+% - a future improvement could be to let the sequencer pull from multiple active sequences as it wishes
+% - one concept which has not been adressed by the framework are virtual sequencers which coordinate the running of sequences on multiple sequencers
+% - this should be investigated in the future
 
-% transactions
-- eventhough transactions exist as a base type, they do not have any special behavior in the framework
-- in UVM additional information such as transaction ids are recorded in the sequence item type
-- UVM sequence items are also where the constrained randomization is done
-- this is not implemented in the framework
-- making transaction more capable would be a future improvement
+The component implementations largely follow their UVM counterparts. One contribution is the addition of synchronization methods to wait for monitors and drivers based on a target transaction count, which allows for a test case to wait for an expected amount of transactions to take place on an interface. The provided sequencer implementation differs from that of the UVM. Instead of arbitrating access to the driver on a per transaction basis, the sequencer plays one complete sequence at a time. This is a simplification which works well for simple cases, but it is not possible to mix transaction streams. The framework does not address the concept of virtual sequencers either. Both issues should be investigated in the future. 
 
 % sequences
-- the sequences are implemented like generators in python or F\# and differ thus slightly from UVM sequences
-- it can be argued that the interface for yielding items and receiving responses is more clear than in UVM
-- however, due to merging the sending and receiving, sequences can not send next item before receiving response
-- for pipelined interfaces this is not good
-- this would also require a some id system to match responses to requests
-- sequences as in UVM are not always necessary
-  - only when complex relation between items is needed
-  - and when items depend on responses from DUT
-- therefore scala collections are used alongside UVM like sequences
-- they offer a way to build non-feedback stimuli streams in a simpler way
-- furthermore, the addition of composition methods like concat, mix and repeat are useful for building complex stimuli streams
-- this is not found in UVM
-- virtual sequences can be created by the Orchestrator
-- this feature set should provide a good basis for building complex stimuli streams which matches the capabilities of the UVM subset presented by \citeauthor{sutherland2015uvm}
+% - the sequences are implemented like generators in python or F\# and differ thus slightly from UVM sequences
+% - it can be argued that the interface for yielding items and receiving responses is more clear than in UVM
+% - however, due to merging the sending and receiving, sequences can not send next item before receiving response
+% - for pipelined interfaces this is not good
+% - this would also require a some id system to match responses to requests
+% - sequences as in UVM are not always necessary
+%   - only when complex relation between items is needed
+%   - and when items depend on responses from DUT
+% - therefore scala collections are used alongside UVM like sequences
+% - they offer a way to build non-feedback stimuli streams in a simpler way
+% - furthermore, the addition of composition methods like concat, mix and repeat are useful for building complex stimuli streams
+% - this is not found in UVM
+% - virtual sequences can be created by the Orchestrator
+% - this feature set should provide a good basis for building complex stimuli streams which matches the capabilities of the UVM subset presented by \citeauthor{sutherland2015uvm}
 
+The sequences in the framework allow for the creation of a transactions stream based on a feedback stream of transactions just like in UVM. However, a series of composition mechanisms are contributed which increase the usability. Instead of just sending one item and receiving one response, a sequence can directly play another sequence without the need of creating a virtual sequence. In addition, standard composition operations such as concatenation, mixing or repeating of sequences are provided. Finally, the framework also allows for the usage of Scala collections to build non-feedback stimuli streams. This can be useful when the relation between transactions in the stream is simple and no feedback from driver is needed. Virtual sequences that target different sequencers as they can be created in the UVM have not been investigated. This could be a future improvement.
 
 
 % configuration
-- one of the strengths of UVM is its built-in configuration mechanisms 
-- the UVM factory and configuration database allow for easy change of behavior and config of components
-- the framework provides factories and key-value parameters defined by the hierarchy context to achieve similar functionality
-- one improvement is that the factories are compile time safe
-- only classes with the correct constructors can be created through the factory
-- and only derived classes with the correct constructor can override another type
-- just like in UVM it is possible to create unique configuration contexts for different parts of the testbench
-- instead of using string paths, the configuration is passed through the factory to the component that is created
-- the builder allows for reusing the same configuration for multiple components
-- the interface to the key-value configuration parameters was improved to include option return types, default values
-- for passing configuration context, context parameters proved to be a very useful tool
-- it polutes the code, since all components, sequences and transactions have to accept the Hierarchy parameter
-- but it works well with all factory and config functions taking it as a context parameter
-- using dynamic variables would be the alternative -> but then no compile time guarantee that a hierarchy context is available
+% - one of the strengths of UVM is its built-in configuration mechanisms 
+% - the UVM factory and configuration database allow for easy change of behavior and config of components
+% - the framework provides factories and key-value parameters defined by the hierarchy context to achieve similar functionality
+% - one improvement is that the factories are compile time safe
+% - only classes with the correct constructors can be created through the factory
+% - and only derived classes with the correct constructor can override another type
+% - just like in UVM it is possible to create unique configuration contexts for different parts of the testbench
+% - instead of using string paths, the configuration is passed through the factory to the component that is created
+% - the builder allows for reusing the same configuration for multiple components
+% - the interface to the key-value configuration parameters was improved to include option return types, default values
+% - for passing configuration context, context parameters proved to be a very useful tool
+% - it polutes the code, since all components, sequences and transactions have to accept the Hierarchy parameter
+% - but it works well with all factory and config functions taking it as a context parameter
+% - using dynamic variables would be the alternative -> but then no compile time guarantee that a hierarchy context is available
 
-- one thing that is not possible is to override a factory from the command line
-- since scala allows for a series of entry points, one entry point should be dedicated per test case and each testcase can define specific overrides
-- this is the only way compile time guarantees can be given, since all overrides are statically known
+% - one thing that is not possible is to override a factory from the command line
+% - since scala allows for a series of entry points, one entry point should be dedicated per test case and each testcase can define specific overrides
+% - this is the only way compile time guarantees can be given, since all overrides are statically known
+
+The configuration system in the framework is inspired by the UVM factory and configuration database but adapts them to the capabilities of Scala. The framework provides factories for each testbench ground type - components, sequences and transactions - as well as configuration objects. Although the UVM factory allows for creating general UVM objects through one factory, these four factories cover the most common use cases of where a factory is needed to change out implementations. The splitting of the factory is necessary to create compile-time safe interfaces. This contribution means, that all factory override and creation calls check at compile time that only classes with the correct type and constructor will be created and that only derived classes with the correct constructor override another type. 
+
+The configuration context consisting of factory overrides and key-value parameters is inherited through the hierarchy just like in UVM. However, it is avoided to use hierarchical string paths to define the scope of a configuration. Instead, the configuration is passed through the factory call itself to the component, sequence or transaction that is created. The context builder allows for the creation of a configuration context which can be reused to create multiple instances. The interface to the key-value configuration parameters was improved to include option return types and default values, to make the handling of missing parameters more easy. 
+
+One feature which this factory implementation does not supprto is the ability to override a type from the command line, like it is possible in UVM. In UVM, the test case which should be run is also defined in the command line, such that only one compilation is needed for all tests. Scala however supports multiple entry points to a program. As such, one entry point should be dedicated per test case and each test case should define its specific overrides. This is the only way to give the compile time guarantees that all factory calls and overrides will work, since it means that all overrides are statically known.
 
 % comments on evaluation
-- the use cases showed that the framework is capable of handling a range of different verification tasks
-- less verbose -> we define behavior in one place and it is not spread over multiple
-\todo{discuss use cases}
+% - the use cases showed that the framework is capable of handling a range of different verification tasks
+% - less verbose -> we define behavior in one place and it is not spread over multiple
 
 
+The goal of the project was to explore how the integration of a verification framework with the concepts of the UVM would benefit from a modern high-level language such as Scala. The four use cases show that the framework is generally capable of implementing some small verification tasks. The comparison with the PyUVM test case in use case 3 showed that the frameworks contributions have an impact on the conciseness of the testbench code, even in such a simple case. It also shows that the framework is capable of replicating the test case eventhough some UVM concepts were simplified or removed. \todo{discuss use cases}
 
 % general observations
-- it can be seen that simplifications may cause some specific cases to be more difficult to handle
-- this is the price to pay
+% - it can be seen that simplifications may cause some specific cases to be more difficult to handle
+% - this is the price to pay
 
-- it is really difficult working with something which is promised to bear fruit for really complex cases when time is
-limited and does not allow for creating cases which would show the full potential
-- I also don't have the use case and expertise to showcase full blown UVM
-- the design of such a framework should build on actual experience with large verification projects
+% - it is really difficult working with something which is promised to bear fruit for really complex cases when time is
+% limited and does not allow for creating cases which would show the full potential
+% - I also don't have the use case and expertise to showcase full blown UVM
+% - the design of such a framework should build on actual experience with large verification projects
 
-- it is hard to motivate a framework made for reuse with simple use cases
-- but complex use cases are outside the scope of the project
-
+% - it is hard to motivate a framework made for reuse with simple use cases
+% - but complex use cases are outside the scope of the project
+Generally, it can be seen that the simplifications made to the UVM also can cause some limitations in very specific cases. One of the problems of designing a framework is the anticipation of \textit{how} it might be used. This is an especially difficult task for infrastructure which is meant for complex systems. Many of the mechanisms of the UVM do not make sense at a small scale but instead bear fruit when used in large projects. Designing such a framework does as such require real world experience with large verification projects in order to judge what limitations are in the end acceptable and which are not. As such, the framework should be seen as a starting point, trying to formulate a minimal subset with an API tailored to the simplicity. Taking this as a basis, the framework could be extended to include more complex features as they are needed.
 
 
 % general design decisions
 %% language choice -> scala 3
-- the framework was implemented in Scala 3
-- since the aim was to explore the integration of verification in a modern language -> newest language features should be used
-- this limits the integration with existing scala solutions
-- for instance, the framework can not be used with chisel
+% - the framework was implemented in Scala 3
+% - since the aim was to explore the integration of verification in a modern language -> newest language features should be used
+% - this limits the integration with existing scala solutions
+% - for instance, the framework can not be used with chisel
+
+One very binding design choice is that of the language. The framework was implemented in Scala 3. Since the aim was to explore hardware verification in a modern language, the newest language features should be available. This however limits the integration with existing Scala solutions at the current point. All Chisel and ChiselTest infrastructure is at the time of writing far away from achieving compatibility with Scala 3. Since a Scala verification framework would be more useful if it could be used with Chisel, this is a severe limitation.
 
 %3. collect future work and prioritize different tasks
-- performance evaluation
-- verilator performance features (multi-threading, ...)
+% - performance evaluation
+% - verilator performance features (multi-threading, ...)
 
-- allow for setting top level verilog parameters
+% - allow for setting top level verilog parameters
 
-- add support for attached models
-- a function receiving the dut and can do whatever it likes, reading outputs, setting inputs to for instance model a
-UART/SPI/Memory
-- simulation loop could call the function in each evaluation step
+% - add support for attached models
+% - a function receiving the dut and can do whatever it likes, reading outputs, setting inputs to for instance model a
+% UART/SPI/Memory
+% - simulation loop could call the function in each evaluation step
 
-- integration with scalatest
+% - integration with scalatest
 
+The proposed framework can be seen as a proof of concept which shows that there is potential in using a modern high-level language for verification and actually tailor the framework to the language. This framework can be seen as the starting point for further exploration. A number of smaller features which the UVM offers and which are necessary for certain verification tasks still have to be investigated. Most importantly however, the framework should be evaluated on larger and more complex designs to see how well the simplifications hold up at that scale. In order to make the framework a credible alternative, its performance should be evaluated and compared to existing solutions like Cocotb but also UVM testbenches running on commercial simulators.
 
 
 \begin{comment}
