@@ -2551,6 +2551,8 @@ Often, it is of interest for a test case to know when a sequence has finished, i
 the driver and the responses have been received. This can be done by calling the \ttt{seq.waitUntilDone()} method
 which blocks until the sequence has finished.
 
+\todo{orchestrator for virtual sequences}
+
 \begin{comment}
 
 - scala sequences should be convertable to sequences
@@ -3462,24 +3464,36 @@ This thesis has proposed a verification framework for SystemVerilog designs whic
   % - name how they could be improved
   % - include evaluation use cases
 
-The frameworks primary interface to the simulation is influenced by the ChiselTest framework. 
-- uses step to advance time 
-- this is less flexible than what is possible in SV and cocotb but works well for sequential designs which are the most common case
-- it is thus impossible to directly synchronize with edges, but code can only ever run on the falling edge of the clock
-- one issue in this framework which chiseltest does not have is that mealy outputs are not working correctly, since the change in value is first visible to the testbench after the next clock edge because inputs are driven after sim threads have finished work
-- this should be fixed
-- one feature which the framework improved is the support for multiple clocks
-- this is done through the use of a clock domain which groups ports with a clock to decide their drive times
-- clocks can have periods and the simulation resolution can be controlled
+The frameworks primary interface to the simulation is influenced by the ChiselTest framework. Most importantly a \ttt{step} interface is used to advance the simulation by whole clock cycles instead of synchronizing the simulation thread directly with clock edges. Code in the verification framework can only ever run at the falling edge of the clock. This is less flexible that what is possible in SystemVerilog and Cocotb, but it works well for sequential designs which are the most common case. 
+
+One issue in the framework is the handling of mealy outputs, i.e. outputs which depend on the inputs. Their value is only visible to the testbench after the next clock edge because inputs are driven after simulation threads have finished their work. This should be fixed such that the view of the simulation threads accuratly represents the behavior of the DUT.
+
+One contribution of the framework is the support for multiple clocks using the \ttt{step} interface. This was not possible in the ChiselTest framework. To handle the correct driving of inputs relative to their clocks, clock domain declarations are necessary. Another improvement over ChiselTest is the ability to control the periods of clocks and the simulation time resolution. These are features which SystemVerilog and Cocotb already offer due to their lower level timing control. One final improvement over the ChiselTest framework is the ability to read internal state of the DUT. This feature is again also present in Cocotb and SystemVerilog. The access to internal state is however untyped and does not allow for depositing values. This should be added to fully replicate the capabilities of SystemVerilog and Cocotb.
+
+A disadvantage of the framework is that the interface of the DUT has to be replicated from the RTL to Scala. Since interfaces should be defined early in the design process and thus stay stable, this should not be a major limitation.
+
+
+% - uses step to advance time 
+% - this is less flexible than what is possible in SV and cocotb but works well for sequential designs which are the most common case
+% - it is thus impossible to directly synchronize with edges, but code can only ever run on the falling edge of the clock
+% - one issue in this framework which chiseltest does not have is that mealy outputs are not working correctly, since the change in value is first visible to the testbench after the next clock edge because inputs are driven after sim threads have finished work
+% - this should be fixed
+% - one feature which the framework improved is the support for multiple clocks
+% - this is done through the use of a clock domain which groups ports with a clock to decide their drive times
+% - clocks can have periods and the simulation resolution can be controlled
+% - in addition SV and cocotb capabilities of reading internal state are provided in Scala
+% - register access should be typed and include writing though to fully replicate the SV and cocotb capabilities
 
 %multi threading
-- the framework uses virtual threads in the JVM over normal ones in Chiseltest
-- furthermore chiseltest even though allowing multithreaded tbs actually executes on thread after the other -> not true parallelism
-- cocotb's coroutines are also not true parallelism but cooperative multitasking
-- this framework uses true parallelism through virtual threads
-- the gears library was used to provide a set of concurrent primitives such as futures and channels
-- this is not strictly necessary and a more direct integration with the simulation environment would make sense in the long run
-- especially since unlike in cocotb, the actual asynchronous operations are abstracted away (i.e. no await calls in tb code)
+% - the framework uses virtual threads in the JVM over normal ones in Chiseltest
+% - furthermore chiseltest even though allowing multithreaded tbs actually executes on thread after the other -> not true parallelism
+% - cocotb's coroutines are also not true parallelism but cooperative multitasking
+% - this framework uses true parallelism through virtual threads
+% - the gears library was used to provide a set of concurrent primitives such as futures and channels
+% - this is not strictly necessary and a more direct integration with the simulation environment would make sense in the long run
+% - especially since unlike in cocotb, the actual asynchronous operations are abstracted away (i.e. no await calls in tb code)
+
+The implementation of the framework uses virtual threads, a relatively new feature in the UVM, to provide lightweight concurrency. ChiselTest uses normal operating system threads which have more overhead. Furthermore, ChiselTest actually serializes the execution of threads, while the verification framework lets all threads released in a clock cycle run truely concurrently. This is also in contrast to Cocotb, where coroutines with cooperative multitasking are used. The Gears library was used to provide a set of higher level concurrent abstractions such as futures and channels. This is however not strictly necessary and a more direct integration of the management of threads with the simulation environment might be a better solution in the long run which allows for greater control over the management of the threads. This is especially true, because all of the asynchronous functionality of the Gears library like the \ttt{await} calls are hidden from the user between the API of the framework.
 
 % context params
 - the usage of gears requires the Async context parameter to be added to all functions which interact with the simulation
@@ -3516,14 +3530,122 @@ The frameworks primary interface to the simulation is influenced by the ChiselTe
 - what this framework provides is some simplifications in the conccepts and some adjustments to the API to make the usage more concise and simple
 - furthermore, it was aimed to make the usage more safe through scalas type system
 
+% phasing
+- the phasing system was simplefied focussing on the primary purpose of phases: synchronizing multiple concurrent components
+- an argument was made, that in this framework, the building of the testbench can be done through the constructor in one pass instead of multiple phases
+- since components are completely initialized once their constructor returns (including subcomponents) it is impossible to reference uninitialized components
+- only the connection of channels is chosen to be done after the constructor by the usage of ports like in UVM
+- when inheritance is used, scala automatically calls the constructor of the base class
+- this can create situations where the base class constructor configures a component in a way which is not desired by the derived class
+- in UVM the construction and configuration of components is split into multiple phases and only one part could be completely overwritten
+- in the framework, the base classes config would have to be reversed in the derived class
+- this is only possible if no side effects are created by the base class config
+- this is a limitation which comes from the simplification of the phasing system
+- one improvement over UVM is that phases are opt-in which makes it clearer which phases a compoennt actually uses
+
+% components
+- the components follow the UVM structure
+- only some slight improvements in how components access data from channels was made
+- synchronization mechanisms to wait for monitors and drivers were added
+- the sequencer implementation plays one sequence after the other
+- a parallel sequencer implementation was not added
+- in UVM sequences request access to the driver which the sequencer grants on a per transaction basis
+- here the sequencer receives the whole sequence and forwards all transactions to the driver and waits for the next sequence
+- for simple cases this works, but sometimes it is wanted to mix transaction streams
+- a future improvement could be to let the sequencer pull from multiple active sequences as it wishes
+- one concept which has not been adressed by the framework are virtual sequencers which coordinate the running of sequences on multiple sequencers
+- this should be investigated in the future
+
+% transactions
+- eventhough transactions exist as a base type, they do not have any special behavior in the framework
+- in UVM additional information such as transaction ids are recorded in the sequence item type
+- UVM sequence items are also where the constrained randomization is done
+- this is not implemented in the framework
+- making transaction more capable would be a future improvement
+
+% sequences
+- the sequences are implemented like generators in python or F\# and differ thus slightly from UVM sequences
+- it can be argued that the interface for yielding items and receiving responses is more clear than in UVM
+- however, due to merging the sending and receiving, sequences can not send next item before receiving response
+- for pipelined interfaces this is not good
+- this would also require a some id system to match responses to requests
+- sequences as in UVM are not always necessary
+  - only when complex relation between items is needed
+  - and when items depend on responses from DUT
+- therefore scala collections are used alongside UVM like sequences
+- they offer a way to build non-feedback stimuli streams in a simpler way
+- furthermore, the addition of composition methods like concat, mix and repeat are useful for building complex stimuli streams
+- this is not found in UVM
+- virtual sequences can be created by the Orchestrator
+- this feature set should provide a good basis for building complex stimuli streams which matches the capabilities of the UVM subset presented by \citeauthor{sutherland2015uvm}
+
+
+
+% configuration
+- one of the strengths of UVM is its built-in configuration mechanisms 
+- the UVM factory and configuration database allow for easy change of behavior and config of components
+- the framework provides factories and key-value parameters defined by the hierarchy context to achieve similar functionality
+- one improvement is that the factories are compile time safe
+- only classes with the correct constructors can be created through the factory
+- and only derived classes with the correct constructor can override another type
+- just like in UVM it is possible to create unique configuration contexts for different parts of the testbench
+- instead of using string paths, the configuration is passed through the factory to the component that is created
+- the builder allows for reusing the same configuration for multiple components
+- the interface to the key-value configuration parameters was improved to include option return types, default values
+- for passing configuration context, context parameters proved to be a very useful tool
+- it polutes the code, since all components, sequences and transactions have to accept the Hierarchy parameter
+- but it works well with all factory and config functions taking it as a context parameter
+- using dynamic variables would be the alternative -> but then no compile time guarantee that a hierarchy context is available
+
+- one thing that is not possible is to override a factory from the command line
+- since scala allows for a series of entry points, one entry point should be dedicated per test case and each testcase can define specific overrides
+- this is the only way compile time guarantees can be given, since all overrides are statically known
+
+% comments on evaluation
+- the use cases showed that the framework is capable of handling a range of different verification tasks
+- less verbose -> we define behavior in one place and it is not spread over multiple
+\todo{discuss use cases}
+
+
+
+% general observations
+- it can be seen that simplifications may cause some specific cases to be more difficult to handle
+- this is the price to pay
+
+- it is really difficult working with something which is promised to bear fruit for really complex cases when time is
+limited and does not allow for creating cases which would show the full potential
+- I also don't have the use case and expertise to showcase full blown UVM
+- the design of such a framework should build on actual experience with large verification projects
+
+- it is hard to motivate a framework made for reuse with simple use cases
+- but complex use cases are outside the scope of the project
+
+
+
+% general design decisions
+%% language choice -> scala 3
+- the framework was implemented in Scala 3
+- since the aim was to explore the integration of verification in a modern language -> newest language features should be used
+- this limits the integration with existing scala solutions
+- for instance, the framework can not be used with chisel
 
 %3. collect future work and prioritize different tasks
+- performance evaluation
+- verilator performance features (multi-threading, ...)
+
+- allow for setting top level verilog parameters
+
+- add support for attached models
+- a function receiving the dut and can do whatever it likes, reading outputs, setting inputs to for instance model a
+UART/SPI/Memory
+- simulation loop could call the function in each evaluation step
+
+- integration with scalatest
 
 
 
-
-
-
+\begin{comment}
+  
 
 1. summary of findings
 - recap results from design and implementation
@@ -3577,7 +3699,6 @@ The frameworks primary interface to the simulation is influenced by the ChiselTe
 4. limitations and challenges
 - what are the main difficulties and limitations of the framework?
 - are there cases where it does not work as expected?
-
 - factory does not allow for overrides from CLI -> this is largely motivated by single entry point in SV -> here one entry point per test case 
 
 - there usage of context parameters should be re-evaluated, at least Async should be part of Sim
@@ -3585,72 +3706,15 @@ The frameworks primary interface to the simulation is influenced by the ChiselTe
 - it should be possible to use mealy outputs in the framework, i.e. pokes should drive immediately while placed at the falling edge
 - this way peeks can reflect the state of the DUT at the current time
 
-5. future work
-- what are the next steps for the framework?
-- how can it be improved and extended?
 
-- performance evaluation
+\end{comment}
 
 
 
 
-- general topics
-- what works well?
-- what is not possible which is possible in UVM
-- what could in general be improved
-
-
-- contributions:
-  - step system with multiple clocks
-  - register access
-  - uvm 
-    - declarative opt-in phases through traits
-    - removal of multiple build phases
-    - reduced class library complexity (some of which should be hidden from the user anyways)
-    - mixing UVM generator like seq with scala seq
-
-use cases:
-- less verbose -> we define behavior in one place and it is not spread over multiple
-
-- scala 3 was chosen to use newest features and make future proof but that prevents integration with chisel
-
-- annoying to write interface in scala and SystemVerilog -> simple tool could create scala code from SystemVerilog
-
-- it is really difficult working with something which is promised to bear fruit for really complex cases when time is
-limited and does not allow for creating cases which would show the full potential
-- I also don't have the use case and expertise to showcase full blown UVM
-- the design of such a framework should build on actual experience with large verification projects
-
-
-- it could be useful to have a user extendible phasing system
-
-
-- register access should be typed and include writing
-
-- it is hard to motivate a framework made for reuse with simple use cases
-- but complex use cases are outside the scope of the project
-
-- performance => we should implement more in C++ and cross the native jvm boundary less often
-- we can hand references to closures to native code and it can invoke callbacks -> this is how cocotb does it
-
-- sequences can not send next item before receiving response
-- for pipeline interfaces this is not good
-
-- the framework simplefies some things, how can we be sure that this does not create an issue for more complex cases?
-- we are aiming to provide a framework which is easy to use for common case
-- is it then still universal?
 
 %\section{Future Work} %========================================================================================================
 
 
 
-- verilator performance features (multi-threading, ...)
 
-- allow for setting top level verilog parameters
-
-- add support for attached models
-- a function receiving the dut and can do whatever it likes, reading outputs, setting inputs to for instance model a
-UART/SPI/Memory
-- simulation loop could call the function in each evaluation step
-
-- integration with scalatest
