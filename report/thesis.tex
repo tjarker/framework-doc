@@ -977,6 +977,10 @@ Work has been done on extending Chiseltest with formal verification features \ci
 deeply integrated with the Chisel hardware construction language and allows the user to write formal properties in
 the source code of the design in Chisel just like in SystemVerilog.
 
+\todo{we need to talk about svsim}
+
+\todo{also spinal HDL sim}
+
 \subsubsection{ChiselVerify} %-------------------------------------------------------------------------------------------------
 
 ChiselVerify is a verification library for Chisel designs built on top of Chiseltest \cite{chiselverify}. It aims to
@@ -2107,7 +2111,7 @@ the design. Inputs and outputs are associated with a data type. The data types a
 
 The API for interacting with the DUT is inspired by ChiselTest. Inputs provide \ttt{peek} and \ttt{poke} methods,
 while outputs only provide a \ttt{peek} method. Clock ports have a \ttt{step(n)} method to advance the simulation by
-\ttt{n} clock cycles.
+\ttt{n} clock cycles. An additional method \ttt{stepUntil(predicate: => Boolean)} is added which accepts a closure evaluating to a boolean. Calling this method will advance the simulation until the clock cycle where the closure evaluates to true. 
 
 
 
@@ -2657,13 +2661,11 @@ akin to the configuration database which is tailored to the capabilities of the 
 
 In Scala, complex type relations can be expressed in the type arguments of a generic function. As such \ttt{[T <:
 Component, R <: T]} can be used to express that \ttt{R} is a subtype of \ttt{T} which is a component. This can be
-used to make a factory safe, such that only subtypes can override a type. 
+used to make a factory safe, such that only subtypes can override a type. Furthermore, Scala has an extensive metaprogramming subset which allows to inspect code at compile time. The factory shall rely on runtime reflection to create objects. Runtime reflection allows for the dynamic creation of objects using so-called class tags. Using this approach, no type registration with the factory is required. However, the constructor of the class must follow an expected signature. Trying to create an object of a class which does not have the expected constructor signature using runtime reflection would cause a runtime error. This is where Scala's metaprogramming capabilities come into play. A call to the factory for type \ttt{T} can check at compile time if the constructor of \ttt{T} has the expected signature. The same applies for overriding types with subtypes, where overrides are only accepted if both types follow the expected constructor signature. This makes the usage of the factory statically safe, with invalid usage being rejected at compile time. It also necessitates the usage of seperate factories for each primitive type, since the exptected constructor signatures may differ.
 
-For the verification framework it is decided to provide multiple factories: Components, sequences and transactions each have their own factory, taking care of setup steps specific to each primitive and expecting a constructor interface specific to each primtive. The configuration of these factories as well as the defining of key-value parameter paris are done through a \ttt{Config} singleton.
+For the verification framework it is decided to provide multiple factories: Components, sequences and transactions each have their own factory, taking care of setup steps specific to each primitive and expecting a constructor interface specific to each primtive. Types can be overriden in a factory using the \ttt{overrideType[A,B]} method. The defining of key-value parameter pairs are done through the \ttt{Config} singleton.
 
 The \ttt{Config} singleton provides a \ttt{set(k,v)} method to set a configuration parameter and a \ttt{tryGet[A](k)} method to attempt to retrieve a configuration parameter of type \ttt{A} with key \ttt{k}. The latter return a Scala \ttt{Option[A]} type which is \ttt{None} if the key does not exist or the value cannot be cast to type \ttt{A}. It returns \ttt{Some(v)} if the look-up was successful, where \ttt{v} is the actual value of type \ttt{A}. A method \ttt{get[A](k)} is also provided which throws an exception if the look-up fails. Furthermore, a \ttt{getOrElse[A](k, default)} method is provided which returns the default value of type \ttt{A} if the key does not exist or the value cannot be cast to type \ttt{A}. This is a more concise interface than the UVM configuration database exposes.
-
-The \ttt{Config} singleton also provides a \ttt{OverrideType[A,B]} method, where \ttt{B} has to be derived from \ttt{A}. This method affects which type a factory returns.
 
 A demonstration of the API to the factories is shown in Listing \ref{lst:factory}. The factory objects \ttt{Comp}, \ttt{Sequence} (not \ttt{Seq} since that name is used in Scala) and \ttt{Tx} provide \ttt{create[A]} methods to produce an object of type \ttt{A} or the type which \ttt{A} is overridden with. The code from line 10 to 21 shows how a unique configuration can be created for a component. The factory \ttt{create} method accepts a key-value pair map itself which is visible to the object that is created. Instead of passing parameters directly to the factory, another mechanism is also provided which allows for the creation of a configuration context. Calling \ttt{Comp.builder} returns a builder object which can capture parameters and overrides using the \ttt{withParams} and \ttt{withOverride} methods. A builder could be bound to a variable and used to create multiple objects with the same configuration. 
 
@@ -2732,11 +2734,12 @@ swappable components
 
 \begin{listing}
 \begin{lstlisting}[language=scala, captionpos=b, caption={Demonstration of the API for the four different factories for components, sequences, transactions and configuration objects.},label=lst:factory]
-Config.overrideType[MyType, MyDerivedType]
 Config.set(key, value)
 Config.get(key)
 
 Config.get[MyConfig].myParam
+
+Comp.overrideType[MyType, MyDerivedType]
 
 Comp.create[MyComponent]
 Sequence.create[MySequence]
@@ -3022,6 +3025,8 @@ Verilator transpiles the SystemVerilog source code into a C++ class. A mechanism
 code can interact with an instance of this class. The JNA (java native access) library can be used to call native
 functions from the java virtual machine (JVM). In C++, a simulation context class is used to group all objects associated with an simulation instance. The following set of functions is provided, which take the simulation context as an argument to interact
 with the simulation:
+
+\todo{in the impl: name when inspiration was drawn from existing work}
 
 \begin{itemize}
   \item \ttt{createSimContext\_XX} creates a new simulation context and return a pointer to it
@@ -3331,6 +3336,8 @@ Scala and Python. The fourth use case replicates verification blocks for an APB 
 PyUVM and serve as verification infrastructure for the Didactic SoC mutli-project chip developed as part of the
 Edu4Chip project \cite{edu4chip}.
 
+\todo{since focus is on improving usability and showcasing use of modern lang -> no performance eval}
+
 \section{Use Case 1: Greatest Common Divisor} %--------------------------------------------------------------------------------
 
 The first use case is a simple greatest common divisor (GCD) circuit, which is taken from the lab work of the DTU
@@ -3447,25 +3454,145 @@ replicated differently?}
 
 \chapter{Discussion} %/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+%1. rough summary of what was done
+This thesis has proposed a verification framework for SystemVerilog designs which is implemented in Scala 3. The framework allows for multi-threaded testbenches using a peek/poke/step interface to interact with DUT. On top of the simulation interface which facilitates the construction of unit tests, a library of standard testbench components taken from the UVM was implemented. The execution of these testbenches is structured through a simplified phasing model. Configuration and flexibility is provided through the use of compile time safe factories for components, sequences, transactions and configuration objects alongside a hierarchy aware parameter system inspired by the UVM factory and configuration database.
+
+%2. go through features, compare them to existing solutions
+  % - highlight strengths and explain limitations 
+  % - name how they could be improved
+  % - include evaluation use cases
+
+The frameworks primary interface to the simulation is influenced by the ChiselTest framework. 
+- uses step to advance time 
+- this is less flexible than what is possible in SV and cocotb but works well for sequential designs which are the most common case
+- it is thus impossible to directly synchronize with edges, but code can only ever run on the falling edge of the clock
+- one issue in this framework which chiseltest does not have is that mealy outputs are not working correctly, since the change in value is first visible to the testbench after the next clock edge because inputs are driven after sim threads have finished work
+- this should be fixed
+- one feature which the framework improved is the support for multiple clocks
+- this is done through the use of a clock domain which groups ports with a clock to decide their drive times
+- clocks can have periods and the simulation resolution can be controlled
+
+%multi threading
+- the framework uses virtual threads in the JVM over normal ones in Chiseltest
+- furthermore chiseltest even though allowing multithreaded tbs actually executes on thread after the other -> not true parallelism
+- cocotb's coroutines are also not true parallelism but cooperative multitasking
+- this framework uses true parallelism through virtual threads
+- the gears library was used to provide a set of concurrent primitives such as futures and channels
+- this is not strictly necessary and a more direct integration with the simulation environment would make sense in the long run
+- especially since unlike in cocotb, the actual asynchronous operations are abstracted away (i.e. no await calls in tb code)
+
+% context params
+- the usage of gears requires the Async context parameter to be added to all functions which interact with the simulation
+- on top of that the Sim context parameter is used to provide access to the simulation controller
+- this is a bit cumbersome
+- if gears was removed, the Async context parameter could be removed as well
+- else it may be worth considering to use dynamic variables to provide access to the simulation controller such as it is done in chiseltest
+- context parameters is however the prefered way in scala 3 to provide context dependent values which a simulation conext is
+- in chiseltest, calling some methods without the sim context being defined causes runtime errors whereas in this framework it is a compile time error
+
+% interfacing with Sv
+- the RTL design is simulated using a Verilator model
+- like in chiseltest, native functions interacting with the C++ model are called through JNA
+- one advantage that this simulation approach has, which chiseltest and cocotb share, over SV is that simulation model compilation is decoupled from tb compilation
+- this means a change in tb does not require a recompilation of the RTL
+- this is especially useful for large designs
+- in the framework, the control of the simulation happens in Scala -> therfore many native calls which are expensive
+- in spinal HDL sim, the control is done in C++ which calls the scala code
+- it would be interesting to see how this affects performance
+- what should be done is to limit the number of calls to the native code
+  - set multiple inputs at once
+
+% unit tests
+- small unit tests are possible through the Simulation entry point
+- chiseltest integrates tests with the scalatest framework to organize test execution
+- tests are declared with a text and are grouped together
+- this is not possible in the framework but could be added in the future
+
+% complex TB
+- the framework ended up orienting itself closely on UVM
+- the UVM and especially the subset presented by \citeauthor{sutherland2015uvm} provides a clear and relatively simple structure for testbenches
+- it allows to ignore many of the more complex features of the UVM
+- the structure of components, sequences and test cases establishes clear interfaces between the different parts of the testbench and makes sense
+- what this framework provides is some simplifications in the conccepts and some adjustments to the API to make the usage more concise and simple
+- furthermore, it was aimed to make the usage more safe through scalas type system
+
+
+%3. collect future work and prioritize different tasks
+
+
+
+
+
+
+
 1. summary of findings
 - recap results from design and implementation
 - relate results back to original research questions
+
+- a framework to verify systemverilog designs in scala 3 was designed and implemented
+- the framework allows for multi-threaded testbenches using fork-join model on top of lightweight virtual threads
+- interaction with the dut is doen through a peek/poke/step interface
+- internal registers can be read 
+- multiple clock domains are supported
+- simulation uses verilator as a backend
+- testcase is purely scala code -> interface of DUT + actual test code
+
+- a library of standard testbench which follow UVM concepts was implemented
+- the execution of testbench is structured by a simplified phasing system of UVM
+- the coordination of phasing is simplified by seperating service providing components and controlling components, i.e. the test case
+- testbench primitives which facilitate synchronization
+- channels between components through ports which are integrated with simulation runtime
+- generator-like sequences alongside scala sequences for testbench
+
+- compile time safe factories for components, sequences, transactions and configuration objects
+- parameter passing through hierarchy context  
+
+
+- a statically type safe factory override interface was implemented
+- creating instances can still fail however due to constructor mismatch
 
 2. comparison to existing work
 - how does the framework compare to existing verification frameworks and methods
 - does it improve efficiency, usability, scalability?
 
+- framework orients itself closely on existing work such as Chiseltest, cocotb and UVM
+- but provides a series of small improvements over these
+
+- the framework follows the step abstraction of chiseltest but extends it to multiple clocks
+- 
+
 3. strengths and contributions
 - what aspects work particularly well and are novel?
 - how does the framework improve certain aspects?
+
+- decoupling of compiling simulation and testbench (only advantage if no incremental compilation for SV is available)
+- all test code only in scala -> not using makefile setup like in cocotb
+- direct integration of SV unlike in Chiseltest where SV designs have to use a chisel wrapper
+
+- in the end framework orients itself quite closely to UVM and works more at the API level than at the methodology level
+- phasing is opt-in and abstract classes allow forcing derived classes to implement certain phases
+
+- a statically safe factory 
 
 4. limitations and challenges
 - what are the main difficulties and limitations of the framework?
 - are there cases where it does not work as expected?
 
+- factory does not allow for overrides from CLI -> this is largely motivated by single entry point in SV -> here one entry point per test case 
+
+- there usage of context parameters should be re-evaluated, at least Async should be part of Sim
+
+- it should be possible to use mealy outputs in the framework, i.e. pokes should drive immediately while placed at the falling edge
+- this way peeks can reflect the state of the DUT at the current time
+
 5. future work
 - what are the next steps for the framework?
 - how can it be improved and extended?
+
+- performance evaluation
+
+
+
 
 - general topics
 - what works well?
@@ -3514,6 +3641,8 @@ limited and does not allow for creating cases which would show the full potentia
 - is it then still universal?
 
 %\section{Future Work} %========================================================================================================
+
+
 
 - verilator performance features (multi-threading, ...)
 
