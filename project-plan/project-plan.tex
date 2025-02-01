@@ -10,7 +10,7 @@
 
 \begin{document}
 
-\title{{\Huge Project Plan}\\ Verification of Digital Designs}
+\title{{\Huge Original Project Plan}\\ Verification of Digital Designs}
 \author{Tjark Petersen}
 \date{\today}
 
@@ -59,7 +59,7 @@ Initial talks with two Copenhagen based companies working with verification have
 
 While Python is a language with a low entry barrier, it does not scale well with complex systems such as large testbench environments where features like compile-time type safety can circumvent run-time crashes and provide larger confidence in the correctness of the implemented code. This is especially important when reuse is encouraged such that the internals of verification components aren't always known to the developer. Instead a statically typed language should be used. On the other hand, the verbosity of the language should be minimal while offering garbage collection and a rich standard library to ease the development process. 
 
-This opens the oportunity to reconsider the abstractions behind the UVM as well as their respective implementation in the context of a new open-source framework. This framwork should accept synthesizable SystemVerilog designs to make it as accessible as possible, given that (System)Verilog is the most widely used language for digital design and used as an intermediate language by other hardware description languages like Chisel, MyHDL, Clash or SpinalHDL.
+This opens the opportunity to reconsider the abstractions behind the UVM as well as their respective implementation in the context of a new open-source framework. This framework should accept synthesizable SystemVerilog designs to make it as accessible as possible, given that (System)Verilog is the most widely used language for digital design and used as an intermediate language by other hardware description languages like Chisel, MyHDL, Clash or SpinalHDL.
 
 \textit{Scala} is a language that fits the requirements for a compiled, garbage-collected language with a strong type system. At its core, the language is simple and concise but it offers more advanced features like functional programming. The language is furthermore especially friendly to DSLs, which should allow for natural APIs for the user of a verification framework. It it therefore chosen as the language for the implementation of the proposed framework.
 

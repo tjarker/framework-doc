@@ -1,0 +1,30 @@
+\documentclass[11pt]{article}
+
+\usepackage{graphicx}
+
+\usepackage[backend=biber,style=ieee]{biblatex}
+\addbibresource{refs.bib}
+
+\usepackage{comment}
+\usepackage{pdflscape}
+
+\begin{document}
+
+\title{{\Huge Process Evaluation}}
+\author{Tjark Petersen}
+\date{\today}
+
+\maketitle
+\pagenumbering{gobble}
+
+In this document, a brief self-evaluation of the project process is given. The master project was conducted throughout a period of 5 months starting on 02.09.2024 and ending on 02.02.2025. While it was clear from the start that the project of developing a verification framework in Scala inspired by the reuse methodology of the UVM was a very widely scoped task, it was expected that some clear opportunities for features would become apparent during the project. Since no prior knowledge of the UVM existed, it was difficult to identify exactly what would have to be replicated from the outset. This led to a exploratory approach to the project. 
+
+It was expected that the project would be divided half and half between the implementation of the simulation aspect and the reuse aspect. However, it turned out that the simulation aspect was more complex that anticipated and more time was spent on laying the ground work for what was to be the actual contribution of the project. As such, the time spent on bringing UVM features to Scala was less than expected. 
+
+Designing a framework is also a difficult task in general, since one always has to try and consider all use cases that might arise. This means that a lot of time is spent going back and forth between trying out different designs and seeing how they work in practice. 
+
+In the end time ended up being especially short for developing use cases for the framework. Implementing the use cases was itself a complex task which sometimes required the debugging of the framework itself. 
+
+In general, a more tight scope would have been beneficial for the project. Either, the project should have focussed on the simulation aspect and providing a good framework for that, or it should have built on top of an existing testing framework and added the UVM features to that.
+
+\end{document}
