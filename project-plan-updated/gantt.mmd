@@ -1,0 +1,27 @@
+gantt
+    dateFormat  YYYY-MM-DD
+    excludes    weekends, tuesday
+    axisFormat  %b %d
+    tickInterval 1week
+    todayMarker off
+    weekday monday
+
+
+    section Simulation Environment
+    Design: 2024-10-03, 2024-11-20
+    Simulator API: ver_wrap, 2024-10-03, 15d
+    Simulation Threads: conc_expl, after ver_wrap, 2024-11-20
+
+
+    section Verification Environment
+    Component & Phasing: 10d
+    Component Library: 3d
+    Factory & Configuration: 15d
+
+    section Use Cases
+    Use Case Implementation: 2024-12-10, 2025-01-30
+
+
+    section Report
+    Write technical background: 2024-12-13, 2w
+    Finalize Report: 2025-01-01, 2025-02-02
