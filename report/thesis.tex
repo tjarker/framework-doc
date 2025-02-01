@@ -8,6 +8,8 @@
   - DUT or DUT
 }
 
+\todo{When submitting the thesis, the student is to enclose a separate document presenting the original project plan and a revision of the same, where appropriate. In addition, the document is to include a brief auto-evaluation of the project process.}
+
 \chapter{Introduction} %///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 Computer chips are around us everywhere in our daily lives. They are in our phones, our cars, our computers and even
@@ -104,7 +106,7 @@ of the framework.
 - while UVM is an open standard, it has been influenced from a number of predecessors methdologies developed by the EDA vendors to guide users in the adoption of SV for verification
 - non-industry projects focus on basic verification functionality over methodologies
 - notably Cocotb provides a python verification framework
-- and ChiselTest and ChiselVerify provides scala verification eco system for Chisel designs
+- and Chiseltest and ChiselVerify provides scala verification eco system for Chisel designs
 - one notable exception is PyUVM but that one is mostly a reimplementation of UVM in python
 
 - UVM was designed for SV
@@ -977,23 +979,25 @@ Work has been done on extending Chiseltest with formal verification features \ci
 deeply integrated with the Chisel hardware construction language and allows the user to write formal properties in
 the source code of the design in Chisel just like in SystemVerilog.
 
-\todo{we need to talk about svsim}
+Chiseltest relies on Chisel compiler infrastructure inside Scala, which has been deprecated in favor of a new MLIR based compiler called CIRCT. Due to this Chiseltest itself has also been deprecated and is thus not a viable option for new projects.
 
-\todo{also spinal HDL sim}
+
+\subsubsection{Chisel svsim}
+
+Due to the deprecation of Chiseltest, a low level testing framework for Chisel designs relying on Verilator or VCS as backends has been developed called svsim \cite{svsim}. It is meant as a fabric for building actual verification frameworks and not as a replacement for Chiseltest. As such, it only provides bare minimum interaction capabilities with the simulation and does not provide any level of abstraction or infrastructure for building complex testbenches.
+
 
 \subsubsection{ChiselVerify} %-------------------------------------------------------------------------------------------------
 
 ChiselVerify is a verification library for Chisel designs built on top of Chiseltest \cite{chiselverify}. It aims to
 improve the verification capabilities in the Chisel ecosystem by providing verification tools such as functional
 coverage, constrained randomization and formal verification features. While showcasing how a BFM can be built using
-scala and Chiseltest through a general AXI4 BFM, the framework does not provide guidelines and abstractions on how to
-build standardized, scalable and reusable testbenches.
+scala and Chiseltest through a general AXI4 BFM, the framework does not provide guidelines and abstractions on how to build standardized, scalable and reusable testbenches.
 
 Functional coverage can only be collected at the IO of the DUT in ChiselVerify. It is not possible to collect
 coverage at the transaction level which would require the monitoring of scala variables in addition to Chisel IO
 ports. However, ChiselVerify allows for the expression of more complex cross coverage relationships. It not only
-supports simultaneous hits between the cross-coverage bins but also timed relationships, for instance that a hit to a
-bin results eventually in a hit to the crossed bin.
+supports simultaneous hits between the cross-coverage bins but also timed relationships, for instance that a hit to a bin results eventually in a hit to the crossed bin. However, with the deprecation of Chiseltest, the foundation of ChiselVerify is not actively maintained anymore.
 
 \begin{comment}
 
@@ -1005,6 +1009,13 @@ bin results eventually in a hit to the crossed bin.
 - does not provide methods to build reusable scalable testbenches
 
 \end{comment}
+
+\subsubsection{SpinalHDL}
+
+SpinalHDL is a hardware construction language which is similar to Chisel and is also implemented in Scala. It has its own simulation and testing framework \cite{spinal}. It uses Verilator as a simulation backend and is tightly integrated with the hardware description language in Scala. It allows for the access of internal signals of the DUT. The simulation is driven through an event-based engine which runs in a C++ wrapper around the Verilator simulation and invokes Scala callbacks to drive the simulation. Each DUT has an associated clock domain which has methods to synchronize the simulation with clock edges. The callback mechanisms are used to add Verilog \ttt{always} like blocks, which are executed every time a certain event such as a positive edge occurs.
+
+While some work exists in the SpinalHDL ecosystem to provide more advanced verification features, such as the SpinalFuzz coverage guided fuzzer \cite{ruep2022spinalfuzz}, the framework does not provide the infrastructure for building complex testbenches like the UVM does.
+
 
 \subsubsection{PyUVM} %--------------------------------------------------------------------------------------------------------
 
@@ -1790,9 +1801,9 @@ story:
 
 \section{Scope} %==============================================================================================================
 
-The aim of this project is to provide a capable verification framework which takes inspiration from existing frameworks such as Cocotb, ChiselTest and ChiselVerify to provide a useful simulation interface and which takes inspiration from UVM to extend and co-design this simulation interface with a library of primitives for building reusable testbench infrastructure. This is quite a daunting task, involving many different aspects from simulators, to API design, to concurrent programming and verification methodology. In order to make this task achievable within the time frame of this project, the scope has to be narrowed down.
+The aim of this project is to provide a capable verification framework which takes inspiration from existing frameworks such as Cocotb, Chiseltest and ChiselVerify to provide a useful simulation interface and which takes inspiration from UVM to extend and co-design this simulation interface with a library of primitives for building reusable testbench infrastructure. This is quite a daunting task, involving many different aspects from simulators, to API design, to concurrent programming and verification methodology. In order to make this task achievable within the time frame of this project, the scope has to be narrowed down.
 
-In order to be able to build a library for reusable testbench infrastructure, some basic simulation functionality is strictly necessary. An interface to the simulation of an RTL design has to be provided. This interface has to allow for the control of the simulation by multiple threads in a safe manner such that multiple components like they are found in UVM can run concurrently. This multi-threaded simulation interface should allow for the creation of simple unit tests as they are found in ChiselTest and serve as the basis for complex structured testbenches as they are found in UVM.
+In order to be able to build a library for reusable testbench infrastructure, some basic simulation functionality is strictly necessary. An interface to the simulation of an RTL design has to be provided. This interface has to allow for the control of the simulation by multiple threads in a safe manner such that multiple components like they are found in UVM can run concurrently. This multi-threaded simulation interface should allow for the creation of simple unit tests as they are found in Chiseltest and serve as the basis for complex structured testbenches as they are found in UVM.
 
 While features like constrained-random stimulus generation and function coverage are essential to a modern verification framework, they are not part of the scope of this project. These features have already been explored in the context of Python and Scala and could be integrated into the new framework at a later point. 
 
@@ -2090,7 +2101,7 @@ Neither Vera nor Chiseltest support testing a design with multiple clock domains
 Chiseltest, the Chisel \ttt{Module} base type contains a single clock which is driven by Chiseltest. Due to the lack of
 fine-grained control of time in either language, clock ports can't be driven with arbitrary frequencies by user code either. Cocotb gives the user direct access to time and allows therefore for the creation of arbitrary and multiple clocks. It is up to the user to synchronize himself with the clock edges, which gives maximum flexibilty but also requires more work from the user. 
 
-For the verification framework, it is chosen to use a \ttt{step} interface to control time like in ChiselTest. It is
+For the verification framework, it is chosen to use a \ttt{step} interface to control time like in Chiseltest. It is
 however extended to support multiple clock domains. It is decided to drive all signals at the falling edge of the
 clock domain that they are associated with. An example for two clock domains is shown in Figure \ref{fig:wavedrom}. Inputs in a clock are changed at the falling edge of the clock by the user, while the sequential design reacts at the rising edge of the clock. Since inputs are actually driven \textit{after} all threads have finished their work, the affects of the change in input on mealy outputs, i.e. outputs which are a function of the input, are first visible in the \textit{next} clock cycle to the user. This is a limitation which simplifies the building of the simulation interface, but could be addressed in future extensions. The option of adding skews like in Vera, could also be added in the future. 
 \begin{figure}
@@ -2109,13 +2120,13 @@ the design. Inputs and outputs are associated with a data type. The data types a
 \cite{chiselpaper}. Finally, the inputs and outputs are associated with a clock and optionally a reset through the
 \ttt{domain} function.
 
-The API for interacting with the DUT is inspired by ChiselTest. Inputs provide \ttt{peek} and \ttt{poke} methods,
+The API for interacting with the DUT is inspired by Chiseltest. Inputs provide \ttt{peek} and \ttt{poke} methods,
 while outputs only provide a \ttt{peek} method. Clock ports have a \ttt{step(n)} method to advance the simulation by
 \ttt{n} clock cycles. An additional method \ttt{stepUntil(predicate: => Boolean)} is added which accepts a closure evaluating to a boolean. Calling this method will advance the simulation until the clock cycle where the closure evaluates to true. 
 
 
 
-Up until now, the DUT has been considered a black box which can only be interacted with through its ports. For some designs this can limit the observability severly. In Cocotb, the user can access any internal signal of the DUT. In the current ChiselTest version, access to internal signals is not possible. For the verification framework, is is chosen to allow limited acccess to internal signals. Only registers shall be accessable and it is only possible to read their value. In order to allow for the reading of internal registers, an additional function is added which can be used in an interface declaration to give access to a register. For instance, access to the state register could be given by declaring \ttt{val state = Reg(3.W, "state")} in the interface. The name provided in the string is the hierarchical path starting from inside the top module. To read the register, the \ttt{peekReg} method is used, which returns the integer value of the register.
+Up until now, the DUT has been considered a black box which can only be interacted with through its ports. For some designs this can limit the observability severly. In Cocotb, the user can access any internal signal of the DUT. In the current Chiseltest version, access to internal signals is not possible. For the verification framework, is is chosen to allow limited acccess to internal signals. Only registers shall be accessable and it is only possible to read their value. In order to allow for the reading of internal registers, an additional function is added which can be used in an interface declaration to give access to a register. For instance, access to the state register could be given by declaring \ttt{val state = Reg(3.W, "state")} in the interface. The name provided in the string is the hierarchical path starting from inside the top module. To read the register, the \ttt{peekReg} method is used, which returns the integer value of the register.
 
 
 %listing
@@ -3024,11 +3035,9 @@ The simulation runtime consists of Scala library code which bridges the interact
 \subsection{Interfacing the Verilator Model} %---------------------------------------------------------------------------------
 
 Verilator transpiles the SystemVerilog source code into a C++ class. A mechanism is needed by which the Scala test
-code can interact with an instance of this class. The JNA (java native access) library can be used to call native
+code can interact with an instance of this class. Here, inspiration is taken from the Chiseltest framework. The JNA (java native access) library can be used to call native
 functions from the java virtual machine (JVM). In C++, a simulation context class is used to group all objects associated with an simulation instance. The following set of functions is provided, which take the simulation context as an argument to interact
 with the simulation:
-
-\todo{in the impl: name when inspiration was drawn from existing work}
 
 \begin{itemize}
   \item \ttt{createSimContext\_XX} creates a new simulation context and return a pointer to it
@@ -3303,7 +3312,7 @@ separate fork for it, in which the body is run. The channels in the sequence are
 transactions and forward them to the driver, as well as send back the response from the driver. One can wait for a
 sequence to finish by calling \ttt{waitUntilDone} which awaits the fork executing the body.
 
-\todo{not all composition methods have been implemented}
+For now, only the concatenation, mixing and map operation are supported to compose sequences. These operations are implemented by creating sequences which yield the transactions of the input sequences in the desired order. 
 
 \subsection{Test Cases} %------------------------------------------------------------------------------------------------------
 
@@ -3337,10 +3346,8 @@ BFM. It also shows how internal registers may be read. The second use case demon
 framework handles multiple clock domains and how a concurrent testbench can be written. The third use case replicates
 a UVM-style testbench which the PyUVM authors use as an example, allowing for a comparison of the implementation in
 Scala and Python. The fourth use case replicates verification blocks for an APB interface which are implemented in
-PyUVM and serve as verification infrastructure for the Didactic SoC mutli-project chip developed as part of the
-Edu4Chip project \cite{edu4chip}.
-
-\todo{since focus is on improving usability and showcasing use of modern lang -> no performance eval}
+PyUVM and serve as verification infrastructure for the Didactic SoC chip developed as part of the
+Edu4Chip project \cite{edu4chip}. 
 
 \section{Use Case 1: Greatest Common Divisor} %--------------------------------------------------------------------------------
 
@@ -3447,7 +3454,6 @@ PyUVM testbench contains 1024 of these tokens, while the scala testbench contain
 
 % TinyAlu.scala 276 (wc 877)
 
-\todo{parallel seq is not working for now}
 
 \section{Use Case 4: APB Verification IP} %---------------------------------------------------------------------------------
 
@@ -3466,11 +3472,11 @@ This thesis has proposed a verification framework for SystemVerilog designs whic
   % - name how they could be improved
   % - include evaluation use cases
 
-The frameworks primary interface to the simulation is influenced by the ChiselTest framework. Most importantly a \ttt{step} interface is used to advance the simulation by whole clock cycles instead of synchronizing the simulation thread directly with clock edges. Code in the verification framework can only ever run at the falling edge of the clock. This is less flexible that what is possible in SystemVerilog and Cocotb, but it works well for sequential designs which are the most common case. 
+The frameworks primary interface to the simulation is influenced by the Chiseltest framework. Most importantly a \ttt{step} interface is used to advance the simulation by whole clock cycles instead of synchronizing the simulation thread directly with clock edges. Code in the verification framework can only ever run at the falling edge of the clock. This is less flexible that what is possible in SystemVerilog and Cocotb, but it works well for sequential designs which are the most common case. 
 
 One issue in the framework is the handling of mealy outputs, i.e. outputs which depend on the inputs. Their value is only visible to the testbench after the next clock edge because inputs are driven after simulation threads have finished their work. This should be fixed such that the view of the simulation threads accuratly represents the behavior of the DUT.
 
-One contribution of the framework is the support for multiple clocks using the \ttt{step} interface. This was not possible in the ChiselTest framework. To handle the correct driving of inputs relative to their clocks, clock domain declarations are necessary. Another improvement over ChiselTest is the ability to control the periods of clocks and the simulation time resolution. These are features which SystemVerilog and Cocotb already offer due to their lower level timing control. One final improvement over the ChiselTest framework is the ability to read internal state of the DUT. This feature is again also present in Cocotb and SystemVerilog. The access to internal state is however untyped and does not allow for depositing values. This should be added to fully replicate the capabilities of SystemVerilog and Cocotb.
+One contribution of the framework is the support for multiple clocks using the \ttt{step} interface. This was not possible in the Chiseltest framework. To handle the correct driving of inputs relative to their clocks, clock domain declarations are necessary. Another improvement over Chiseltest is the ability to control the periods of clocks and the simulation time resolution. These are features which SystemVerilog and Cocotb already offer due to their lower level timing control. One final improvement over the Chiseltest framework is the ability to read internal state of the DUT. This feature is again also present in Cocotb and SystemVerilog. The access to internal state is however untyped and does not allow for depositing values. This should be added to fully replicate the capabilities of SystemVerilog and Cocotb.
 
 A disadvantage of the framework is that the interface of the DUT has to be replicated from the RTL to Scala. Since interfaces should be defined early in the design process and thus stay stable, this should not be a major limitation.
 
@@ -3495,7 +3501,7 @@ A disadvantage of the framework is that the interface of the DUT has to be repli
 % - this is not strictly necessary and a more direct integration with the simulation environment would make sense in the long run
 % - especially since unlike in cocotb, the actual asynchronous operations are abstracted away (i.e. no await calls in tb code)
 
-The implementation of the framework uses virtual threads, a relatively new feature in the UVM, to provide lightweight concurrency. ChiselTest uses normal operating system threads which have more overhead. Furthermore, ChiselTest actually serializes the execution of threads, while the verification framework lets all threads released in a clock cycle run truely concurrently. This is also in contrast to Cocotb, where coroutines with cooperative multitasking are used. The Gears library was used to provide a set of higher level concurrent abstractions such as futures and channels. This is however not strictly necessary and a more direct integration of the management of threads with the simulation environment might be a better solution in the long run which allows for greater control over the management of the threads. This is especially true, because all of the asynchronous functionality of the Gears library like the \ttt{await} calls are hidden from the user between the API of the framework.
+The implementation of the framework uses virtual threads, a relatively new feature in the UVM, to provide lightweight concurrency. Chiseltest uses normal operating system threads which have more overhead. Furthermore, Chiseltest actually serializes the execution of threads, while the verification framework lets all threads released in a clock cycle run truely concurrently. This is also in contrast to Cocotb, where coroutines with cooperative multitasking are used. The Gears library was used to provide a set of higher level concurrent abstractions such as futures and channels. This is however not strictly necessary and a more direct integration of the management of threads with the simulation environment might be a better solution in the long run which allows for greater control over the management of the threads. This is especially true, because all of the asynchronous functionality of the Gears library like the \ttt{await} calls are hidden from the user between the API of the framework.
 
 % context params
 % - the usage of gears requires the Async context parameter to be added to all functions which interact with the simulation
@@ -3506,7 +3512,7 @@ The implementation of the framework uses virtual threads, a relatively new featu
 % - context parameters is however the prefered way in scala 3 to provide context dependent values which a simulation conext is
 % - in chiseltest, calling some methods without the sim context being defined causes runtime errors whereas in this framework it is a compile time error
 
-One issue with the current implementation of the framework is that context parameters are polluting a lot of the code. This is especially the case due to the need to both accept the simulation as well as the Gears async context parameter in all functions which interact with the simulation. If the Gears library was removed, the Async context parameter could be removed as well and its functionality could be integrated into the simulation context. Having to accept one context parameter already seems like a more acceptable solution. As an alternative, the Scala context parameter system could be completely avoided and dynamic variables could be used instead to provide context. This is how the simulation controller is accessed in ChiselTest. This has the disadvantage that accesses outside of a context which provides simulation capabilities, i.e. a test case, would cause runtime errors instead of compile time errors as in the current implementation. 
+One issue with the current implementation of the framework is that context parameters are polluting a lot of the code. This is especially the case due to the need to both accept the simulation as well as the Gears async context parameter in all functions which interact with the simulation. If the Gears library was removed, the Async context parameter could be removed as well and its functionality could be integrated into the simulation context. Having to accept one context parameter already seems like a more acceptable solution. As an alternative, the Scala context parameter system could be completely avoided and dynamic variables could be used instead to provide context. This is how the simulation controller is accessed in Chiseltest. This has the disadvantage that accesses outside of a context which provides simulation capabilities, i.e. a test case, would cause runtime errors instead of compile time errors as in the current implementation. 
 
 % interfacing with Sv
 % - the RTL design is simulated using a Verilator model
@@ -3520,7 +3526,7 @@ One issue with the current implementation of the framework is that context param
 % - what should be done is to limit the number of calls to the native code
 %   - set multiple inputs at once
 
-The RTL design is simulated using a Verilator model. Like in ChiselTest, native functions interacting with the C++ model are called through JNA. One advantage that this simulation approach has, which ChiselTest and Cocotb share, over SystemVerilog is that simulation model compilation is decoupled from the compilation of the testbench. This means that a change in the testbench does not require a recompilation of the design source code. This is especially useful for large designs with long compilation times. One disadvantage of implementing the simulation control in Scala is that calling native C++ code is expensive since JVM parameters have to translated to native ones. In the simulation framework from SpinalHDL, the simulation runtime is moved to C++. The situation is as such reversed, with the C++ code calling Scala closures to execute the user code. It would be interesting to measure how this affects performance compared to the current implementation. In general, the number of calls to the native code should be limited. For instance, setting multiple inputs at once instead of one by one could be a good optimization.
+The RTL design is simulated using a Verilator model. Like in Chiseltest, native functions interacting with the C++ model are called through JNA. One advantage that this simulation approach has, which Chiseltest and Cocotb share, over SystemVerilog is that simulation model compilation is decoupled from the compilation of the testbench. This means that a change in the testbench does not require a recompilation of the design source code. This is especially useful for large designs with long compilation times. One disadvantage of implementing the simulation control in Scala is that calling native C++ code is expensive since JVM parameters have to translated to native ones. In the simulation framework from SpinalHDL, the simulation runtime is moved to C++. The situation is as such reversed, with the C++ code calling Scala closures to execute the user code. It would be interesting to measure how this affects performance compared to the current implementation. In general, the number of calls to the native code should be limited. For instance, setting multiple inputs at once instead of one by one could be a good optimization.
 
 % unit tests
 % - small unit tests are possible through the Simulation entry point
@@ -3528,7 +3534,7 @@ The RTL design is simulated using a Verilator model. Like in ChiselTest, native 
 % - tests are declared with a text and are grouped together
 % - this is not possible in the framework but could be added in the future
 
-The first two use cases demonstrate the usage of the verification framework for small directed unit tests. For now these tests are however not organized in any way and provide no mechanism of grouping and labeling tests. ChiselTest integrates with the ScalaTest framework to provide this functionality. This could be added to the verification framework in the future.
+The first two use cases demonstrate the usage of the verification framework for small directed unit tests. For now these tests are however not organized in any way and provide no mechanism of grouping and labeling tests. Chiseltest integrates with the ScalaTest framework to provide this functionality. This could be added to the verification framework in the future.
 
 % complex TB
 % - the framework ended up orienting itself closely on UVM
@@ -3643,7 +3649,7 @@ Generally, it can be seen that the simplifications made to the UVM also can caus
 % - this limits the integration with existing scala solutions
 % - for instance, the framework can not be used with chisel
 
-One very binding design choice is that of the language. The framework was implemented in Scala 3. Since the aim was to explore hardware verification in a modern language, the newest language features should be available. This however limits the integration with existing Scala solutions at the current point. All Chisel and ChiselTest infrastructure is at the time of writing far away from achieving compatibility with Scala 3. Since a Scala verification framework would be more useful if it could be used with Chisel, this is a severe limitation.
+One very binding design choice is that of the language. The framework was implemented in Scala 3. Since the aim was to explore hardware verification in a modern language, the newest language features should be available. This however limits the integration with existing Scala solutions at the current point. All Chisel and Chiseltest infrastructure is at the time of writing far away from achieving compatibility with Scala 3. Since a Scala verification framework would be more useful if it could be used with Chisel, this is a severe limitation.
 
 %3. collect future work and prioritize different tasks
 % - performance evaluation
