@@ -1855,23 +1855,23 @@ in the background then. Maybe they can be described more shallow}
 
 The first choice to be made is, which language the verification framework should be integrated into. On the one hand,
 this can be seen as an implementation choice, but on the other hand, the chosen language may limit the design choices
-in terms of capabilities and syntax. Therefore the decision is made prior to designing the functionality of the
+in terms of capabilities and syntax. Therefore, the decision is made prior to designing the functionality of the
 framework. The examples
 which have been discussed were cocotb and PyUVM using Python, but also Scala being used by Chiseltest and
-ChiselVerify. Before reflecting over these languages and other options, it is also worth considering the advantages
+ChiselVerify. Before reflecting on these languages and other options, it is also worth considering the advantages
 and disadvantages of embedding a verification framework into another language compared to developing a standalone
-language such as Vera or even integrating it into the design language itself such as it is the case in SystemVerilog.
+language such as Vera or even integrating it into the design language itself, as is the case in SystemVerilog.
 
 One of the primary advantages of embedding a verification framework into a general-purpose language instead of
-developing a standalone hardware verification language or a shared design and verification language, is the effort
+developing a standalone hardware verification language or a shared design and verification language is the effort
 associated with developing all the necessary tools and infrastructure. A standalone language requires its own
-compiler or interpreter which will have to be maintained. Any additional functionality which is not part of the
-language itself has to be developed from the ground since no library ecosystem exists, as it is the case for
-general-purpose languages. Additionally, many modern languages provide a dependency management system, which can be
-leveraged to share and reuse code. Finally, quality of life features such as IDE support of the host language can
+compiler or interpreter which will have to be maintained. Any additional functionality, which is not part of the
+language itself, has to be developed from the ground since no library ecosystem exists, as is the case for
+general-purpose languages. In addition, many modern languages provide a dependency management system, which can be
+used to share and reuse code. Finally, quality-of-life features, such as IDE support of the host language, can
 also be leveraged.
 
-When performance is considered, a combined design and verification language has a clear advantage, since everything
+When performance is considered, a combined design and verification language has a clear advantage since everything
 can be compiled and optimized together. In a standalone language or an embedded language, a simulation has to be
 interfaced by a runtime. Depending on the implementation, this can lead to a significant performance overhead.
 
@@ -1885,10 +1885,10 @@ the verification constructs a whole language has to be learned.
 Due to the time constraints of this thesis, and the focus on higher level infrastructure for testbenches, embedding a
 verification language into a general-purpose programming language is the only realistic choice. When it comes to the
 choice of a host language, several factors have to be considered. The language should have object-oriented features
-to allow for inheritance based composability. It would be interesting to also have functional programming features
-such as closures and higher-order functions to be able to experiment with different design patterns. While the
+to allow for inheritance-based composability. It would be interesting to also have functional programming features,
+such as closures and higher-order functions, to be able to experiment with different design patterns. While the
 language should be performant, it should not be a low-level language with explicit memory management, since this
-would introduce the chances of memory bugs. Instead a garbage collected language would be preferable.
+would introduce the chances of memory bugs. Instead, a garbage-collected language would be preferable.
 
 Python is an interpreted language with dynamic typing, object-oriented features and closures. Java is a compiled
 object-oriented language with garbage collection running on a virtual machine. A modern alternative to Java is Scala,
@@ -1899,21 +1899,21 @@ and a more concise syntax, making it the preferred choice. This leaves Python an
 Python has the advantage of being easier to learn and having a larger ecosystem of libraries, while Scala generally
 offers better performance. One significant difference between the two is that Python is dynamically typed, while
 Scala is statically typed. The dynamic typing of Python can make it easy to write code, but it also means that
-basically all errors are only caught at runtime. For potentially very large testbench systems with long running
+all errors are only caught at runtime. For potentially very large testbench systems with long-running
 simulations, this should be considered a drawback. Considering this alongside Scala's flexibility in implementing
 embedded languages with a natural syntax, it is decided to implement the verification framework in Scala.
 
 Scala has received a major update with the release of Scala 3. This new version includes an overhaul of the syntax to
 make it more lightweight. It also re-envisioned many of the more advanced features of the language such as contextual
-abstractions, which allow the passing of implicit parameters to functions, as well as metaprogramming features. The
+abstractions, which allow the passing of implicit parameters to functions, as well as meta-programming features. The
 new version also includes a more powerful type system, which allows for more expressive types and more type-level
-programming. While Scala 3 is clearly the more future-proof choice and offers many improvements over Scala 2, many of
+programming. While Scala 3 is clearly the more future-proof choice and offers many improvements over Scala 2, much of
 the existing work in the Scala ecosystem such as Chisel and Chiselverify is incompatible with Scala 3. Since the
 purpose of this project is to explore the integration of a verification framework into a modern programming language,
-this language should be as expressive and feature rich as possible in order to explore all possibilities. Especially
+this language should be as expressive and feature-rich as possible to explore all possibilities. Especially
 the improved type system in Scala 3 which offers new ways to compose and extend types is of interest for the
 development of a verification framework with a focus on reusability. Therefore, Scala 3 is chosen as the host
-language for the verification framework, in spite of the incompatibility with existing Scala 2 projects.
+language for the verification framework, despite the incompatibility with existing Scala 2 projects.
 
 \begin{comment}
   DSL pros:
@@ -1957,48 +1957,48 @@ HVL pros:
 
 \section{Simulation Backend} %----------------------------------------------------------------------------------------------
 
-Another key decision which has to be made, concerns the simulation backend which the verification framework will use.
+Another key decision which has to be made concerns the simulation backend which the verification framework will use.
 Like the choice of host language, this has implications on the design of the framework, such as whether 4-state logic
 or only 2-state logic is supported.
-The decision is influenced by the choice of supported HDL's, ease of interfacing with the simulation and
+The decision is influenced by the choice of supported HDLs, ease of interfacing with the simulation and
 finally of course performance. Since the project itself aims to be open-source, a proprietary simulator
 is not an option.
 
 The two most popular open-source simulators are Icarus Verilog and Verilator. Icarus Verilog
 compiles a Verilog design into its own intermediate representation which can be executed by a separate simulation
 runtime engine, a kind of interpreter \cite{iverilog}. Using Icarus Verilog as a simulation backend would require
-interfacing with this simulation runtime. It is built to support nearly all of the IEEE-1364-2005 Verilog standard,
+interfacing with this simulation runtime. It is built to support nearly all of the IEEE-1364-2005 Verilog standards
 but also supports some of the SystemVerilog features of the IEEE1800-2012 standard.
 
 Verilator, on the other hand, transpiles the Verilog design into C++ or SystemC classes which can then be compiled
 to machine code \cite{verilator}. This makes Verilator very suitable for co-simulation with other models
-or software components, since it can be easily interfaced at the C/C++ level. The only interface to a verilated
+or software components since it can be easily interfaced at the C/C++ level. The only interface to a verilated
 model, apart from setting inputs and reading outputs, is the \texttt{eval} function which runs a static schedule to
 update the model's state. The model is used simply by creating an instance of the associated C++ class, assigning the
 input variables values and evaluating the model. Since the model is in the end compiled to a native executable with
 no additional simulation
 runtime, the performance of Verilator is significantly better than Icarus Verilog, with speedups of 100x on a single
-thread being reported by the developers \cite{verilator}. Verilator supports nearly fully the IEEE 1364-2005
+thread being reported by the developers' \cite{verilator}. Verilator supports nearly fully the IEEE 1364-2005
 standard, partially the IEEE 1800-2005 standard and some very specific features of newer standards. The IEEE
 1800-2005 standard includes SystemVerilog features, of which some like classes and interfaces are supported by Verilator.
 
 Before version 5, Verilator ignored delay statements in the Verilog source code which are necessary to add timing
-information to a simulation. The newer version now support this feature, thus matching the capabilities of Icarus Verilog.
+information to a simulation. The newer version now supports this feature, thus matching the capabilities of Icarus Verilog.
 
 One feature not supported by Verilator is the use of 4-state logic. Verilator only supports 2-state logic and uses
 static analysis of the source code instead to identify initialization issues and warn the user about them. Icarus
 Verilog supports 4-state logic as defined in the Verilog standard.
 
 An new alternative to Verilator is ESSENT, a high-performance Verilog simulator, which is capable of doubling the
-performance of Verilator \cite{beamer2021essent}. It does however use FIRRTL, an intermediate representation for RTL
+performance of Verilator \cite{beamer2021essent}. It does, however, use FIRRTL, an intermediate representation for RTL
 designs, as input. The Slang SystemVerilog compiler \cite{slang} is capable of translating SystemVerilog designs to
 FIRRTL, but does not support all features of SystemVerilog yet. The additional translation step from SystemVerilog to
 FIRRTL is a disadvantage compared to the other simulator options. This fact alongside the maturity of both Icarus
-Verilog and Verilator, makes ESSENT not the prefered choice for the simulation backend.
+Verilog and Verilator, makes ESSENT not the preferred choice for the simulation backend.
 
-In terms of language support and capabilities, both simlators are close to each other. The lacking support of 4-state
+In terms of language support and capabilities, both simulators are close to each other. The lacking support of 4-state
 logic in Verilator is deemed acceptable, since initialization errors are still caught. Considering the ease of
-integrating verilated models with other software components in addition to the
+integrating verilated models with other software components, in addition to the
 superior performance, Verilator is identified as the better option for a simulation backend of the verification framework.
 
 %\section{Requirements} %=======================================================================================================
@@ -2006,37 +2006,35 @@ superior performance, Verilator is identified as the better option for a simulat
 \section{Simulation Interface} %--------------------------------------------------------------------------------------------
 
 A test writer can interact with a simulation in two ways. On the one hand, the ports of DUT can be accessed, i.e.
-driving inputs or reading the state of a port, and on the other hand the advancement of time in the simulation can be
+driving inputs or reading the state of a port and on the other hand, the advancement of time in the simulation can be
 controlled. Concerning the former, a mechanism of referencing ports is required. Furthermore, each port has to be
 associated with a type which decides what values a port is allowed to be driven with and how the bits sampled on a
-port should be interpreted, e.g. as a signed or unsigned integer.
+port should be interpreted, e.g., as a signed or unsigned integer.
 
 Controlling time in a simulation is about letting time progress until points of interest. These points of interest can
-be absolute points in time, but also events like signal transitions. At the most simple level, a simulation interface
-can allow for delays which for instance advance time by a certain amount of nanoseconds. This becomes quickly
-tedious, since most of the time, one is interested in events such as clock edges which would have to be checked for
-manually. A more powerful abstraction is to let the user wait for events like rising edges of signals as a
+be absolute points in time but also events like signal transitions. At the most simple level, a simulation interface
+can allow for delays which, for instance, advance time by a certain amount of nanoseconds. This becomes quickly
+tedious since most of the time one is interested in events such as clock edges, which would have to be checked for
+manually. A more powerful abstraction is to let the user wait for events, like rising edges of signals, as a
 synchronization point. The intent of the test code becomes more clear this way. However, the timing of when inputs
 should be driven and outputs should be sampled relative to the clock edges still has to be managed explicitly by the
 user. This mechanism is what SystemVerilog and Cocotb provide.
 
-In a sequential digital design, the system behavior is defined by the clock. Each clock cycle, new inputs can be
+In a sequential digital design, the system behavior is defined by the clock. In each clock cycle, new inputs can be
 applied and lead to a state change once the active edge of the clock occurs. A new abstraction can thus be created,
-where in each clock cycle the test code can sample outputs to decide new inputs and then advance the simulation to
-the next clock cycle. This way, the test code is always executed in a time region where the clock is stable and the
+where in each clock cycle, the test code can sample outputs to decide new inputs and then advance the simulation to
+the next clock cycle. This way, the test code is always executed in a time region where the clock is stable, and the
 user does not have to worry about aligning the simulation time to the clock edges. The Vera \cite[Sec. 7]{flake2020a}
 HVL and the Chiseltest \cite{chiseltest} framework both use this approach. In Vera, the user controls time using the
 \ttt{@N} syntax, where \ttt{N} is the number of clock cycles to advance time by. In Chiseltest, the
 \ttt{clock.step(N)} method is used to advance time by \ttt{N} clock cycles. For purely sequential designs, this
 interface allows for concise and readable test code.
 
-It does however delegate the responsibility of driving the inputs and sampling the outputs at the correct time to the simulation
+It does, however, delegate the responsibility of driving the inputs and sampling the outputs at the correct time to the simulation
 runtime. The question is, when are the correct times to sample and
 drive? Chiseltest has a simple solution: The time resolution of a simulation is fixed to \SI{1}{ps} while the clock
 is fixed to a \SI{2}{ps} period. This means that the simulation is always advanced from falling edge to falling edge
-of the clock. In Vera on the other hand, the user can specify skews relative to clock edges for when inputs should be
-driven and outputs should be sampled on a per signal basis. This allows for more accurate timing modeling, which may
-for instance be necessary in gate-level simulations with delay models of the gates.
+of the clock. In Vera, on the other hand, the user can specify skews relative to clock edges for when inputs should be driven, and outputs should be sampled on a per-signal basis. This allows for more accurate timing modeling, which may, for instance, be necessary in gate-level simulations with delay models of the gates.
 
 % The question is however, when is the test
 % code actually run within a clock cycle? It should be run after all outputs have been sampled to have the newest
@@ -2066,12 +2064,11 @@ f
 %multi-clock designs
 Neither Vera nor Chiseltest support testing a design with multiple clock domains \cite[Sec.
 7]{flake2020a}\cite{chiseltest_multiclock}. In Vera, the interface to the DUT is associated with a single clock. In
-Chiseltest, the Chisel \ttt{Module} base type contains a single clock which is driven by Chiseltest. Due to the lack of
-fine-grained control of time in either language, clock ports can't be driven with arbitrary frequencies by user code either. Cocotb gives the user direct access to time and allows therefore for the creation of arbitrary and multiple clocks. It is up to the user to synchronize himself with the clock edges, which gives maximum flexibilty but also requires more work from the user. 
+Chiseltest, the Chisel \ttt{Module} base type contains a single clock, which is driven by Chiseltest. Due to the lack of
+fine-grained control of time in either language, clock ports can't be driven with arbitrary frequencies by user code either. Cocotb gives the user direct access to time and, therefore, allows for the creation of arbitrary and multiple clocks. It is up to the user to synchronize himself with the clock edges, which gives maximum flexibility but also requires more work from the user. 
 
-For the verification framework, it is chosen to use a \ttt{step} interface to control time like in ChiselTest. It is
-however extended to support multiple clock domains. It is decided to drive all signals at the falling edge of the
-clock domain that they are associated with. An example for two clock domains is shown in Figure \ref{fig:wavedrom}. Inputs in a clock are changed at the falling edge of the clock by the user, while the sequential design reacts at the rising edge of the clock. Since inputs are actually driven \textit{after} all threads have finished their work, the affects of the change in input on mealy outputs, i.e. outputs which are a function of the input, are first visible in the \textit{next} clock cycle to the user. This is a limitation which simplifies the building of the simulation interface, but could be addressed in future extensions. The option of adding skews like in Vera, could also be added in the future. 
+For the verification framework, it is chosen to use a \ttt{step} interface to control time like in ChiselTest. It is, however, extended to support multiple clock domains. It is decided to drive all signals at the falling edge of the
+clock domain that they are associated with. An example for two clock domains is shown in Figure \ref{fig:wavedrom}. Inputs in a clock are changed at the falling edge of the clock by the user, while the sequential design reacts at the rising edge of the clock. Since inputs are actually driven \textit{after} all threads have finished their work, the effect of the change in input on mealy outputs, i.e., outputs that are a function of the input, is first visible to the user in the \textit{next} clock cycle. This is a limitation which simplifies the building of the simulation interface, but could be addressed in future extensions. The option of adding skews like in Vera, could also be added in the future. 
 \begin{figure}
 \centering
 \includegraphics[width=\textwidth]{diagrams/wavedrom.pdf}
@@ -2081,8 +2078,8 @@ clock domain that they are associated with. An example for two clock domains is 
 
 In order to support multiple clocks, the explicit definition of periods has to be possible. This information will be captured in an interface definition which captures the inputs and outputs of the DUT in
 Scala. While Cocotb can take advantage of dynamic typing to automatically add fields to the DUT object at runtime,
-Scala requires us to declare a class for the DUT statically. This interface defintion should be declared as a class.
-It has to point to the underlying source files and contains fields for each input and output of the DUT. The adopted
+Scala requires us to declare a class for the DUT statically. This interface definition should be declared as a class.
+It has to point to the underlying source files and contain fields for each input and output of the DUT. The adopted
 syntax for declaring an interface is shown in Listing \ref{lst:interface}. Clock ports and reset ports are inputs to
 the design. Inputs and outputs are associated with a data type. The data types are inspired by Chisel
 \cite{chiselpaper}. Finally, the inputs and outputs are associated with a clock and optionally a reset through the
@@ -2094,7 +2091,7 @@ while outputs only provide a \ttt{peek} method. Clock ports have a \ttt{step(n)}
 
 
 
-Up until now, the DUT has been considered a black box which can only be interacted with through its ports. For some designs this can limit the observability severly. In Cocotb, the user can access any internal signal of the DUT. In the current ChiselTest version, access to internal signals is not possible. For the verification framework, is is chosen to allow limited acccess to internal signals. Only registers shall be accessable and it is only possible to read their value. In order to allow for the reading of internal registers, an additional function is added which can be used in an interface declaration to give access to a register. For instance, access to the state register could be given by declaring \ttt{val state = Reg(3.W, "state")} in the interface. The name provided in the string is the hierarchical path starting from inside the top module. To read the register, the \ttt{peekReg} method is used, which returns the integer value of the register.
+Up until now, the DUT has been considered a black box that can only be interacted with through its ports. For some designs, this can severely limit observability. In Cocotb, the user can access any internal signal of the DUT. In the current ChiselTest version, access to internal signals is not possible. The verification framework is chosen to allow limited access to internal signals. Only registers shall be accessible, and it is only possible to read their value. In order to allow for the reading of internal registers, an additional function is added which can be used in an interface declaration to give access to a register. For instance, access to the state register could be given by declaring \ttt{val state = Reg(3.W, "state")} in the interface. The name provided in the string is the hierarchical path starting from inside the top module. To read the register, the \ttt{peekReg} method is used, which returns the integer value of the register.
 
 
 %listing
@@ -2178,21 +2175,21 @@ sampled latest in time
 \section{Concurrency} %-----------------------------------------------------------------------------------------------------
 
 Concurrency is a necessary feature for complex testbenches. It makes it easy to separate different tasks into
-separated units which progress through time in their own manner, for instance waiting for different transitions to
-occur. For hardware designs with multiple interfaces this becomes especially important, since each interface may be
+separated units that progress through time in their own manner, for instance, waiting for different transitions to
+occur. For hardware designs with multiple interfaces, this becomes especially important since each interface may be
 controlled by its own thread instead of having to interleave the control of all interfaces in a single thread.
 
 SystemVerilog and Chiseltest both use a fork-join model for concurrency. A code block can be executed in a new thread
-by the keyword \ttt{fork}. The parent thread will continue its execution after spawning the new thread, but may wait
+by the keyword \ttt{fork}. The parent thread will continue its execution after spawning the new thread but may wait
 for the spawned thread to finish by calling \ttt{join}. A thread waiting for another will sleep until the clock cycle
 when the child thread finishes. This is a simple model which allows for easy parallelization of tasks.
 
 The same model shall be used for the verification framework due to its familiarity and ease of use. One question
-which has to be answered is how the running of the threads is coordinated with the simulation. Here the following
+that must be answered is how the running of the threads is coordinated with the simulation. Here the following
 semantics are chosen: Threads can be in two states, running or sleeping. While running, they can interact with the
 DUT, for instance by driving signals or sampling outputs. Once they reach a \ttt{step} command in their code, they
 will sleep and inform the simulation when they should be woken up again. The simulation will wait for all running
-threads to reach a sleep point before advancing to the next clock cycle where a thread wants to be woken up.
+threads to reach a sleep point before advancing to the next clock cycle, where a thread wants to be woken up.
 
 Since all threads run concurrently, the ordering of \ttt{peek} and \ttt{poke} accesses is non-deterministic. The
 accesses are serialized in the simulation runtime. Multiple \ttt{poke} accesses to the same signal will cause a
@@ -2202,20 +2199,20 @@ To be certain that all \ttt{poke} commands have occurred before the monitor thre
 step, since this may invalidate the value another thread received when calling \ttt{peekMonitor}.
 
 In the UVM, components communicate via TLM channels. TLM channels by themselves only facilitate method invocation by
-one component on another. Only when a TLM FIFO is used, is communication between to concurrently running threads
+one component on another. Only when a TLM FIFO is used is communication between to concurrently running threads
 facilitated. For the verification framework, a simplification is made such that only one channel primitive exists. This
-channel allows for sending and receiving of messages between threads. The channel is not buffered, meaning that the
+channel allows for the sending and receiving of messages between threads. The channel is not buffered, meaning that the
 sender and receiver will be synchronized
-on the exchange of a message. While waiting for the sender or receiver, depending on the operation, the thread will
+in the exchange of a message. While waiting for the sender or receiver, depending on the operation, the thread will
 be put to sleep until the clock cycle where the message is sent or received. This could be the same clock cycle it
 went to sleep or a later one.
 
-For the communication between components, it is however benificial to think about component ports and connecting
-them, as it is done in the UVM. Like this, it is not necessary to directly pass a reference to a channel object to
-the components which should be connected through the channel. Instead, both declare ports, one a receiver port and
+For communication between components, it is beneficial to think about component ports and connecting
+them, as is done in the UVM. Like this, it is unnecessary to directly pass a reference to a channel object to
+the components that should be connected through the channel. Instead, both declare ports, one a receiver port and
 one a sender port. The parent component can then connect the two ports.
 
-The simulation starts in one root thread which can be forked into multiple threads. The simulation finishes when the
+The simulation starts in one root thread, which can be forked into multiple threads. The simulation finishes when the
 root thread exits. It can use the \ttt{join} functionality to wait for other threads to exit before finishing the simulation.
 
 \begin{comment}
@@ -2244,54 +2241,52 @@ root thread exits. It can use the \ttt{join} functionality to wait for other thr
 Test phases are a way to structure the execution of the testbench, essentially adding a set of synchronization points
 to the testbench such that different components agree when a certain functionality should be executed. The UVM
 defines an extensive set of phases to standardize when exactly which tasks should be handled. The purpose of the run
-phases like \textit{reset}, \textit{configure} and \textit{main} is clear: They add certain checkpoints in the
-simulation to synchronize components, and allow better inheritance based composition. A base test could for instance
+phases, like \textit{reset}, \textit{configure}, and \textit{main}, is clear: They add certain checkpoints in the
+simulation to synchronize components and allow better inheritance-based composition. A base test could, for instance,
 define what should be done in the \textit{reset} phase, while specific test cases only have to implement the test
 code in the \textit{main} phase.
 
 In \cite{uvm_phases}, it is argued that having multiple build phases is necessary to ensure that components exist
-before they are referenced. Since UVM components are classes and can be instantiated at any time in constrast to
-modules which are static, it is argued to be necessary to add these phases for coordination and avoiding errors. The build phases are however not run in parallel. This means, the order in which components are created and connected is deterministic and known.
+before they are referenced. Since UVM components are classes and can be instantiated at any time, in contrast to
+modules that are static, it is argued to be necessary to add these phases for coordination and avoiding errors. The build phases are, however, not run in parallel. This means that the order in which components are created and connected is deterministic and known.
 
-In this framework, a simpler approach is chosen which builds on the fact, that in the component hieararchy, a component
-should only ever reference its child components and do so only after they have been created. Scala encourages the use of
+In this framework, a simpler approach is chosen, which builds on the fact that in the component hierarchy, a component
+should only reference its child components and do so only after they have been created. Scala encourages the use of
 the class constructor to fully initialize an object. The declaration of fields and the construction code are merged
 inside the class body. Referencing fields before they have been initialized results in an error. The constructor of a
 component should start by preparing the parameters for its child components and then instantiate them. After the
-child components constructors have returned, they can be assumed to be fully initialized. It is thus possible to
+child components' constructors have returned, they can be assumed to be fully initialized. It is thus possible to
 connect channels of child components. All this
-code will run in zero simulation time and instantiating the top-level component will result in a fully constructed
+code will run in zero simulation time, and instantiating the top-level component will result in a fully constructed
 and connected testbench hierarchy. Due to Scala's way of handling constructor code and field definitions, it is
 impossible to reference uninitialized components using this approach. When inheritance is used, Scala automatically
 calls the super-class constructor before the one of the derived one, such that all fields of the super-class can be
 assumed to be initialized in the constructor of the derived class.
 
-The reason for having a \textit{end of elaboration} phase according to \cite[Ch 4.6]{mehta2018asic} is to finalize
-the configuration of components. It is decided that all configuration of a component should happen in the constructor
-of its parent, thus removing the need of the phase. A \textit{start of simulation} phase could be useful for printing
-of configuration and test information according to \cite[4.6]{mehta2018asic}. Since this is not strictly
+The reason for having an \textit{end of elaboration} phase, according to \cite[Ch 4.6]{mehta2018asic}, is to finalize
+the configuration of components. It is decided that all configuration of a component should happen in its parent's constructor, thus removing the need for the phase. A start of the simulation phase could be useful for printing
+configuration and test information, according to \cite[4.6]{mehta2018asic}. Since this is not strictly
 necessary, it is left out of the framework.
 
-The run phase is called \textit{simulation} phase and the main phase is called the \textit{test} phase in the
-verification framework. In the UVM, the sub-phases of the run phases each have their pre and post variant running
+The run phase is called the \textit{simulation} phase, and the main phase is called the \textit{test} phase in the
+verification framework. In the UVM, the sub-phases of the run phases each have their pre- and post-variant running
 immediately before and
-after the associated phase. According to \cite[Ch 4.6]{mehta2018asic}, not much use is anticipated for these phases
-and they are left out, too.
+after the associated phase. According to \cite[Ch 4.6]{mehta2018asic}, not much use is anticipated for these phases, and they are left out, too.
 
-This leaves the cleanup phases \textit{extract}, \textit{check}, \textit{report} and \textit{final} which are run \textit{after} the simulation has finished. It is necessary
-to have at least one phase after the simulation has ended to give components a chance to analyze observed
-transactions and coverage statistics in order to report results. Viewing phases as synchronization constructs, the
-division into multiple phases is thus not strictly necesary. What it does facilitate is composability through
+This leaves the cleanup phases: \textit{extract}, \textit{check}, \textit{report}, and \textit{final}, which are run \textit{after} the simulation has finished. It is necessary
+to have at least one phase left after the simulation has ended to give components a chance to analyze observed
+transactions and coverage statistics to report results. Viewing phases as synchronization constructs, the
+division into multiple phases is thus not strictly necessary. What it does facilitate is composability through
 inheritance. A component could use the \textit{extract} implementation of its super-class and only specify new
-behavior for the \textit{report} phase. However, this could also be achieved by the super-class declaring a
+behavior for the \textit{report} phase. However, this could also be achieved by the super-class declaring an
 \textit{extract} method independent of the phasing, which the derived class can use in its \textit{report} implementation. How the extracting and
 checking functionality is split into methods can be up to the user and does not have to be part of the phase system.
-As such, it is decided to only include a \textit{report} phase which should be used by all analysis components to write a report to the console or a file. How the data for the report is prepared is up to the component.
+As such, it is decided only to include a \textit{report} phase which should be used by all analysis components to write a report to the console or a file. How the data for the report is prepared is up to the component.
 
-Scala has support for traits which describe a set of methods and fields which a class has to implement. One class can
-implement a series of traits. This makes it possible to make phases opt-in, by implementing the relevant trait in a
+Scala supports traits that describe a set of methods and fields which a class has to implement. One class can
+implement a series of traits. This makes it possible to make phases opt-in by implementing the relevant trait in a
 component. This makes it clear which phases a component uses. This can be useful when extending an existing
-component, since it can be read from the class definition which phases are implemented.
+component since it can be read from the class definition, which phases are implemented.
 
 \begin{figure}
   \centering
@@ -2304,21 +2299,21 @@ The final phasing system is shown in Figure \ref{fig:phases}. The constructors a
 shown for clarity before the start of the run phases. The phase system is kept very simple, but it should, at least
 for standard cases, provide the synchronization points necessary to structure the testbench execution.
 
-One callenge a distributed testbench faces is the decision of when a phase has finished. In UVM, components can raise
-an objection, which that they are not yet ready to proceed to the next phase. They signal that they are done by
-dropping the objection. This way also a driver could for instance block the run phase from finishing until it has
-received its last response. In the verification framework a less powerful but simple approach is chosen. Components
-running code in the simulation phase have no way to object to the simulation finishing. Instead the reset, configure,
-test and shutdown phases finish once all participants have returned from the method associated with the phase. The
-simulation phase is thus meant for components which provide a static service in the testbench such as a driver or
-monitor. The reset, configure, test and shutdown phases are meant for components which \textit{control} the testbench
-in a fixed number of steps and exit once they are done. This way the simulation phase can be used to provide services
-to the testbench which are always available, while the other phases are used to control the testbench execution.
+One challenge a distributed testbench faces is the decision of when a phase has finished. In UVM, components can raise
+an objection that they are not yet ready to proceed to the next phase. They signal that they are done by
+dropping the objection. This way, a driver could block the run phase from finishing until it has
+received its last response. In the verification framework, a less powerful but simple approach is chosen. Components
+running code in the simulation phase have no way to object to the simulation finishing. Instead, the reset, configure,
+test, and shutdown phases finish once all participants have returned from the method associated with the phase. The
+simulation phase is thus meant for components that provide a static service in the testbench, such as a driver or
+monitor. The reset, configure, test, and shutdown phases are meant for components that \textit{control} the testbench
+in a fixed number of steps and exit once they are done. This way, the simulation phase can provide services
+to the testbench that are always available, while the other phases are used to control the testbench execution.
 
-An issue that the controlling phases have, is that some actions which they trigger may take an unpredictable time to
-finish. In this case, a controlling phase such as the test phase should interrogate service providing components such
-as drivers to determine when all its actions have taken effect. This could for instance be done by waiting for
-sequence to finish producing stimulus, or by waiting for a monitor to observe a certain number of transactions on an interface.
+An issue that the controlling phases have, is that some actions, which they trigger, may take an unpredictable time to
+finish. In this case, a controlling phase such as the test phase should interrogate service providing components, such
+as drivers, to determine when all its actions have taken effect. This could, for instance, be done by waiting for
+sequence to finish producing stimulus or by waiting for a monitor to observe a certain number of transactions on an interface.
 
 
 \begin{comment}
@@ -2378,7 +2373,7 @@ components have finished their work
 Providing a set of primitives and a standard manner of composing them is a key part of facilitating the reuse of
 verification components. The verification framework will follow the recommendations of \citeauthor{sutherland2015uvm}
 \cite{sutherland2015uvm} for a minimal UVM subset required for practical verification according to the UVM. The
-primitives which are mentioned by the authors match with those generally presented in the literature. These base primitives are:
+primitives, which are mentioned by the authors, match with those generally presented in the literature. These base primitives are:
 
 \begin{itemize}
   \item The sequence item: The transaction primitive
@@ -2393,18 +2388,18 @@ primitives which are mentioned by the authors match with those generally present
 \end{itemize}
 
 Each of these components has a distinct role in the static verification environment. As such, each of them is needed to build a complete testbench, and the framework should
-provide base classes for each of them which the user can extend.
+provide base classes for each of them, which the user can extend.
 
-In UVM these base components are implemented in a class hiearchy with \textit{uvm void} being the base class. Derived
-from this is the \textit{uvm object} which provides a series of features like printing, recording, copying, comparing
-as well as packing and unpacking, i.e. serialization, of objects. The \textit{uvm report object} is derived from
-this, adding logging funnctionality. The \textit{uvm component} base class is derived from the \textit{uvm report
-object} and adds phasing, hierarchy tracking and the factory interface. UVM sequence items and sequences are derived
+In UVM, these base components are implemented in a class hierarchy, with \textit{uvm void} being the base class. Derived
+from this is the \textit{uvm object}, which provides a series of features like printing, recording, copying, and comparing,
+as well as packing and unpacking, i.e., serialization, of objects. The \textit{uvm report object} is derived from
+this, adding logging functionality. The \textit{uvm component} base class is derived from the \textit{uvm report
+object} and adds phasing, hierarchy tracking, and the factory interface. UVM sequence items and sequences are derived
 from the \textit{uvm object} class.
 
-As noted by \citeauthor{sutherland2015uvm} \cite{sutherland2015uvm}, not all of this class hiearchy is relevant to
-the end-user of UVM. In the framework, three base classes are provided: Components, Transactions and Sequences.
-Instead of relying on inheritance to share functionality among these as it is done in the UVM, traits shall be used
+As noted by \citeauthor{sutherland2015uvm} \cite{sutherland2015uvm}, not all of this class hierarchy is relevant to
+the end-user of UVM. In the framework, three base classes are provided: Components, Transactions, and Sequences.
+Instead of relying on inheritance to share functionality among these as done in the UVM, traits shall be used
 to compose the required functionality of these primitives.
 
 A Component is the base type for all the static elements of the testbench. It is hierarchy-aware by holding
