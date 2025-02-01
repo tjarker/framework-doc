@@ -2921,7 +2921,14 @@ cases for a given function. For the verification of singal processing circuits, 
 continuous random variables, which are only allowed a certain rate of change between two randomizations.
 
 In the verification framework, random variables should be used in transactions. A simple sketch for a syntax is shown
-in Listing \ref{lst:crv_syntax}.
+in Listing \ref{lst:crv_syntax}. In order to provide some capabilities to generate random values in the verification framework, a small set of utility methods shall be provided which are build on top of Scala's random number generator. These methods are:  
+
+\begin{itemize}
+  \item \ttt{Rand.bool()}: Generate a random boolean value
+  \item \ttt{Rand.between(min, max)}: Generate a random integer value between \ttt{min} and \ttt{max}
+  \item \ttt{Rand.oneof(values)}: Takes a random value from a collection
+  \item \ttt{Rand.uint(width)}: Generate a random unsigned integer value of \ttt{width} bits
+\end{itemize}
 
 
 
@@ -3336,6 +3343,8 @@ One of the key challenges in the implementation of the factories and configurati
 
 An important part of creating objects through class tags, is that the constructor has to follow an expected signature. In the implementation, Scala's metaprogramming capabilities are used to verify that the constructor matches the expected signature and throw a compile time error if it does not.
 
+
+
 \chapter{Evaluation}
 %////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -3369,7 +3378,7 @@ handshake for the first transaction is shown in Figure \ref{fig:gcd_timing}.
 \begin{figure}[t]
   \centering
   \includegraphics[width=\textwidth]{diagrams/gcd_timing.pdf}
-  \caption{Wavefrom showing the handshake for the calculation of the greatest common divisor of 12 and 3.}
+  \caption{Waveform showing the handshake for the calculation of the greatest common divisor of 12 and 3.}
   \label{fig:gcd_timing}
 \end{figure}
 
@@ -3390,7 +3399,7 @@ for the test is presented in Figure \ref{fig:cdc_timing}.
 \begin{figure}[t]
   \centering
   \includegraphics[width=\textwidth]{diagrams/cdc_timing.pdf}
-  \caption{Wavefrom showing the handshakes for the clock domain crossing of the value \ttt{0xDEADBEEF}.}
+  \caption{Waveform showing the handshakes for the clock domain crossing of the value \ttt{0xDEADBEEF}.}
   \label{fig:cdc_timing}
 \end{figure}
 
@@ -3457,10 +3466,20 @@ PyUVM testbench contains 1024 of these tokens, while the scala testbench contain
 
 \section{Use Case 4: APB Verification IP} %---------------------------------------------------------------------------------
 
-\todo{compare lines of code roughly, is there a difference in design components? what was not replicated, what was
-replicated differently?}
+The final use case orients itself on the verification infrastructure for the Didactic SoC chip \cite{didactic}. The chip is a multi-project chip, providing multiple tiles for different projects, developed as part of the Edu4Chip project \cite{edu4chip} and will be used for educational tape-out's. Each tile can be interfaced among others through an APB bus. For the verification of the tiles, a verification library for the APB interfaces in PyUVM is provided. The library contains a configurable agent which can take the role of the producer and consumer of an APB interface and be active or passive. Coverage of the applied transactions is collected inside the agent too. The interface parameters such as the data or address widths are configurable. The transaction type not only captures the actual pin values but also control variables such as a number of wait cycles before the transaction is executed. 
 
-\cite{didactic}
+Due to time limitations, the full verification infrastructure could not be replicated as part of the project. Instead, an APB agent is provided which only works as an active producer. The agent is used to drive a sequence of random APB transactions on an example subsytem of the Didactic SoC \ttt{student\_ss\_1.v}. The waveform for an execution of the testbench is shown in Figure \ref{fig:apb_timing}. The framework is able to generate random transactions as it is done in the PyUVM code also without using constraints. The random values are generated using for instance \ttt{Rand.uint(32.W)} for the write data. The address is limited to 0 and 4 for reads and only 0 for writes, since those are the only addresses where the DUT reacts. The implemented testbench provides a simple functional coverage collection which is based on hashmaps which count hits for metrics such as the operation type or the error response. Even cross coverage is possible by providing tuples of values to a hashmap as a key.
+
+Since the verification infrastructure is not fully replicated, a good comparison between the two testbenches is difficult. The base driver implementation and the producer variant fill 177 lines of code in the PyUVM testbench, while they only fill 78 lines in Scala, but the PyUVM variants allow for more configuration. More importantly, the PyUVM drivers are able to handle reset events during the normal execution, requiring the driver to be restarted and the interface signals to be driven with default values. This is not implemented in the Scala testbench. 
+
+In its simplicity, the testbench in the proposed framework does however show that the framework is capable of creating verification infrastructure which matches the general capabilities of Cocotb and PyUVM.
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{diagrams/apb_timing.pdf}
+  \caption{Waveform showing the driving of 10 APB transactions with random intervals in between transactions.}
+  \label{fig:apb_timing}
+\end{figure}
+
 
 \chapter{Discussion} %/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -3732,8 +3751,9 @@ The proposed framework can be seen as a proof of concept which shows that there 
 
 \end{comment}
 
+\chapter{Conclusion} %/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
+\todo{write conclusion}
 
 
 %\section{Future Work} %========================================================================================================
