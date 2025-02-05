@@ -1,7 +1,14 @@
 \section*{Abstract}
 \addcontentsline{toc}{section}{Abstract}
 
-\blindtext
+The increasing complexity of digital designs has made functional verification a critical bottleneck in the product development of digital systems.
+The Universal Verification Methodology (UVM) has become the industry standard for structuring testbenches in SystemVerilog, facilitating an increase in productivity through the composability and reuse of the testbench infrastructure. Projects like Cocotb and Chiseltest try, however, to bring verification into more capable modern languages such as Python or Scala. While they offer the primitives to build testbench infrastructure in those languages, they do not explore how concepts for composability and reuse, such as those found in the UVM, should take advantage of the more powerful host language.
+
+This thesis explores the adaptation of UVM principles to a verification environment in a modern high-level language, intending to bring composability, flexibility, and reusability to testbench design in a Scala-based verification framework. Through a small number of interviews and an analysis of the core concepts of the UVM, a minimal yet effective verification framework is proposed, leveraging Scala’s advanced type system and meta-programming features.
+
+The framework provides the primitives for reusable testbench infrastructure in a concurrent testbench environment whose execution is structured in time through a simplified phasing system. Key features such as transaction-based modeling, configurable test environments, and stimulus sequences are implemented in a way that simplifies traditional UVM concepts while staying capable of performing common verification tasks. The framework is evaluated through four use cases of varying complexity. The use cases demonstrate that the proposed framework can support both simple unit tests and more complex UVM-like testbenches concisely.
+
+This work highlights the potential of using a modern high-level language for verification, which may bridge the gap between hardware verification methodologies and contemporary software development practices. Future research should evaluate the framework further with complex use cases to determine how the simplifications perform at scale.
 
 
 

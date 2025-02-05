@@ -1,6 +1,6 @@
 \chapter{Use Cases Code} %///////////////////////////////////////////////////////////////////////////////////////////////////////////
-\section{GCD Test Code} %------------------------------------------------------------------------------------------------------
-
+\section{Use Case 1 Code (GCD)} %------------------------------------------------------------------------------------------------------
+\label{sec:gcd_test}
 \begin{lstlisting}[language=scala, captionpos=b, caption=Test code for the GCD circuit.,label=lst:gcd_test]
 import framework.*
 import framework.given
@@ -34,10 +34,9 @@ class GcdBfm(gcd: GCD) {
   val states = Seq("wait_a", "ack_a", "wait_b", "compare", "update_a", "update_b", "ack_result")
 
   def printState()(using Sim, Async): Unit = {
-    val s = summon[Sim]
     println(s"@${gcd.time}${"=" * 80}")
-    println(s"State: ${states(s.peekReg(gcd.state).toInt)}")
-    println(s"A = ${s.peekReg(gcd.a)} B = ${s.peekReg(gcd.b)}")
+    println(s"State: ${states(gcd.state.peekReg.toInt)}")
+    println(s"A = ${gcd.a.peekReg} B = ${gcd.b.peekReg}")
   }
 
   def transact(value: BigInt, expected: Option[BigInt])(using
@@ -86,7 +85,7 @@ class GcdBfm(gcd: GCD) {
   }
 }
 
-@main def GcdSim(): Unit =
+@main def GcdTest(): Unit =
   Simulation(new GCD, 1.ns, Some("gcd.vcd")) { gcd =>
     val bfm = GcdBfm(gcd)
 
@@ -107,12 +106,11 @@ class GcdBfm(gcd: GCD) {
       println(s"Result: ${res}")
     }
   }
-
 \end{lstlisting}
 
-
-\section{Clock Domain Crossing Test Code} %-----------------------------------------------------------------------------------
-
+\newpage
+\section{Use Case 2 Code (Clock Domain Crossing)} %-----------------------------------------------------------------------------------
+\label{sec:cdc_test}
 \begin{lstlisting}[language=scala, captionpos=b, caption=Test code for the clock domain crossing circuit.,label=lst:cdc_test]
 import framework.*
 import framework.given
@@ -197,8 +195,8 @@ class HandshakeReceiver(
   }
 }
 
-@main def CdcSim(): Unit =
-  Simulation(CDC(), 1.ns, Some("cdc.vcd")) { cdc =>
+@main def CdcTest(): Unit =
+  Simulation(CDC(), 1.ns, Some("cdc.vcd"),debug = true) { cdc =>
     val magicNum = BigInt("deadbeef", 16)
     fork {
       val sender =
@@ -211,4 +209,817 @@ class HandshakeReceiver(
       receiver.expect(magicNum)
     }.join()
   }
+\end{lstlisting}  
+
+\newpage
+\section{Use Case 3 Code (Tiny ALU)} %-----------------------------------------------------------------------------------
+\label{sec:alu_test}
+
+\begin{lstlisting}[language=scala, captionpos=b, caption=Test code for the tiny ALU.,label=lst:alu_test]
+import framework.given
+import framework.*
+import types.*
+import Time.*
+
+import scala.util.boundary
+import TinyAlu.AluRequest
+import TinyAlu.AluResult
+
+import collection.mutable
+
+class TinyAlu extends ModuleInterface("src/hdl/sv/tinyalu.sv") {
+
+  override val name = "tinyalu"
+
+  val clk = ClockPort(2.ps)
+  val reset_n = ResetPort()
+
+  val start = Input(Bool())
+
+  val a = Input("A", UInt(8.W))
+  val b = Input("B", UInt(8.W))
+  val op = Input(UInt(3.W))
+
+  val done = Output(Bool())
+  val result = Output(UInt(8.W))
+
+  domain(clk, reset_n)(
+    start,
+    a,
+    b,
+    op,
+    done,
+    result
+  )
+}
+
+object TinyAlu {
+
+  enum Op(val enc: Int, val sym: String) {
+    case Add extends Op(1, "+")
+    case And extends Op(2, "&")
+    case Xor extends Op(3, "^")
+    case Mul extends Op(4, "*")
+
+  }
+
+  object Op {
+    def fromInt(i: Int): Op = i match {
+      case 1 => Add
+      case 2 => And
+      case 3 => Xor
+      case 4 => Mul
+    }
+  }
+
+  object AluRequest {
+    inline def random(): AluRequest = {
+      val a = Rand.uint(8.W)
+      val b = Rand.uint(8.W)
+      val op = Rand.oneof(Op.values)
+      AluRequest(op, a, b)
+    }
+  }
+  class AluRequest(val op: Op, val a: BigInt, val b: BigInt)
+      extends Transaction {
+    def randomize(): AluRequest = {
+      val a = Rand.uint(8.W)
+      val b = Rand.uint(8.W)
+      val op = Rand.oneof(Op.values)
+      AluRequest(op, a, b)
+    }
+
+    override def toString(): String = s"AluRequest($a ${op.sym} $b)"
+  }
+
+  class AluResult(val req: AluRequest, val result: BigInt) extends Transaction {
+    override def toString(): String = s"AluResult($req = $result)"
+  }
+
+  def prediction(t: AluRequest): AluResult = {
+    val a = t.a
+    val b = t.b
+    val op = t.op
+    AluResult(
+      t,
+      op match {
+        case Op.Add => a + b
+        case Op.And => a & b
+        case Op.Xor => a ^ b
+        case Op.Mul => a * b
+      }
+    )
+  }
+
+}
+
+class TinyAluBfm(dut: TinyAlu) {
+
+  def reset()(using Sim, Async) = {
+    dut.reset_n.deassert()
+    dut.start.poke(false)
+    dut.clk.step()
+    dut.reset_n.assert()
+    dut.clk.step()
+  }
+
+  def sendRequest(t: AluRequest)(using Sim, Async.Spawn): Unit = {
+    import t.{a, b, op}
+    dut.a.poke(a)
+    dut.b.poke(b)
+    dut.op.poke(op.enc)
+    dut.start.poke(true)
+    dut.clk.step()
+    dut.start.poke(false)
+  }
+
+  def waitForDone()(using Sim, Async) = {
+    dut.clk.stepUntil(dut.done.peek)
+  }
+
+  def waitForStart()(using Sim, Async) = {
+    dut.clk.stepUntil(dut.start.peekMonitor)
+  }
+
+  def getResult()(using Sim, Async): BigInt = {
+    dut.result.peek
+  }
+
+  def observeTransaction()(using Sim, Async): AluResult = {
+    waitForStart()
+    val t = AluRequest(
+      TinyAlu.Op.fromInt(dut.op.peekMonitor.toInt),
+      dut.a.peekMonitor,
+      dut.b.peekMonitor
+    )
+    waitForDone()
+    val res = dut.result.peek
+    AluResult(t, res)
+  }
+
+}
+
+
+class AluDriver(using Hierarchy)
+    extends Driver[AluRequest, AluResult],
+      SimulationPhase {
+
+  val dut = param[TinyAlu]
+  val bfm = TinyAluBfm(dut)
+  def sim()(using Sim, Async.Spawn) = foreachTx { t =>
+    info(s"Sending request: $t")
+    bfm.sendRequest(t)
+    bfm.waitForDone()
+    respond(AluResult(t, bfm.getResult()))
+  }
+
+}
+
+class AluMonitor(using Hierarchy) extends Monitor[AluResult], SimulationPhase {
+
+  val dut = param[TinyAlu]
+  val bfm = TinyAluBfm(dut)
+
+  def sim()(using Sim, Async.Spawn) = forever {
+      val tx = bfm.observeTransaction()
+      publish(tx)
+      dut.clk.step()
+    }
+
+  
+}
+
+class AluScoreboard(using Hierarchy)
+    extends AnalysisComponent[AluResult],
+      ReportPhase {
+
+  val passing = mutable.ListBuffer[AluResult]()
+  val failing = mutable.ListBuffer[AluResult]()
+
+  def sim()(using Sim, Async.Spawn) = foreachTx { tx =>
+    val pred = TinyAlu.prediction(tx.req)
+    if (tx.result == pred.result) {
+      passing += tx
+    } else {
+      failing += tx
+    }
+  }
+
+  def report() = {
+    passing.foreach { tx =>
+      info(s"PASSED: $tx")
+    }
+    failing.foreach { tx =>
+      if (Config.get[AluTestConfig].CheckErrors) {
+        error(s"FAILED: $tx expected ${TinyAlu.prediction(tx.req)}")
+      } else {
+        info(s"FAILED: $tx expected ${TinyAlu.prediction(tx.req)}")
+      }
+    }
+  }
+
+}
+
+
+class AluCoverage(using Hierarchy) extends AnalysisComponent[AluResult] {
+
+  val ops = mutable.Map[TinyAlu.Op, Int](TinyAlu.Op.values.map(_ -> 0)*)
+
+  def sim()(using Sim, Async.Spawn) = foreachTx { tx =>
+    ops(tx.req.op) += 1
+  }
+
+  def report() = {
+    if (Config.get[AluTestConfig].CoverageErrors) {
+      ops.foreach { case (op, cnt) =>
+        if (cnt == 0) error(s"Operation $op not covered")
+      }
+      if (!ops.exists(_._2 == 0)) info("All operations covered")
+    }
+  }
+
+}
+
+class AluEnv(using Hierarchy) extends Component {
+
+  val driver = Factory.create[AluDriver]
+  val seq = Factory.create[Sequencer[AluRequest, AluResult]]
+
+  val monitor = Factory.create[AluMonitor]
+  val scoreboard = Factory.create[AluScoreboard]
+  val coverage = Factory.create[AluCoverage]
+
+  driver.port.connect(seq.port)
+  monitor.addListeners(scoreboard, coverage)
+}
+
+class RandomSeq(using Hierarchy)
+    extends Sequence[AluRequest, AluResult] {
+
+  protected def body()(using Sim, Async.Spawn): Unit = {
+    for (op <- TinyAlu.Op.values) {
+      val a = Rand.uint(8.W)
+      val b = Rand.uint(8.W)
+      yieldTx(AluRequest(op, a, b))
+    }
+  }
+}
+
+class MaxSeq(using Hierarchy) extends Sequence[AluRequest, AluResult] {
+
+  protected def body()(using Sim, Async.Spawn): Unit = {
+    for (op <- TinyAlu.Op.values) {
+      yieldTx(AluRequest(op, 0xFF, 0xFF))
+    }
+  }
+}
+
+class ManualSeq(op: TinyAlu.Op, a: BigInt, b: BigInt)(using Hierarchy)
+    extends Sequence[AluRequest, AluResult] {
+
+  protected def body()(using Sim, Async.Spawn): Unit = {
+    yieldTx(AluRequest(op, a, b))
+  }
+}
+
+class FibonacciSeq(using Hierarchy)
+    extends Sequence[AluRequest, AluResult] {
+
+  protected def body()(using Sim, Async.Spawn): Unit = {
+    var a = 0
+    var b = 1
+    for (i <- 0 until 10) {
+      yieldTx(AluRequest(TinyAlu.Op.Add, a, b))
+      val c = a + b
+      a = b
+      b = c
+    }
+  }
+}
+
+class TestAllSeq(using Hierarchy)
+    extends Sequence[AluRequest, AluResult] {
+
+  protected def body()(using Sim, Async.Spawn): Unit = {
+    val rand = Factory.create[RandomSeq]
+    val max = Factory.create[MaxSeq]
+    val fib = Factory.create[FibonacciSeq]
+    rand.start()
+    max.start()
+    fib.start()
+    yieldSeq(rand)
+    yieldSeq(max)
+    yieldSeq(fib)
+  }
+}
+
+class TestAllSeqParallel(using Hierarchy)
+    extends Sequence[AluRequest, AluResult] {
+
+  protected def body()(using Sim, Async.Spawn): Unit = {
+    val rand = Factory.create[RandomSeq]
+    val max = Factory.create[MaxSeq]
+    val fib = Factory.create[FibonacciSeq]
+    rand.start()
+    max.start()
+    fib.start()
+    
+    val mix = SequenceComposition.Mix(rand, max, fib)
+    mix.start()
+    yieldSeq(mix)
+  }
+}
+
+class AluTestConfig {
+  val CoverageErrors = true
+  val CheckErrors = true
+}
+
+class AluTestConfigNoErr extends AluTestConfig {
+  override val CoverageErrors = false
+  override val CheckErrors = false
+}
+
+class AluTest(dut: TinyAlu)(using Hierarchy) extends Test, ResetPhase {
+
+  Config.set("dut", dut)
+
+  val bfm = TinyAluBfm(dut)
+  val env = Factory.builder
+    .withParams("hello" -> "world")
+    .withConfigOverride[AluTestConfig, AluTestConfigNoErr]
+    .withTypeOverride[AluDriver, AluDriver]
+    .create[AluEnv]
+
+  def reset()(using Sim, Async.Spawn) = {
+    bfm.reset()
+  }
+
+  def sequence()(using Sim, Async.Spawn): Sequence[AluRequest, AluResult] = RandomSeq()
+
+  def test()(using Sim, Async.Spawn) = {
+    util.Random.setSeed(42)
+    val seq = sequence()
+    seq.start()
+    env.seq.play(seq)
+    seq.waitUntilDone()
+  }
+}
+
+class FibonacciTest(dut: TinyAlu)(using Hierarchy) extends AluTest(dut) {
+
+  override def sequence()(using Sim, Async.Spawn) = FibonacciSeq()
+
+}
+
+class ParallelTest(dut: TinyAlu)(using Hierarchy) extends AluTest(dut) {
+
+  override def sequence()(using Sim, Async.Spawn) = TestAllSeqParallel()
+
+}
+
+@main def AluTestRandom(): Unit =
+  Test.run(new TinyAlu, 1.ps, Some("alu_rand.vcd"))(new AluTest(_))
+
+@main def AluTestFibonacci(): Unit =
+  Test.run(new TinyAlu, 1.ps, Some("alu_fib.vcd"))(new FibonacciTest(_))
+
+
+@main def AluTestParallel(): Unit =
+  Test.run(new TinyAlu, 1.ps, Some("alu_parallel.vcd"))(new ParallelTest(_))
+\end{lstlisting}  
+
+
+
+
+\newpage
+
+\section{Use Case 4 Code (APB)} %-----------------------------------------------------------------------------------
+\label{sec:apb_test}
+
+\begin{lstlisting}[language=scala, captionpos=b, caption=Test code for the APB Didactic SoC subsystem.,label=lst:apb_test]
+import framework.*
+import framework.types.*
+import framework.Time.ns
+
+import gears.async.Async
+import gears.async.Async.Spawn
+
+
+enum OpType(val value: Int) {
+  case Read extends OpType(0)
+  case Write extends OpType(1)
+}
+
+enum NormalAccess(val value: Int) {
+  case Normal extends NormalAccess(0)
+  case Privileged extends NormalAccess(1)
+}
+
+enum SecureAccess(val value: Int) {
+  case Secure extends SecureAccess(0)
+  case NonSecure extends SecureAccess(1)
+}
+
+enum DataAccess(val value: Int) {
+  case Data extends DataAccess(0)
+  case Instruction extends DataAccess(1)
+}
+
+class ApbTransaction extends Transaction {
+
+  var noWaitLen = Rand.bool()
+  var maxWaitLen = 15
+
+  var op = Rand.oneof(OpType.values)
+  var addr = if(op == OpType.Read) Rand.oneof(Seq(0,4)) else 0
+  var data = Rand.uint(32.W)
+  var strb = Rand.uint(4.W)
+  var slverr = Rand.bool()
+
+
+  var normAcc = Rand.oneof(NormalAccess.values)
+  var secAcc = Rand.oneof(SecureAccess.values)
+  var dataAcc = Rand.oneof(DataAccess.values)
+
+  var waitLen = if noWaitLen then 0 else Rand.between(0, maxWaitLen)
+
+
+  override def toString(): String = {
+    s"ApbTransaction(op=$op, addr=$addr, data=$data, strb=$strb, slverr=$slverr, normAcc=$normAcc, secAcc=$secAcc, dataAcc=$dataAcc, waitLen=$waitLen)"
+  }
+
+  def copy(): this.type = {
+    val tx = new ApbTransaction
+    tx.noWaitLen = noWaitLen
+    tx.maxWaitLen = maxWaitLen
+    tx.op = op
+    tx.addr = addr
+    tx.data = data
+    tx.strb = strb
+    tx.slverr = slverr
+    tx.normAcc = normAcc
+    tx.secAcc = secAcc
+    tx.dataAcc = dataAcc
+    tx.waitLen = waitLen
+    tx.asInstanceOf[this.type]
+  }
+
+}
+
+class ApbBaseSeq(using Hierarchy) extends Sequence[ApbTransaction, ApbTransaction] {
+
+  val delayBeforeTx = Rand.between(0, 15)
+
+  def body()(using Sim, Async.Spawn): Unit = {
+    
+    if delayBeforeTx > 0 then stepClockDomain(delayBeforeTx)
+
+  }
+
+  def checkResp(resp: ApbTransaction)(using Sim, Async): Unit = {
+    if resp.slverr then {
+      error("Slave error detected")
+    }
+  }
+
+  def yieldApbTx(tx: ApbTransaction)(using Sim, Async): Unit = {
+    checkResp(yieldTx(tx))
+  }
+
+}
+
+
+class ApbSingleSeq(using Hierarchy) extends ApbBaseSeq {
+
+  override def body()(using Sim, Async.Spawn): Unit = {
+    super.body()
+
+    yieldApbTx(new ApbTransaction)
+  }
+
+}
+
+class ApbSingleZdSeq(using Hierarchy) extends ApbSingleSeq {
+
+  override val delayBeforeTx: Int = 0
+
+  override def body()(using Sim, Async.Spawn): Unit = {
+    super.body()
+
+    val tx = new ApbTransaction
+    tx.noWaitLen = true
+
+    yieldApbTx(tx)
+  }
+
+}
+
+class ApbRandomSeq(using Hierarchy) extends ApbBaseSeq {
+
+  val len = Config.getOrElse("len", 10)
+
+  override def body()(using Sim, Async.Spawn): Unit = {
+    super.body()
+
+    for i <- 0 until len do {
+      val tx = new ApbTransaction
+      warning(s"Generated transaction $i: $tx")
+      yieldApbTx(tx)
+    }
+  }
+
+}
+
+abstract class ApbBaseDriver(using Hierarchy) extends Driver[ApbTransaction, ApbTransaction] {
+
+
+  val bfm = param[ApbBfm]
+
+  override def sim()(using Sim, Spawn): Unit = {
+
+    driverLoop()
+
+  }
+
+  def drivePins(tx: ApbTransaction)(using Sim, Async): ApbTransaction
+
+
+  def driverLoop()(using Sim, Async): Unit = while(true) {
+
+    info("Waiting for next transaction")
+
+    val tx = next()
+
+    info(s"Got transaction $tx")
+
+    info("Driving pins")
+    val resp = drivePins(tx)
+
+    info(s"Responding with $resp")
+    respond(resp)
+  }
+
+}
+
+class ApbProducerDriver(using Hierarchy) extends ApbBaseDriver {
+
+  override def drivePins(tx: ApbTransaction)(using Sim, Async): ApbTransaction = {
+
+    info("Driving pins for producer")
+
+    bfm.clk.step(tx.waitLen)
+    bfm.sel.poke(true)
+    bfm.en.poke(false)
+    bfm.addr.poke(tx.addr)
+
+    tx.op match {
+      case OpType.Write => {
+        bfm.wdata.poke(tx.data)
+        bfm.wr.poke(true)
+      }
+      case OpType.Read => {
+        bfm.wr.poke(false)
+      }
+    }
+
+    bfm.clk.step()
+    bfm.en.poke(true)
+
+    val cnt = bfm.clk.stepUntil(bfm.ready.peek)
+
+    val err = bfm.slverr.peek
+    val rdata = bfm.rdata.peek
+
+    info(s"Got response: $rdata, error: $err")
+
+
+    val resp = tx.copy()
+
+    resp.slverr = err
+    tx.op match {
+      case OpType.Read => resp.data = rdata
+      case _ => ()
+    }
+
+    if cnt < 1 then bfm.clk.step()  
+    bfm.sel.poke(false)
+    bfm.en.poke(false)
+
+    resp
+  }
+
+}
+
+class ApbCoverage(using Hierarchy) extends AnalysisComponent[ApbTransaction] {
+
+  val op = mutable.Map[OpType, Int](OpType.values.map(_ -> 0)*)
+  val addr = mutable.Map[Int, Int]().withDefaultValue(0)
+  val err = mutable.Map[Boolean, Int](true -> 0, false -> 0)
+
+  val opErr = mutable.Map[(OpType, Boolean), Int](OpType.values.flatMap { op =>
+    Seq((op, true) -> 0, (op, false) -> 0)
+  }*).withDefaultValue(0)
+
+  val data = mutable.Map[BigInt, Int]().withDefaultValue(0)
+
+  val delayBeforeTx = mutable.Map[Int, Int]().withDefaultValue(0)
+
+  def sim()(using Sim, Async.Spawn): Unit = {
+    foreachTx { tx =>
+      op(tx.op) += 1
+      addr(tx.addr) += 1
+      err(tx.slverr) += 1
+      data(tx.data) += 1
+      opErr(tx.op -> tx.slverr) += 1
+      delayBeforeTx(tx.waitLen) += 1
+    }
+  }
+
+  def report(): Unit = {
+    val str = s"""Coverage report:
+      |Op coverage:
+      |${op.map { case (k, v) => s"$k: $v" }.mkString("\n")}
+      |
+      |Addr coverage:
+      |${addr.map { case (k, v) => s"$k: $v" }.mkString("\n")}
+      |
+      |Error coverage:
+      |${err.map { case (k, v) => s"$k: $v" }.mkString("\n")}
+      |
+      |Op error cross coverage:
+      |${opErr.map { case ((op, err), v) => s"$op, $err: $v" }.mkString("\n")}
+      |
+      |Data coverage:
+      |${data.map { case (k, v) => s"${k.toString(16)}: $v" }.mkString("\n")}
+      |
+      |Delay before transaction coverage:
+      |${delayBeforeTx.map { case (k, v) => s"$k: $v" }.mkString("\n")}
+      |""".stripMargin
+    info(str)
+  }
+
+}
+
+class ApbMonitor(using Hierarchy) extends Monitor[ApbTransaction] {
+
+  val bfm = Config.get[ApbBfm]("bfm")
+
+
+  def sim()(using Sim, Async.Spawn) = forever {
+      val tx = new ApbTransaction
+
+      var waitStates = 0
+
+      while (!bfm.en.peek || !bfm.ready.peek) {
+        if (bfm.sel.peek && !bfm.ready.peek) {
+          waitStates += 1
+        }
+        bfm.clk.step()
+      }
+
+      tx.waitLen = waitStates
+      tx.addr = bfm.addr.peek.toInt
+      tx.slverr = bfm.slverr.peek
+
+      if (bfm.wr.peek) {
+        tx.op = OpType.Write
+        tx.data = bfm.wdata.peek.toInt
+      } else {
+        tx.op = OpType.Read
+        tx.data = bfm.rdata.peek.toInt
+      }
+
+      bfm.clk.step()
+
+      publish(tx)
+    }
+
+
+}
+
+class ApbAgent(using Hierarchy) extends Component {
+
+  val driver = Factory.create[ApbProducerDriver]
+  val seq = Factory.create[Sequencer[ApbTransaction, ApbTransaction]]
+
+  val monitor = Factory.create[ApbMonitor]
+  val coverage = Factory.create[ApbCoverage]
+
+  driver.port.connect(seq.port)
+  monitor.addListeners(coverage)
+
+}
+
+class ApbEnv(using Hierarchy) extends Component {
+
+  val agent = Factory.create[ApbAgent]
+
+}
+
+class toplevel(aw: Int = 10, dw: Int = 32)
+    extends ModuleInterface(
+      "src/hdl/sv/student_ss_1.sv",
+      "src/hdl/sv/toplevel.sv"
+    ) {
+
+  val clk = ClockPort("clk_in", 2.ns)
+  val reset = ResetPort("reset_int")
+
+  val addr = Input("PADDR", UInt(aw.W))
+  val en = Input("PENABLE", Bool())
+  val sel = Input("PSEL", Bool())
+  val wdata = Input("PWDATA", UInt(dw.W))
+  val wr = Input("PWRITE", Bool())
+  val rdata = Output("PRDATA", UInt(dw.W))
+  val ready = Output("PREADY", Bool())
+  val slverr = Output("PSLVERR", Bool())
+
+  val irq = Output(Bool())
+
+  val irqEn = Input("irq_en", Bool())
+  val ssCtrl = Input("ss_ctrl", UInt(8.W))
+
+  val pmod0Gpi = Input("pmod_0_gpi", UInt(4.W))
+  val pmod0Gpo = Output("pmod_0_gpo", UInt(4.W))
+  val pmod0Oe = Output("pmod_0_gpio_oe", UInt(4.W))
+
+  val pmod1Gpi = Input("pmod_1_gpi", UInt(4.W))
+  val pmod1Gpo = Output("pmod_1_gpo", UInt(4.W))
+  val pmod1Oe = Output("pmod_1_gpio_oe", UInt(4.W))
+
+  domain(clk, reset)(
+    addr,
+    en,
+    sel,
+    wdata,
+    wr,
+    rdata,
+    ready,
+    slverr,
+    irq,
+    irqEn,
+    ssCtrl,
+    pmod0Gpi,
+    pmod0Gpo,
+    pmod0Oe,
+    pmod1Gpi,
+    pmod1Gpo,
+    pmod1Oe
+  )
+
+}
+
+import apb.*
+
+class DidacticTest(apb: ApbBfm)(using Hierarchy) extends Test, ResetPhase {
+
+  Config.set("bfm" -> apb)
+  Factory.overrideType[ApbBaseSeq, ApbRandomSeq]
+
+  val env = Factory.create[ApbEnv]
+
+  def reset()(using Sim, Async.Spawn) = {
+    apb.reset()
+  }
+
+  def test()(using Sim, Async.Spawn): Unit = {
+
+    val seq = Factory.create[ApbBaseSeq]
+    seq.start()
+
+    env.agent.seq.play(seq)
+
+    info("waiting for sequence to finish")
+    seq.waitUntilDone()
+
+    info("Test done")
+
+  }
+
+}
+
+@main def DidacticSocTest(): Unit = Test.run(toplevel(10, 32), 1.ns, Some("didactic.vcd")) { dut =>
+
+  val apb = ApbBfm(
+    dut.clk,
+    dut.reset,
+    dut.addr,
+    dut.en,
+    dut.sel,
+    dut.wdata,
+    dut.wr,
+    dut.rdata,
+    dut.ready,
+    dut.slverr
+  )
+
+  util.Random.setSeed(42)
+
+  val t = DidacticTest(apb)
+
+  println("Running test")
+  t
+}
+
 \end{lstlisting}  
